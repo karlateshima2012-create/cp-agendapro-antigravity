@@ -47,13 +47,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    return this.props.children;
+    return (this.props as any).children;
   }
 }
 
 const App: React.FC = () => {
   useEffect(() => {
-    console.log('🚀 Build Version: 2026.03.02.01 - AUTO-DEPLOY ENABLED');
+    console.log('🚀 Build Version: 2026.03.02.02 - TAILWIND FIXED');
   }, []);
 
   // ✅ NOVA VERIFICAÇÃO: Se estiver na rota /reset-password, renderiza componente específico
