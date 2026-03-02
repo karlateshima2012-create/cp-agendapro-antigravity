@@ -1,27 +1,43 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-body { 
-  font-family: 'Inter', sans-serif; 
-  margin: 0; 
-  padding: 0; 
+@theme {
+  --color-primary: #25aae1;
+  --color-primary-hover: #1f8fb8;
+  --color-primary-light: #e0f2fe;
 }
 
-@keyframes fade-in { 
-  from { opacity: 0; } 
-  to { opacity: 1; } 
+/* Estilos Globais */
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-800 antialiased;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
 }
 
-.animate-fade-in { 
-  animation: fade-in 0.3s ease-out; 
+/* Animações e Utilitários Customizados */
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar { 
-  display: none; 
-}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 
-.no-scrollbar { 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
+  to {
+    opacity: 1;
+  }
 }
