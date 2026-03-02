@@ -72,6 +72,10 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
 
       {editingId !== null && (
         <div className="bg-white p-6 rounded-2xl border border-primary/30 shadow-lg mb-6 ring-4 ring-primary/5">
+          {/* Honey-pot inputs to prevent browser from suggesting "Save Password" */}
+          <input type="text" name="prevent_autofill_user" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
+          <input type="password" name="prevent_autofill_pwd" style={{ display: 'none' }} tabIndex={-1} autoComplete="new-password" />
+
           <h3 className="font-bold text-lg mb-4 text-primary">{editingId === 0 ? 'Novo Serviço' : 'Editar Serviço'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="col-span-2 md:col-span-1">

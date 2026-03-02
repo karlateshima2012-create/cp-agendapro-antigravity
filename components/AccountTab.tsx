@@ -281,6 +281,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
               <div className="relative">
                 <input
                   type="password"
+                  autoComplete="new-password"
                   value={telegramToken}
                   onChange={e => setTelegramToken(e.target.value)}
                   placeholder="Token do BotFather"
