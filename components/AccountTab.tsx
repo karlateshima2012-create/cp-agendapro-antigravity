@@ -76,11 +76,13 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
   };
 
 
+  const OFFICIAL_BOT_TOKEN = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
+
   const handleSaveSettings = async () => {
     if (onUpdateSettings) {
       setIsSaving(true);
       await onUpdateSettings({
-        telegramBotToken: telegramToken.trim(),
+        telegramBotToken: OFFICIAL_BOT_TOKEN, // Sempre salvar o token oficial agora
         telegramChatId: telegramChatId.trim(),
         coverImage: coverImage.trim(),
         profileImage: profileImage.trim(),
@@ -95,22 +97,21 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
   };
 
   const testNotification = async () => {
-    const cleanToken = telegramToken.trim();
     const cleanChatId = telegramChatId.trim();
-    if (!cleanToken || !cleanChatId) {
-      alert('Preencha o Token e o Chat ID para testar.');
+    if (!cleanChatId) {
+      alert('Preencha o seu Chat ID para testar.');
       return;
     }
     try {
       const text = "<b>🔔 CP Agenda Pro</b>: Teste de Notificação bem-sucedido!";
-      const url = `https://api.telegram.org/bot${cleanToken}/sendMessage?chat_id=${cleanChatId}&parse_mode=HTML&text=${encodeURIComponent(text)}`;
+      const url = `https://api.telegram.org/bot${OFFICIAL_BOT_TOKEN}/sendMessage?chat_id=${cleanChatId}&parse_mode=HTML&text=${encodeURIComponent(text)}`;
       const res = await fetch(url);
       const data = await res.json();
 
       if (data.ok) {
         alert('✅ Sucesso! Verifique seu Telegram.');
       } else {
-        alert('❌ Erro: ' + (data.description || 'Token ou ID Inválido'));
+        alert('❌ Erro: ' + (data.description || 'ID Inválido ou Bot não iniciado'));
       }
     } catch (e) {
       alert('Erro de conexão com a API do Telegram.');
@@ -271,52 +272,80 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
 
         {/* TELEGRAM */}
         <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
-          <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 mb-8 flex items-center gap-3">
             <Bell size={20} className="text-yellow-500" /> Notificações via Telegram
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Bot Token (API)</label>
-              <div className="relative">
-                <input
-                  type="password"
-                  autoComplete="new-password"
-                  value={telegramToken}
-                  onChange={e => setTelegramToken(e.target.value)}
-                  placeholder="Token do BotFather"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white outline-none text-sm"
-                />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-4 transition-all hover:bg-blue-50">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-black shadow-lg shadow-primary/20">1</div>
+                  <div>
+                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Ative o Chatbot Oficial</p>
+                    <p className="text-xs text-gray-500 font-medium">Clique no botão abaixo e envie <b>/start</b> para o robô.</p>
+                  </div>
+                </div>
+                <a
+                  href="https://t.me/Cpagendaprobot"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-primary text-white text-center py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/10"
+                >
+                  Abrir @Cpagendaprobot
+                </a>
+              </div>
+
+              <div className="p-5 bg-amber-50/50 rounded-2xl border border-amber-100 flex flex-col gap-4 transition-all hover:bg-amber-50">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center font-black shadow-lg shadow-amber-500/20">2</div>
+                  <div>
+                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Descubra seu Chat ID</p>
+                    <p className="text-xs text-gray-500 font-medium tracking-tight leading-relaxed">
+                      Use o bot <b>@userinfobot</b> para obter seu número de identificação único.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <a
+                    href="https://t.me/userinfobot"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 bg-amber-500 text-white text-center py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-amber-500/10"
+                  >
+                    Abrir @userinfobot
+                  </a>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Seu Chat ID</label>
-                <input
-                  type="text"
-                  value={telegramChatId}
-                  onChange={e => setTelegramChatId(e.target.value)}
-                  placeholder="ID Numérico"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white outline-none text-sm font-mono"
-                />
+            <div className="space-y-6">
+              <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">Configuração Final</label>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1">Seu Chat ID</label>
+                  <input
+                    type="text"
+                    value={telegramChatId}
+                    onChange={e => setTelegramChatId(e.target.value)}
+                    placeholder="Digite seu ID"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-sm font-mono ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-300 shadow-sm"
+                  />
+                </div>
+                <button
+                  onClick={testNotification}
+                  className="w-full bg-gray-900 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10"
+                >
+                  <Bell size={16} /> Testar Notificação
+                </button>
               </div>
-              <button
-                onClick={testNotification}
-                className="bg-primary text-white px-6 rounded-xl font-bold text-xs uppercase hover:bg-primary-hover transition-all h-[46px] flex items-center justify-center active:scale-95"
-                style={{ backgroundColor: primaryColor }}
-              >
-                Testar
-              </button>
-            </div>
-          </div>
 
-          <div className="mt-6 space-y-3">
-            <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3">
-              <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
-              <p className="text-[11px] text-blue-700 font-medium">
-                Obtenha o Chat ID usando o @userinfobot no Telegram.
-              </p>
+              <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 flex items-start gap-3">
+                <Info size={16} className="text-gray-400 mt-1 flex-shrink-0" />
+                <p className="text-[10px] text-gray-500 font-bold leading-relaxed uppercase tracking-tight">
+                  Após inserir o ID, lembre-se de clicar no botão "Salvar Alterações" no fim da página.
+                </p>
+              </div>
             </div>
           </div>
         </div>
