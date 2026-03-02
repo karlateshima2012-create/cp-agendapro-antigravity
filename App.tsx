@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 const App: React.FC = () => {
   useEffect(() => {
-    console.log('🚀 Build Version: 2026.03.02.09 - FAVICON ADDED');
+    console.log('🚀 Build Version: 2026.03.02.11 - SVG FAVICON ADDED');
   }, []);
 
   // ✅ NOVA VERIFICAÇÃO: Se estiver na rota /reset-password, renderiza componente específico
