@@ -84,6 +84,18 @@ switch ($module) {
     case 'public':
         require_once __DIR__ . '/routes/public.php';
         break;
+    case 'telegram-webhook':
+        require_once __DIR__ . '/routes/telegram_webhook.php';
+        break;
+    case 'telegram-register':
+        // Script simples para registrar o webhook para o token oficial
+        $token = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
+        $domain = $_SERVER['HTTP_HOST'];
+        $webhookUrl = "https://{$domain}/api/telegram-webhook";
+        $url = "https://api.telegram.org/bot{$token}/setWebhook?url=" . urlencode($webhookUrl);
+        $res = file_get_contents($url);
+        Response::ok(['status' => 'webhook_registered', 'response' => json_decode($res, true), 'url' => $webhookUrl]);
+        break;
     default:
         Response::fail("Not Found: $path ($method)", 404);
 }

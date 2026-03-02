@@ -278,43 +278,35 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
-              <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-4 transition-all hover:bg-blue-50">
+              <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex flex-col gap-6 transition-all hover:bg-blue-50">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-black shadow-lg shadow-primary/20">1</div>
+                  <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center font-black shadow-lg shadow-primary/20 rotate-3">1</div>
                   <div>
-                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Ative o Chatbot Oficial</p>
-                    <p className="text-xs text-gray-500 font-medium">Clique no botão abaixo e envie <b>/start</b> para o robô.</p>
+                    <p className="text-base font-black text-gray-900 uppercase tracking-tight">Ative seu Assistente</p>
+                    <p className="text-xs text-gray-500 font-medium leading-relaxed">Clique no botão abaixo para abrir o Robô Oficial. Lá você receberá seu <b>ID de Notificação</b> instantaneamente.</p>
                   </div>
                 </div>
-                <a
-                  href="https://t.me/Cpagendaprobot"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-primary text-white text-center py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/10"
-                >
-                  Abrir @Cpagendaprobot
-                </a>
-              </div>
 
-              <div className="p-5 bg-amber-50/50 rounded-2xl border border-amber-100 flex flex-col gap-4 transition-all hover:bg-amber-50">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center font-black shadow-lg shadow-amber-500/20">2</div>
-                  <div>
-                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Descubra seu Chat ID</p>
-                    <p className="text-xs text-gray-500 font-medium tracking-tight leading-relaxed">
-                      Use o bot <b>@userinfobot</b> para obter seu número de identificação único.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
                   <a
-                    href="https://t.me/userinfobot"
+                    href="https://t.me/Cpagendaprobot?start=setup"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 bg-amber-500 text-white text-center py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-amber-500/10"
+                    className="bg-primary text-white text-center py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-3"
                   >
-                    Abrir @userinfobot
+                    <Bell size={20} /> Clique para Ativar Chat ID
                   </a>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">O robô responderá seu ID na hora</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-blue-100/50">
+                  <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-3">O que você receberá no Telegram:</p>
+                  <div className="bg-white/60 p-4 rounded-2xl border border-blue-50 text-[11px] text-gray-600 font-medium leading-relaxed italic">
+                    "Olá! 🆔 Seu Chat ID: 128010XXXX... Copie este número e cole no campo ao lado."
+                  </div>
                 </div>
               </div>
             </div>
