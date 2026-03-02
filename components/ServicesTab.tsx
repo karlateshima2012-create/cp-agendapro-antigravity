@@ -33,6 +33,7 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
         name: formState.name,
         description: formState.description || '',
         duration: formState.duration || 30,
+        cleaning_buffer: formState.cleaning_buffer || 0,
         price: formState.price || 0
       };
       onUpdateServices([...services, newService]);
@@ -51,17 +52,17 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
 
   const startNew = () => {
     setEditingId(0);
-    setFormState({ duration: 30, price: 0, description: '' });
+    setFormState({ duration: 30, cleaning_buffer: 0, price: 0, description: '' });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-           <h2 className="text-xl font-bold text-gray-800">Meus Serviços</h2>
-           <p className="text-gray-500 text-sm">Gerencie os serviços que seus clientes podem agendar.</p>
+          <h2 className="text-xl font-bold text-gray-800">Meus Serviços</h2>
+          <p className="text-gray-500 text-sm">Gerencie os serviços que seus clientes podem agendar.</p>
         </div>
-        <button 
+        <button
           onClick={startNew}
           className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2"
         >
@@ -75,41 +76,64 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
+                name="service_name_field"
+                id="service_name_field"
+                autoComplete="off"
                 value={formState.name || ''}
-                onChange={e => setFormState({...formState, name: e.target.value})}
+                onChange={e => setFormState({ ...formState, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none capitalize"
               />
             </div>
             <div className="col-span-2 md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Preço (¥) <span className="text-gray-400 font-normal">(Opcional)</span></label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 placeholder="0"
                 value={formState.price || ''}
-                onChange={e => setFormState({...formState, price: Number(e.target.value)})}
+                onChange={e => setFormState({ ...formState, price: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-              <textarea 
+              <textarea
                 rows={2}
+                name="service_description_field"
+                id="service_description_field"
+                autoComplete="off"
                 value={formState.description || ''}
-                onChange={e => setFormState({...formState, description: e.target.value})}
+                onChange={e => setFormState({ ...formState, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none capitalize"
               />
             </div>
             <div className="col-span-2 md:col-span-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">Duração (minutos)</label>
-              <select 
-                 value={formState.duration || 30}
-                 onChange={e => setFormState({...formState, duration: Number(e.target.value)})}
-                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
+              <select
+                value={formState.duration || 30}
+                onChange={e => setFormState({ ...formState, duration: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
               >
-                {[15, 30, 45, 60, 90, 120].map(m => (
-                  <option key={m} value={m}>{m} min</option>
+                {[15, 30, 45, 60, 120, 180, 240, 360, 480, 720, 1440].map(m => (
+                  <option key={m} value={m}>
+                    {m < 60 ? `${m} min` : (m === 1440 ? '24h (Diária)' : `${m / 60}h`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2 md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Intervalo de Limpeza <span className="text-gray-400 font-normal">(Bloqueio extra)</span></label>
+              <select
+                value={formState.cleaning_buffer || 0}
+                onChange={e => setFormState({ ...formState, cleaning_buffer: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-blue-200 rounded-lg bg-blue-50/30 text-gray-900 focus:ring-2 focus:ring-primary outline-none"
+              >
+                <option value={0}>Nenhum</option>
+                {[15, 30, 45, 60, 90, 120, 180, 240, 360, 480].map(m => (
+                  <option key={m} value={m}>
+                    {m < 60 ? `${m} min` : `${m / 60}h`}
+                  </option>
                 ))}
               </select>
             </div>
@@ -122,7 +146,7 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {services.map(svc => (
+        {(services || []).map(svc => (
           <div key={svc.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group">
             <div className="flex justify-between items-start">
               <div>
@@ -135,9 +159,18 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
               </div>
             </div>
             <div className="flex items-center gap-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100 pt-4">
-              <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full"><Clock size={14} /> {svc.duration} min</span>
+              <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full">
+                <Clock size={14} /> {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
+              </span>
               {svc.price > 0 && (
-                <span className="flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">¥ {svc.price}</span>
+                <span className="flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">
+                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(svc.price)}
+                </span>
+              )}
+              {svc.cleaning_buffer > 0 && (
+                <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-100">
+                  Limpeza: {svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`}
+                </span>
               )}
             </div>
           </div>

@@ -27,6 +27,7 @@ interface Props {
   onUpdateAppointments: (appointments: Appointment[]) => void;
   onUpdateStatus: (id: number, status: AppointmentStatus) => void;
   onDeleteAppointment: (id: number) => void;
+  onBulkDelete?: (ids: number[]) => void;
   onUpdateServices: (services: Service[]) => void;
   onUpdateAvailability: (availability: AvailabilityConfig) => void;
   onUpdateAccount: (settings: Partial<AccountInfo>) => void;
@@ -52,6 +53,7 @@ export const ClientDashboard: React.FC<Props> = ({
   onOpenPublic,
   onUpdateStatus,
   onDeleteAppointment,
+  onBulkDelete,
   onUpdateServices,
   onUpdateAvailability,
   onUpdateAccount
@@ -83,11 +85,10 @@ export const ClientDashboard: React.FC<Props> = ({
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${
-        activeTab === id
-          ? 'bg-primary text-white shadow-lg shadow-primary/30'
-          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
-      }`}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeTab === id
+        ? 'bg-primary text-white shadow-lg shadow-primary/30'
+        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+        }`}
     >
       <Icon size={20} />
       {label}
@@ -96,7 +97,10 @@ export const ClientDashboard: React.FC<Props> = ({
 
   return (
     <>
-      <OnboardingModal />
+      <OnboardingModal
+        seen={!!account.onboardingSeen}
+        onMarkSeen={async () => onUpdateAccount({ onboardingSeen: true })}
+      />
 
       <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
         <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-shrink-0 flex flex-col h-auto md:h-screen sticky top-0 z-10">
@@ -118,11 +122,10 @@ export const ClientDashboard: React.FC<Props> = ({
               <div className="flex flex-col gap-2">
                 <button
                   onClick={handleCopyLink}
-                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
-                    copied
-                      ? 'bg-green-50 text-green-600 border-green-100'
-                      : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                  }`}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${copied
+                    ? 'bg-green-50 text-green-600 border-green-100'
+                    : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
+                    }`}
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                   {copied ? 'Copiado!' : 'Copiar link'}
@@ -162,20 +165,33 @@ export const ClientDashboard: React.FC<Props> = ({
                   availability={availability}
                   onUpdateStatus={onUpdateStatus}
                   onDeleteAppointment={onDeleteAppointment}
+                  onBulkDelete={onBulkDelete}
                   publicLink={account.publicLink}
                 />
               </div>
 
               <div className={activeTab === 'availability' ? 'block' : 'hidden'}>
-                <AvailabilityTab config={availability} onSave={onUpdateAvailability} />
+                <AvailabilityTab
+                  key={JSON.stringify(availability)}
+                  config={availability}
+                  onSave={onUpdateAvailability}
+                />
               </div>
 
               <div className={activeTab === 'services' ? 'block' : 'hidden'}>
-                <ServicesTab services={services} onUpdateServices={onUpdateServices} />
+                <ServicesTab
+                  key={JSON.stringify(services)}
+                  services={services}
+                  onUpdateServices={onUpdateServices}
+                />
               </div>
 
               <div className={activeTab === 'account' ? 'block' : 'hidden'}>
-                <AccountTab account={account} onUpdateSettings={onUpdateAccount} />
+                <AccountTab
+                  key={JSON.stringify(account)}
+                  account={account}
+                  onUpdateSettings={onUpdateAccount}
+                />
               </div>
             </div>
 
@@ -187,11 +203,10 @@ export const ClientDashboard: React.FC<Props> = ({
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={handleCopyLink}
-                      className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs font-bold transition-all border ${
-                        copied
-                          ? 'bg-green-50 text-green-600 border-green-100'
-                          : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                      }`}
+                      className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs font-bold transition-all border ${copied
+                        ? 'bg-green-50 text-green-600 border-green-100'
+                        : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
+                        }`}
                     >
                       {copied ? <Check size={14} /> : <Copy size={14} />}
                       {copied ? 'Copiado!' : 'Copiar link'}

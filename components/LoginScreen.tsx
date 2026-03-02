@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase } from '../supabase';
+import { api } from '../src/api';
 
 interface Props {
   onLogin: (email: string, pass: string) => void;
@@ -43,7 +42,12 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       setError('Por favor, digite um e-mail válido no campo acima primeiro.');
       return;
     }
+
+    // ✅ Limpa mensagens anteriores
     setError('');
+    setSuccessMsg('');
+
+    // ✅ Vai para tela de recuperação
     setView('forgot');
   };
 
@@ -54,19 +58,21 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // Pega a URL base atual do navegador (ex: https://...webcontainer.io)
-      // Remove barras extras e hashes para garantir um redirect limpo
-      const currentOrigin = window.location.origin;
-      
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${currentOrigin}/`,
-      });
+      console.log('📤 Enviando email de recuperação para:', email);
+      const resp: any = await api.requestPasswordReset(email.trim());
 
-      if (resetError) throw resetError;
+      // ✅ MENSAGEM GENÉRICA POR SEGURANÇA (NÃO revela se email existe)
+      setSuccessMsg('Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha em instantes. Verifique sua caixa de entrada e spam.');
 
-      setSuccessMsg('O e-mail de recuperação foi enviado! Se não encontrar, verifique sua caixa de spam.');
+      // Limpar campo após envio
+      setTimeout(() => {
+        setEmail('');
+      }, 1000);
+
     } catch (err: any) {
-      setError(err.message || 'Erro ao enviar e-mail de recuperação.');
+      console.error('💥 Erro ao enviar email:', err);
+      // ✅ MESMO EM CASO DE ERRO, MOSTRA MENSAGEM GENÉRICA
+      setSuccessMsg('Se o e-mail estiver cadastrado, você receberá um link para redefinir sua senha em instantes. Verifique sua caixa de entrada e spam.');
     } finally {
       setLoading(false);
     }
@@ -77,7 +83,7 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md animate-fade-in">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
-            <button 
+            <button
               onClick={() => { setView('login'); setError(''); setSuccessMsg(''); }}
               className="flex items-center gap-2 text-gray-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest mb-6"
             >
@@ -86,7 +92,7 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
 
             <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Recuperar Senha</h2>
             <p className="text-gray-500 text-sm mb-8 font-medium">Enviaremos as instruções para o e-mail abaixo:</p>
-            
+
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3">
                 <AlertCircle size={18} className="flex-shrink-0" />
@@ -100,7 +106,7 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
                   <CheckCircle size={40} />
                 </div>
                 <p className="text-green-800 font-bold text-sm leading-relaxed">{successMsg}</p>
-                <button 
+                <button
                   onClick={() => setView('login')}
                   className="w-full bg-primary text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest text-xs"
                 >
@@ -113,8 +119,8 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail Confirmado</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={20} />
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       readOnly
                       value={email}
                       className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-gray-100 bg-gray-50 text-gray-400 font-bold outline-none cursor-not-allowed"
@@ -127,8 +133,8 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={loading}
                   className="w-full bg-primary hover:bg-primary-hover text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 text-xs uppercase tracking-widest"
                 >
@@ -151,11 +157,11 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">CP Agenda Pro</h1>
           </div>
           <p className="text-gray-500 text-sm mb-10 font-medium">Faça login para gerenciar seu negócio</p>
-          
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3">
-               <AlertCircle size={16} className="flex-shrink-0" />
-               {error}
+              <AlertCircle size={16} className="flex-shrink-0" />
+              {error}
             </div>
           )}
 
@@ -164,12 +170,12 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={18} />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   value={email}
-                  onChange={e => setEmail(e.target.value.toLowerCase())} 
-                  className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium" 
+                  onChange={e => setEmail(e.target.value.toLowerCase().trim())}
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium"
                   placeholder="seu@email.com"
                 />
               </div>
@@ -177,15 +183,15 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
             <div className="space-y-2">
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Senha</label>
               <div className="relative">
-                <input 
-                  type={showPassword ? "text" : "password"} 
+                <input
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
-                  onChange={e => setPassword(e.target.value)} 
+                  onChange={e => setPassword(e.target.value)}
                   className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-mono font-bold outline-none transition-all pr-12"
                   placeholder="••••••••"
                 />
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 p-2 transition-colors"
@@ -198,9 +204,9 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
             <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all transform active:scale-95 text-xs uppercase tracking-widest">
               Acessar Painel
             </button>
-            
+
             <div className="text-center pt-2">
-              <button 
+              <button
                 type="button"
                 onClick={goToForgot}
                 className="text-primary text-[11px] font-black uppercase tracking-widest hover:underline decoration-primary"

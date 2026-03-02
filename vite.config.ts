@@ -1,24 +1,16 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: './',
+  plugins: [react()],
+  base: './', // ✅ subdomínio
+
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-    rollupOptions: {
-      external: [
-        'react',
-        'react-dom',
-        'react-dom/client',
-        'lucide-react'
-      ],
-      output: {
-        format: 'esm'
-      }
-    }
   },
-  optimizeDeps: {
-    exclude: ['lucide-react']
-  }
+
+  // pode remover isso também; não é necessário
+  // optimizeDeps: { exclude: ['lucide-react'] }
 });

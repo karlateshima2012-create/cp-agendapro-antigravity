@@ -32,13 +32,13 @@ export const DEFAULT_AVAILABILITY: AvailabilityConfig = {
   blockedDates: [],
   intervalMinutes: 30,
   workingHours: [
-    { day: 0, name: 'Dom', isWorking: false, startTime: '09:00', endTime: '17:00' },
-    { day: 1, name: 'Seg', isWorking: true, startTime: '09:00', endTime: '18:00' },
-    { day: 2, name: 'Ter', isWorking: true, startTime: '09:00', endTime: '18:00' },
-    { day: 3, name: 'Qua', isWorking: true, startTime: '09:00', endTime: '18:00' },
-    { day: 4, name: 'Qui', isWorking: true, startTime: '09:00', endTime: '18:00' },
-    { day: 5, name: 'Sex', isWorking: true, startTime: '09:00', endTime: '18:00' },
-    { day: 6, name: 'Sáb', isWorking: true, startTime: '08:00', endTime: '21:00' },
+    { day: 'segunda', name: 'Segunda-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
+    { day: 'terca', name: 'Terça-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
+    { day: 'quarta', name: 'Quarta-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
+    { day: 'quinta', name: 'Quinta-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
+    { day: 'sexta', name: 'Sexta-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
+    { day: 'sabado', name: 'Sábado', isWorking: false, startTime: '09:00', endTime: '13:00' },
+    { day: 'domingo', name: 'Domingo', isWorking: false, startTime: '09:00', endTime: '13:00' }
   ]
 };
 

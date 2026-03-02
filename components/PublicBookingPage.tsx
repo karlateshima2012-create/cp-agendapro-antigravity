@@ -12,7 +12,8 @@ import {
   Briefcase,
   AlertCircle,
   Ban,
-  Check
+  Check,
+  Mail
 } from 'lucide-react';
 
 interface Props {
@@ -52,10 +53,37 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [clientData, setClientData] = useState({ name: '', phone: '' });
+  const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const normalizedHours = React.useMemo(() => {
+    console.log('🚀 PublicBookingPage Build Version: 2026.02.18.10');
+    let hours = availability.workingHours;
+    if (typeof hours === 'string') {
+      try {
+        hours = JSON.parse(hours);
+        if (typeof hours === 'string') hours = JSON.parse(hours);
+      } catch (e) {
+        console.error('Failed defensive parse of workingHours:', e);
+        return [];
+      }
+    }
+
+    if (!Array.isArray(hours)) return [];
+
+    // Normalize keys
+    return hours.map(h => ({
+      ...h,
+      enabled: h.enabled ?? h.isWorking ?? h.is_working ?? true,
+      start: h.start ?? h.startTime ?? h.start_time ?? '09:00',
+      end: h.end ?? h.endTime ?? h.end_time ?? '18:00'
+    }));
+  }, [availability.workingHours]);
+
+  console.log('AVAILABILITY OBJECT:', JSON.stringify(availability, null, 2));
+  console.log('NORMALIZED HOURS:', normalizedHours);
 
   const getNowJST = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   const formatLiteralDate = (date: Date) => {
@@ -68,6 +96,15 @@ export const PublicBookingPage: React.FC<Props> = ({
   const toTitleCase = (str: string) => {
     if (!str) return '';
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const formatDurationFriendly = (minutes: number) => {
+    if (minutes === 1440) return '24 horas (Diária)';
+    if (minutes >= 60) {
+      const hours = minutes / 60;
+      return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    }
+    return `${minutes} minutos`;
   };
 
   const renderProgressBar = () => {
@@ -128,6 +165,86 @@ export const PublicBookingPage: React.FC<Props> = ({
     );
   };
 
+  const toTimestamp = (dateStr: string) => {
+    if (!dateStr) return 0;
+    const parts = dateStr.split(/[-T :]/);
+    if (parts.length < 3) return 0;
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]) - 1;
+    const d = parseInt(parts[2]);
+    const h = parts.length > 3 ? parseInt(parts[3]) : 0;
+    const min = parts.length > 4 ? parseInt(parts[4]) : 0;
+    return Date.UTC(y, m, d, h, min);
+  };
+
+  const getSlotsForDate = (date: string) => {
+    if (!selectedService) return [];
+    const nowJST = getNowJST();
+    const todayStr = formatLiteralDate(nowJST);
+    const isToday = date === todayStr;
+    const currentMinutes = nowJST.getHours() * 60 + nowJST.getMinutes();
+    const jsDayOfWeek = new Date(date + 'T12:00:00').getDay();
+    const jsDayToPtDay: Record<number, string> = {
+      1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo'
+    };
+    const dayName = jsDayToPtDay[jsDayOfWeek];
+    const config = normalizedHours.find(h => h.day === dayName);
+    if (!config || !config.enabled) return [];
+    let startTime = config.start;
+    let endTime = config.end;
+
+    // Para diárias (24h+), o horário padrão é o de início da disponibilidade (Check-in)
+    // Mostramos apenas este slot se for o caso
+    if (selectedService.duration >= 1440) {
+      endTime = startTime;
+    }
+
+    const toMin = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const interval = availability.intervalMinutes || 30;
+    const times: string[] = [];
+    let curr = toMin(startTime);
+    const end = (selectedService.duration >= 1440) ? curr : toMin(endTime);
+
+    while (curr <= end) {
+      if (isToday && curr <= currentMinutes + 15) {
+        curr += interval;
+        continue;
+      }
+      const timeStr = `${String(Math.floor(curr / 60)).padStart(2, '0')}:${String(curr % 60).padStart(2, '0')}`;
+      const slotStartTimestamp = toTimestamp(`${date} ${timeStr}`);
+      const totalSlotDuration = selectedService.duration + (selectedService.cleaning_buffer || 0);
+      const slotEndTimestamp = slotStartTimestamp + (totalSlotDuration * 60000);
+
+      const isBusy = (busyAppointments || []).some(a => {
+        if (a.status === 'canceled' || a.status === 'rejected') return false;
+        const apptStartTimestamp = toTimestamp(a.startAt);
+        const apptEndTimestamp = a.endAt ? toTimestamp(a.endAt) : apptStartTimestamp + (a.duration * 60000);
+        return (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
+      });
+
+      const isBlockedInSlot = (availability.blockedDates || []).some(b => {
+        const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
+        const bStart = Date.UTC(
+          parseInt(bDate.split('-')[0]),
+          parseInt(bDate.split('-')[1]) - 1,
+          parseInt(bDate.split('-')[2]),
+          0, 0
+        );
+        const bEnd = bStart + (24 * 60 * 60000);
+        return (slotStartTimestamp < bEnd && slotEndTimestamp > bStart);
+      });
+
+      if (!isBusy && !isBlockedInSlot) times.push(timeStr);
+      if (selectedService.duration >= 1440) break; // Só 1 slot para diárias
+      curr += interval;
+    }
+    return times;
+  };
+
   const renderCalendar = () => {
     const nowJST = getNowJST();
     const todayStr = formatLiteralDate(nowJST);
@@ -136,32 +253,33 @@ export const PublicBookingPage: React.FC<Props> = ({
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startDay = new Date(year, month, 1).getDay();
     const days = [];
-
-    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-12 w-full"></div>);
-
+    const jsDayToPtDay: Record<number, string> = {
+      1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo'
+    };
+    for (let i = 0; i < startDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-12 w-full"></div>);
+    }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const dayOfWeek = new Date(year, month, d).getDay();
-
-      const isPastOrToday = dateStr <= todayStr; // Bloqueia passado E HOJE (dia atual)
+      const jsDayOfWeek = new Date(year, month, d).getDay();
+      const dayString = jsDayToPtDay[jsDayOfWeek];
+      const isPastOrToday = dateStr <= todayStr;
       const isSelected = selectedDate === dateStr;
-      const isDayOff = !availability.workingHours.find(w => w.day === dayOfWeek)?.isWorking;
-      const isBlocked = availability.blockedDates.some(b => {
-        const bDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
-        return bDate === dateStr;
-      });
-      const isUnavailable = isPastOrToday || isDayOff || isBlocked;
-
+      const scheduleForDay = normalizedHours.find(w => w.day === dayString);
+      const isDayOff = !scheduleForDay || !scheduleForDay.enabled;
+      const isBlocked = (availability.blockedDates || []).some(b => b.date?.split('T')[0] === dateStr);
+      const isDayFull = selectedService ? getSlotsForDate(dateStr).length === 0 : false;
+      const isUnavailable = isPastOrToday || isDayOff || isBlocked || isDayFull;
       days.push(
         <button
           key={d}
           disabled={isUnavailable}
           onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
           className={`h-11 w-11 mx-auto flex items-center justify-center rounded-2xl text-sm font-black transition-all ${isUnavailable
-              ? 'text-gray-200 cursor-not-allowed line-through'
-              : isSelected
-                ? 'text-white shadow-lg scale-110'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-primary hover:scale-105'
+            ? 'text-gray-200 cursor-not-allowed line-through'
+            : isSelected
+              ? 'text-white shadow-lg scale-110'
+              : 'text-gray-700 hover:bg-gray-100 hover:text-primary hover:scale-105'
             }`}
           style={!isUnavailable && isSelected ? { backgroundColor: primaryColor, boxShadow: `0 8px 15px -4px ${primaryColor}66` } : {}}
         >
@@ -172,39 +290,7 @@ export const PublicBookingPage: React.FC<Props> = ({
     return days;
   };
 
-  const slots = selectedDate ? (() => {
-    if (!selectedService) return [];
-    const nowJST = getNowJST();
-    const todayStr = formatLiteralDate(nowJST);
-    const isToday = selectedDate === todayStr;
-    const currentMinutes = nowJST.getHours() * 60 + nowJST.getMinutes();
-    const [y, m, d] = selectedDate.split('-').map(Number);
-    const dayOfWeek = new Date(y, m - 1, d).getDay();
-    const schedule = availability.workingHours.find(wh => wh.day === dayOfWeek);
-    if (!schedule || !schedule.isWorking) return [];
-
-    const times = [];
-    const interval = availability.intervalMinutes || 30;
-    const toMin = (t: string) => t.split(':').map(Number)[0] * 60 + t.split(':').map(Number)[1];
-    let curr = toMin(schedule.startTime);
-    const end = toMin(schedule.endTime);
-
-    while (curr + selectedService.duration <= end) {
-      if (isToday && curr <= currentMinutes + 15) { curr += interval; continue; }
-      const timeStr = `${String(Math.floor(curr / 60)).padStart(2, '0')}:${String(curr % 60).padStart(2, '0')}`;
-      const isBusy = busyAppointments.some(a => { // ALTERADO: usa busyAppointments
-        if (a.status === 'canceled' || a.status === 'rejected') return false;
-        const apptDate = new Date(new Date(a.startAt).toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-        if (formatLiteralDate(apptDate) !== selectedDate) return false;
-        const apptMin = apptDate.getHours() * 60 + apptDate.getMinutes();
-        return (curr < apptMin + a.duration && curr + selectedService.duration > apptMin);
-      });
-      if (!isBusy) times.push(timeStr);
-      curr += interval;
-    }
-    // FILTRO DE 00:00 (FUSO HORÁRIO)
-    return times.filter(t => t !== '00:00');
-  })() : [];
+  const slots = selectedDate ? getSlotsForDate(selectedDate) : [];
 
   const handleFinalConfirm = async () => {
     if (isSubmitting) return;
@@ -216,17 +302,20 @@ export const PublicBookingPage: React.FC<Props> = ({
       return;
     }
     const normalizedName = toTitleCase(clientData.name);
-    const success = await onBook({
+    const result = await onBook({
       serviceId: selectedService!.id,
       serviceName: selectedService!.name,
       startAt: new Date(selectedDate + 'T' + selectedTime).toISOString(),
       duration: selectedService!.duration,
-      name: normalizedName,
-      phone: clientData.phone,
-      email: ''
+      clientName: normalizedName,
+      clientPhone: clientData.phone,
+      clientEmail: clientData.email || ''
     });
-    if (success) setStep(5);
-    else setErrorMsg('Não foi possível salvar seu agendamento. Tente novamente.');
+    if (result === true) {
+      setStep(5);
+    } else {
+      setErrorMsg(typeof result === 'string' ? result : 'Não foi possível salvar seu agendamento. Tente novamente.');
+    }
     setIsSubmitting(false);
   };
 
@@ -234,7 +323,7 @@ export const PublicBookingPage: React.FC<Props> = ({
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
       <div className="w-full max-w-4xl bg-white md:my-10 md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col min-h-screen md:min-h-0 border border-gray-100">
 
-      <header className="relative h-auto min-h-[280px] md:h-80 bg-gray-100 overflow-hidden">
+        <header className="relative h-auto min-h-[280px] md:h-80 bg-gray-100 overflow-hidden">
           {/* Imagem de capa - preenche TODO o header */}
           <div className="absolute inset-0">
             {coverImage ? (
@@ -288,7 +377,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               md:hidden
               flex justify-center
               pt-20
-              mb-8    <-- ADICIONADO AQUI
+              mb-8
               relative
               z-20
             ">
@@ -322,7 +411,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               <p className="text-white/70 text-sm md:text-base font-medium max-w-lg line-clamp-2 text-center md:text-left mx-auto md:mx-0">{shortDescription}</p>
             )}
           </div>
-        </header> 
+        </header>
 
         <main className="flex-1 p-6 md:p-12">
           {renderProgressBar()}
@@ -339,7 +428,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {services.length > 0 ? services.map(s => (
+                {(services || []).length > 0 ? (services || []).map(s => (
                   <button
                     key={s.id}
                     onClick={() => { setSelectedService(s); setStep(2); }}
@@ -354,7 +443,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3 flex-1">{s.description}</p>
                     <div className="flex justify-between items-center border-t border-gray-50 pt-6">
                       <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
-                        <Clock size={16} style={{ color: primaryColor }} /> {s.duration} min
+                        <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                       </div>
                       <div className="flex flex-col items-end">
                         {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
@@ -381,7 +470,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                 </div>
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100">
                   <Clock size={16} style={{ color: primaryColor }} />
-                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{selectedService?.duration} min de duração</span>
+                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{formatDurationFriendly(selectedService?.duration || 0)} de duração</span>
                 </div>
               </div>
 
@@ -408,7 +497,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
                   {selectedDate ? (
                     <div className="grid grid-cols-3 gap-3">
-                      {slots.map(t => (
+                      {(slots || []).map(t => (
                         <button
                           key={t}
                           onClick={() => setSelectedTime(t)}
@@ -467,6 +556,13 @@ export const PublicBookingPage: React.FC<Props> = ({
                     <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-300" value={clientData.phone} onChange={e => setClientData({ ...clientData, phone: e.target.value.replace(/\D/g, '') })} placeholder="090 0000 0000" />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">E-mail (Opcional)</label>
+                  <div className="relative group">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={20} />
+                    <input type="email" className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-300 placeholder:font-medium" value={clientData.email || ''} onChange={e => setClientData({ ...clientData, email: e.target.value })} placeholder="exemplo@email.com" />
+                  </div>
+                </div>
 
                 <button type="submit" className="w-full py-5 text-white font-black rounded-3xl shadow-2xl shadow-primary/30 uppercase tracking-[0.2em] text-[11px] mt-10 transition-all hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-3" style={{ backgroundColor: primaryColor }}>
                   Revisar Agendamento <ArrowRight size={18} />
@@ -488,7 +584,9 @@ export const PublicBookingPage: React.FC<Props> = ({
                     <p className="font-black text-2xl tracking-tight capitalize" style={{ color: primaryColor }}>{selectedService?.name}</p>
                     {selectedService && selectedService.price > 0 && (
                       <div className="flex items-center gap-1">
-                        <span className="text-lg font-black text-gray-900">¥ {selectedService.price.toLocaleString()}</span>
+                        <span className="text-lg font-black text-gray-900">
+                          {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(selectedService.price)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -508,6 +606,13 @@ export const PublicBookingPage: React.FC<Props> = ({
                 </div>
                 <div className="pt-8 border-t border-gray-200 flex flex-col gap-5">
                   <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100" style={{ color: primaryColor }}><Clock size={18} /></div>
+                    <div>
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Duração</p>
+                      <p className="font-bold text-gray-900">{formatDurationFriendly(selectedService?.duration || 0)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100" style={{ color: primaryColor }}><User size={18} /></div>
                     <div>
                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Cliente</p>
@@ -521,6 +626,15 @@ export const PublicBookingPage: React.FC<Props> = ({
                       <p className="font-bold text-gray-900">{clientData.phone}</p>
                     </div>
                   </div>
+                  {clientData.email && (
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100" style={{ color: primaryColor }}><Mail size={18} /></div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">E-mail</p>
+                        <p className="font-bold text-gray-900">{clientData.email}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

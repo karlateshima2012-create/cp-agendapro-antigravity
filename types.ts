@@ -1,6 +1,6 @@
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'canceled' | 'rejected';
-export type UserRole = 'admin' | 'client';
+export type UserRole = 'admin' | 'client' | 'super_admin';
 export type PlanType = '6m' | '12m';
 export type AccountStatus = 'active' | 'expired' | 'blocked';
 
@@ -9,6 +9,7 @@ export interface Service {
   name: string;
   description: string;
   duration: number;
+  cleaning_buffer?: number;
   price: number;
 }
 
@@ -20,13 +21,15 @@ export interface Appointment {
   serviceId: number;
   serviceName: string;
   startAt: string;
+  endAt?: string;
   duration: number;
   status: AppointmentStatus;
   createdAt: string;
+  user_id?: string;
 }
 
 export interface WorkingHour {
-  day: number;
+  day: number | string;
   name: string;
   isWorking: boolean;
   startTime: string;
@@ -91,4 +94,6 @@ export interface AccountInfo {
   telegramBotToken?: string;
   telegramChatId?: string;
   lifetimeAppointments?: number;
+  onboardingSeen?: boolean;
+
 }

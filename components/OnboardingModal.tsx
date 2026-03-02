@@ -1,21 +1,41 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, ChevronRight, ChevronLeft, CheckCircle, Calendar, Briefcase, Layout, PartyPopper } from 'lucide-react';
 
-const STORAGE_KEY = 'cp_agenda_onboarding_seen';
+type Props = {
+  seen: boolean;
+  onMarkSeen: () => Promise<void> | void;
+};
 
-export const OnboardingModal: React.FC = () => {
+export const OnboardingModal: React.FC<Props> = ({ seen, onMarkSeen }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
+  // ABRE quando seen = false (primeiro acesso)
   useEffect(() => {
-    const hasSeen = localStorage.getItem(STORAGE_KEY);
-    if (!hasSeen) setIsVisible(true);
-  }, []);
+    if (!seen) {
+      console.log('🎯 Onboarding: seen = false, abrindo modal');
+      setIsVisible(true);
+    }
+  }, [seen]);
 
-  const handleClose = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, '1');
-    setIsVisible(false);
-  }, []);
+  // FECHA automaticamente quando seen muda para true
+  useEffect(() => {
+    if (seen && isVisible) {
+      console.log('🎯 Onboarding: seen mudou para true, fechando modal');
+      setIsVisible(false);
+    }
+  }, [seen, isVisible]); // ← ADICIONE ESTE useEffect
+
+  const handleClose = useCallback(async () => {
+    try {
+      console.log('🎯 Onboarding: handleClose chamado');
+      await onMarkSeen();
+    } finally {
+      setIsVisible(false);
+    }
+  }, [onMarkSeen]);
+
+  // ... resto do código permanece igual
 
   const handleNext = () => {
     if (currentStep < 4) setCurrentStep((prev) => prev + 1);

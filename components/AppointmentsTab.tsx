@@ -15,14 +15,17 @@ import {
   LayoutGrid,
   CalendarDays,
   Trash2,
+  Mail,
   List as ListIcon
 } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface Props {
   appointments: Appointment[];
   availability: AvailabilityConfig;
   onUpdateStatus: (id: number, status: AppointmentStatus) => void;
   onDeleteAppointment: (id: number) => void;
+  onBulkDelete?: (ids: number[]) => void;
   publicLink?: string;
 }
 
@@ -78,14 +81,47 @@ function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'reje
   return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : '#';
 }
 
-export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, publicLink }) => {
+export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, onBulkDelete, publicLink }) => {
   const [view, setView] = useState<'grid' | 'list' | 'calendar'>('grid');
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'tomorrow' | 'manual'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'tomorrow' | 'past' | 'manual'>('all');
   const [manualDate, setManualDate] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDanger?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+  });
+
+  const openConfirm = (title: string, message: string, onConfirm: () => void, isDanger = true) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      isDanger
+    });
+  };
 
   const getJSTDate = (dateStr: string | number | Date) => {
-    return new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+    let d: Date;
+    if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
+      // Assume UTC if missing timezone (MySQL DATETIME), replace space with T for Safari compat
+      d = new Date(dateStr.replace(' ', 'T') + 'Z');
+    } else {
+      d = new Date(dateStr);
+    }
+    return new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   };
 
   const isSameDayJST = (isoStr: string, targetDate: Date) => {
@@ -102,16 +138,24 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     return t;
   };
 
-  const todayCount = appointments.filter(a => isSameDayJST(a.startAt, getTodayJST()) && a.status !== 'canceled' && a.status !== 'rejected').length;
-  const tomorrowCount = appointments.filter(a => isSameDayJST(a.startAt, getTomorrowJST()) && a.status !== 'canceled' && a.status !== 'rejected').length;
+  const todayCount = (appointments || []).filter(a => a && a.startAt && isSameDayJST(a.startAt, getTodayJST()) && a.status !== 'canceled' && a.status !== 'rejected').length;
+  const tomorrowCount = (appointments || []).filter(a => a && a.startAt && isSameDayJST(a.startAt, getTomorrowJST()) && a.status !== 'canceled' && a.status !== 'rejected').length;
 
-  const filteredAppointments = appointments
+  const filteredAppointments = (appointments || [])
     .filter(appt => {
+      if (!appt || !appt.startAt) return false;
+      const apptDate = getJSTDate(appt.startAt);
+
       if (statusFilter !== 'all' && appt.status !== statusFilter) return false;
       if (dateFilter === 'today') return isSameDayJST(appt.startAt, getTodayJST());
       if (dateFilter === 'tomorrow') return isSameDayJST(appt.startAt, getTomorrowJST());
-      if (dateFilter === 'manual' && manualDate) {
+      if (dateFilter === 'past') {
         const apptDate = getJSTDate(appt.startAt);
+        const today = getTodayJST();
+        today.setHours(0, 0, 0, 0);
+        return apptDate.getTime() < today.getTime();
+      }
+      if (dateFilter === 'manual' && manualDate) {
         const [y, m, d] = manualDate.split('-').map(Number);
         return apptDate.getFullYear() === y &&
           apptDate.getMonth() === (m - 1) &&
@@ -152,6 +196,17 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startDay = new Date(year, month, 1).getDay();
 
+    // MAPEAMENTO: JavaScript day (0-6) para seus dias em português
+    const jsDayToPtDay: Record<number, string> = {
+      0: 'domingo',
+      1: 'segunda',
+      2: 'terca',
+      3: 'quarta',
+      4: 'quinta',
+      5: 'sexta',
+      6: 'sabado'
+    };
+
     const days = [];
     for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-32 bg-gray-50/20 border border-gray-100/50 rounded-xl"></div>);
 
@@ -160,51 +215,88 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       const loopTime = currentLoopDate.getTime();
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
+      // DETERMINA SE É DIA DA SEMANA HABILITADO
+      const jsDayOfWeek = currentLoopDate.getDay(); // 0=Domingo, 1=Segunda...
+      const dayString = jsDayToPtDay[jsDayOfWeek];
+      const scheduleForDay = (availability?.workingHours || []).find(w => w.day === dayString);
+      const isDayEnabled = scheduleForDay?.isWorking === true;
+
       const isPast = loopTime < todayMidnight;
       const isToday = d === todayJST.getDate() && month === todayJST.getMonth();
 
       const blocked = availability.blockedDates.find(b => {
-        const bDate = b.date.includes('T') ? b.date.split('T')[0] : b.date;
+        const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
         return bDate === dateStr;
       });
-      const dayAppts = appointments.filter(a => isSameDayJST(a.startAt, currentLoopDate) && a.status !== 'canceled' && a.status !== 'rejected');
+
+      const dayAppts = appointments.filter(a => {
+        if (a.status === 'canceled' || a.status === 'rejected') return false;
+        const apptStart = getJSTDate(a.startAt);
+        const apptEnd = a.endAt ? getJSTDate(a.endAt) : new Date(apptStart.getTime() + (a.duration * 60000));
+        const dayStart = new Date(currentLoopDate.getTime());
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart.getTime() + (24 * 60 * 60000));
+        return apptEnd.getTime() > dayStart.getTime() && apptStart.getTime() < dayEnd.getTime();
+      });
       const load = dayAppts.length;
 
+      // LÓGICA DE ESTILOS SIMPLIFICADA:
+      let dayClass = 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md';
+      let dayTextClass = 'text-gray-900';
+      let showBadge = false;
+      let badgeText = '';
+      let badgeClass = '';
+
+      if (blocked) {
+        // BLOQUEADO MANUALMENTE: vermelho COM badge
+        dayClass = 'bg-red-50 border-red-100 opacity-80';
+        dayTextClass = 'text-red-400';
+        showBadge = true;
+        badgeText = 'Bloqueado';
+        badgeClass = 'bg-red-100 text-red-600 border-red-200';
+      } else if (!isDayEnabled || isPast) {
+        // DIA INDISPONÍVEL (não trabalhado) OU PASSADO: apenas cinza, SEM badge
+        dayClass = 'bg-gray-50/60 border-gray-100 opacity-70';
+        dayTextClass = 'text-gray-400';
+        showBadge = false; // ← NENHUM badge aqui!
+      } else if (isToday) {
+        // DIA DE HOJE: destaque azul
+        dayClass = 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20';
+        dayTextClass = 'text-primary';
+        showBadge = false;
+      }
+
       days.push(
-        <div key={d} className={`h-32 border p-3 flex flex-col gap-2 rounded-xl transition-all relative ${blocked
-          ? 'bg-red-50 border-red-100 opacity-80' // Visual BLOQUEADO
-          : isToday
-            ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-            : isPast
-              ? 'bg-gray-50/50 opacity-60 border-gray-100'
-              : 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md'
-          }`}>
+        <div key={d} className={`h-32 border p-3 flex flex-col gap-2 rounded-xl transition-all relative ${dayClass}`}>
           <div className="flex justify-between items-start">
-            <span className={`text-sm font-black ${blocked
-              ? 'text-red-400'
-              : isToday
-                ? 'text-primary'
-                : isPast
-                  ? 'text-gray-400'
-                  : 'text-gray-900'
-              }`}>
+            <span className={`text-sm font-black ${dayTextClass}`}>
               {d}
             </span>
-            {blocked ? (
+
+            {/* BADGE APENAS PARA DIAS BLOQUEADOS MANUALMENTE */}
+            {showBadge && (
               <div className="flex flex-col items-end">
-                <div className="px-2 py-0.5 bg-red-100 text-red-600 rounded-lg text-[8px] font-black uppercase tracking-widest border border-red-200">
-                  Bloqueado
+                <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${badgeClass}`}>
+                  {badgeText}
                 </div>
-                <span className="text-[8px] font-black text-red-400 uppercase mt-1 text-right max-w-[60px] leading-tight truncate">{blocked.reason}</span>
+                {blocked?.reason && (
+                  <span className="text-[8px] font-black text-red-400 uppercase mt-1 text-right max-w-[60px] leading-tight truncate">
+                    {blocked.reason}
+                  </span>
+                )}
               </div>
-            ) : load > 0 && (
+            )}
+
+            {/* BADGE DE AGENDAMENTOS (só mostra se dia estiver disponível, habilitado e não for passado) */}
+            {!blocked && isDayEnabled && !isPast && load > 0 && (
               <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${load >= 5 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
                 {load >= 5 ? 'Dia Cheio' : `${load} Agend.`}
               </span>
             )}
           </div>
 
-          {!blocked && (
+          {/* PONTINHOS DE AGENDAMENTOS (só mostra se dia estiver disponível, habilitado e não for passado) */}
+          {!blocked && isDayEnabled && !isPast && (
             <div className="flex gap-1 flex-wrap overflow-hidden h-10 mt-1 content-start">
               {dayAppts.map((_, idx) => (
                 <div key={idx} className={`w-2 h-2 rounded-full ${isPast ? 'bg-gray-300' : 'bg-primary shadow-sm'}`}></div>
@@ -234,10 +326,21 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
         const status = getStatusConfig(appt.status);
         const isPending = appt.status === 'pending';
         const isActive = appt.status !== 'canceled' && appt.status !== 'rejected';
+        const isSelected = selectedIds.includes(appt.id);
 
         return (
-          <div key={appt.id} className="bg-white border border-gray-100 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-lg transition-all group">
+          <div key={appt.id} className={`bg-white border ${isSelected ? 'border-primary ring-1 ring-primary/20 shadow-md' : 'border-gray-100'} p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-lg transition-all group`}>
             <div className="flex items-center gap-4 flex-1">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => {
+                  setSelectedIds(prev =>
+                    prev.includes(appt.id) ? prev.filter(id => id !== appt.id) : [...prev, appt.id]
+                  );
+                }}
+                className="w-5 h-5 rounded-lg border-gray-200 text-primary focus:ring-primary cursor-pointer"
+              />
               <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl px-3 py-2 min-w-[70px] border border-gray-100">
                 <span className="text-[9px] font-black text-gray-400 uppercase leading-none mb-1">{startDateJST.toLocaleDateString('pt-BR', { weekday: 'short' })}</span>
                 <span className="text-lg font-black text-gray-900 leading-none">{startDateJST.getHours().toString().padStart(2, '0')}:{startDateJST.getMinutes().toString().padStart(2, '0')}</span>
@@ -249,9 +352,17 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                   <h4 className="font-bold text-gray-900 capitalize">{appt.clientName}</h4>
                   <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-full">{appt.serviceName || 'Serviço Padrão'}</span>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                  <span className="flex items-center gap-1"><Calendar size={10} /> {startDateJST.toLocaleDateString('pt-BR')}</span>
-                  <span className="flex items-center gap-1"><Phone size={10} /> {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}</span>
+                <div className="flex flex-col gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="flex items-center gap-1"><Calendar size={10} /> {startDateJST.toLocaleDateString('pt-BR')}</span>
+                    <span className="flex items-center gap-1"><Phone size={10} /> {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}</span>
+                  </div>
+                  {appt.clientEmail && (
+                    <div className="flex items-center gap-1">
+                      <Mail size={10} className="flex-shrink-0" />
+                      <span className="break-all">{appt.clientEmail}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -293,7 +404,17 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                   )
                 )}
                 <a href={generateWhatsAppLink(appt, appt.status as any)} target="_blank" rel="noreferrer" className="p-2.5 bg-green-50 text-green-600 border border-green-100 rounded-xl hover:bg-green-100 transition-all" title="WhatsApp"><MessageCircle size={16} /></a>
-                <button onClick={() => onDeleteAppointment(appt.id)} className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Excluir"><Trash2 size={16} /></button>
+                <button
+                  onClick={() => openConfirm(
+                    'Excluir Agendamento',
+                    'Deseja excluir este agendamento permanentemente? Esta ação não pode ser desfeita.',
+                    () => onDeleteAppointment(appt.id)
+                  )}
+                  className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  title="Excluir"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           </div>
@@ -374,6 +495,16 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               <ArrowRightCircle size={14} />
               Amanhã <span className="opacity-50 text-[9px]">{tomorrowCount}</span>
             </button>
+            <button
+              onClick={() => { setDateFilter('past'); setSelectedIds([]); }}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'past'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
+                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
+                }`}
+            >
+              <Trash2 size={14} />
+              Dias Passados
+            </button>
 
             <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border transition-all ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}>
               <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
@@ -395,6 +526,38 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 </button>
               )}
             </div>
+
+            {selectedIds.length > 0 && (
+              <button
+                onClick={() => openConfirm(
+                  'Apagar Selecionados',
+                  `Deseja apagar ${selectedIds.length} agendamentos selecionados? Esta ação não pode ser desfeita.`,
+                  () => {
+                    onBulkDelete?.(selectedIds);
+                    setSelectedIds([]);
+                  }
+                )}
+                className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all flex items-center gap-2"
+              >
+                <Trash2 size={14} />
+                Apagar Selecionados ({selectedIds.length})
+              </button>
+            )}
+
+            {dateFilter === 'past' && filteredAppointments.length > 0 && (
+              <button
+                onClick={() => {
+                  if (selectedIds.length === filteredAppointments.length) {
+                    setSelectedIds([]);
+                  } else {
+                    setSelectedIds(filteredAppointments.map(a => a.id));
+                  }
+                }}
+                className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+              >
+                {selectedIds.length === filteredAppointments.length ? 'Limpar Seleção' : 'Selecionar Todos'}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -430,7 +593,11 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
                   {/* Ícone de lixeira no topo (única opção de excluir permanente) */}
                   <button
-                    onClick={() => onDeleteAppointment(appt.id)}
+                    onClick={() => openConfirm(
+                      'Excluir Agendamento',
+                      'Deseja excluir este agendamento permanentemente? Esta ação não pode ser desfeita.',
+                      () => onDeleteAppointment(appt.id)
+                    )}
                     className="absolute top-4 right-4 p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                     title="Excluir agendamento"
                   >
@@ -461,9 +628,17 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                         <span className="text-[10px] text-gray-400 ml-auto">{appt.duration} MIN</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 px-2 text-xs text-gray-500 font-bold">
-                      <Phone size={14} />
-                      {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}
+                    <div className="flex flex-col gap-1 px-2 text-xs text-gray-500 font-bold">
+                      <div className="flex items-center gap-3">
+                        <Phone size={14} />
+                        {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}
+                      </div>
+                      {appt.clientEmail && (
+                        <div className="flex items-center gap-3">
+                          <Mail size={14} className="flex-shrink-0" />
+                          <span className="break-all">{appt.clientEmail}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -527,6 +702,15 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        isDanger={confirmModal.isDanger}
+      />
     </div>
   );
 };

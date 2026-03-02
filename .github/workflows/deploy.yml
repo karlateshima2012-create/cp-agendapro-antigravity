@@ -1,0 +1,70 @@
+name: CP Agenda Pro - Deploy Automático
+
+on:
+  push:
+    branches:
+      - main  # Ou sua branch principal
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Código
+      uses: actions/checkout@v4
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Instalar Dependências e Build (Frontend)
+      run: |
+        npm install
+        npm run build
+
+    - name: Preparar Pacotes de Deploy
+      run: |
+        # Zipar Frontend (dist agora é a raiz pública)
+        cd dist && zip -r ../dist.zip * && cd ..
+        
+        # Zipar Backend (somente arquivos necessários)
+        cd backend && zip -r ../backend.zip api database migrate.php .env.example && cd ..
+
+    - name: Enviar Arquivos via SCP (Hostinger)
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        source: "dist.zip,backend.zip"
+        target: "domains/creativeprintjp.com/public_html/cpagendapro/"
+
+    - name: Executar Comandos SSH (Unzip e Migrations)
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          cd domains/creativeprintjp.com/public_html/cpagendapro/
+          
+          # Backup rápido da versão anterior (opcional)
+          mkdir -p backup_viva
+          cp -r api database index.html assets backup_viva/ 2>/dev/null || true
+          
+          # Descompactar Backend
+          unzip -o backend.zip
+          rm backend.zip
+          
+          # Rodar Migrações de Banco de Dados
+          php migrate.php
+          
+          # Descompactar Frontend (dist)
+          # Atenção: isso sobrescreve index.html e a pasta assets
+          unzip -o dist.zip
+          rm dist.zip
+          
+          echo "✅ Deploy Finalizado com Sucesso!"
