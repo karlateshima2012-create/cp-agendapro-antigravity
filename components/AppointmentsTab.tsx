@@ -176,17 +176,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   };
 
   // Função para atualizar status e abrir WhatsApp
-  const updateStatusAndNotify = async (appt: any, newStatus: 'confirmed' | 'rejected' | 'canceled') => {
-    // tenta aguardar caso onUpdateStatus seja async
-    const result = onUpdateStatus(appt.id, newStatus) as any;
-    if (result && typeof result.then === 'function') {
-      await result;
-    }
-
-    // só depois abre o WhatsApp
-    const msg = buildWhatsAppMessage(appt, newStatus);
-    openWhatsApp(appt.clientPhone, msg);
-  };
+  // Função removida para evitar disparo automático de WhatsApp
 
   const renderCalendar = () => {
     const todayJST = getTodayJST();
@@ -378,14 +368,14 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 {isPending ? (
                   <>
                     <button
-                      onClick={() => updateStatusAndNotify(appt, 'confirmed')}
+                      onClick={() => onUpdateStatus(appt.id, 'confirmed')}
                       className="p-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors shadow-lg shadow-green-500/10"
                       title="Confirmar"
                     >
                       <CheckCircle size={16} />
                     </button>
                     <button
-                      onClick={() => updateStatusAndNotify(appt, 'rejected')}
+                      onClick={() => onUpdateStatus(appt.id, 'rejected')}
                       className="p-2.5 bg-gray-100 text-gray-500 rounded-xl hover:bg-red-50 hover:text-red-500 transition-all"
                       title="Rejeitar"
                     >
@@ -395,7 +385,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 ) : (
                   isActive && (
                     <button
-                      onClick={() => updateStatusAndNotify(appt, 'canceled')}
+                      onClick={() => onUpdateStatus(appt.id, 'canceled')}
                       className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                       title="Cancelar"
                     >
@@ -646,13 +636,13 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                     {isPending ? (
                       <div className="grid grid-cols-2 gap-3">
                         <button
-                          onClick={() => updateStatusAndNotify(appt, 'confirmed')}
+                          onClick={() => onUpdateStatus(appt.id, 'confirmed')}
                           className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-500/10 active:scale-95"
                         >
                           <CheckCircle size={14} /> Confirmar
                         </button>
                         <button
-                          onClick={() => updateStatusAndNotify(appt, 'rejected')}
+                          onClick={() => onUpdateStatus(appt.id, 'rejected')}
                           className="flex items-center justify-center gap-2 bg-gray-50 hover:bg-red-50 hover:text-red-500 text-gray-500 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-90"
                         >
                           <XCircle size={14} /> Rejeitar
@@ -661,7 +651,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                     ) : (
                       isActive && (
                         <button
-                          onClick={() => updateStatusAndNotify(appt, 'canceled')}
+                          onClick={() => onUpdateStatus(appt.id, 'canceled')}
                           className="flex items-center justify-center gap-2 text-red-400 hover:bg-red-50 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all w-full"
                         >
                           <AlertCircle size={14} /> Cancelar Horário
