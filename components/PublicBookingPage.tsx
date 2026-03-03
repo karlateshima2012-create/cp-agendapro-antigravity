@@ -167,13 +167,16 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   const toTimestamp = (dateStr: string) => {
     if (!dateStr) return 0;
-    const parts = dateStr.split(/[-T :]/);
+    // Remove 'Z' if it exists to treat everything as naive/local wall-clock time
+    const cleanDateStr = dateStr.endsWith('Z') ? dateStr.substring(0, dateStr.length - 1) : dateStr;
+    const parts = cleanDateStr.split(/[-T :]/);
     if (parts.length < 3) return 0;
     const y = parseInt(parts[0]);
     const m = parseInt(parts[1]) - 1;
     const d = parseInt(parts[2]);
     const h = parts.length > 3 ? parseInt(parts[3]) : 0;
     const min = parts.length > 4 ? parseInt(parts[4]) : 0;
+    // We use UTC just to get a stable comparable integer based on the wall-clock numbers
     return Date.UTC(y, m, d, h, min);
   };
 
@@ -223,7 +226,20 @@ export const PublicBookingPage: React.FC<Props> = ({
         if (a.status === 'canceled' || a.status === 'rejected') return false;
         const apptStartTimestamp = toTimestamp(a.startAt);
         const apptEndTimestamp = a.endAt ? toTimestamp(a.endAt) : apptStartTimestamp + (a.duration * 60000);
-        return (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
+
+        const overlaps = (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
+
+        if (overlaps) {
+          console.log(`[Conflict Found] Slot ${timeStr} with appt:`, {
+            appt: a,
+            apptStart: new Date(apptStartTimestamp).toISOString(),
+            apptEnd: new Date(apptEndTimestamp).toISOString(),
+            slotStart: new Date(slotStartTimestamp).toISOString(),
+            slotEnd: new Date(slotEndTimestamp).toISOString()
+          });
+        }
+
+        return overlaps;
       });
 
       const isBlockedInSlot = (availability.blockedDates || []).some(b => {
@@ -305,7 +321,8 @@ export const PublicBookingPage: React.FC<Props> = ({
     const result = await onBook({
       serviceId: selectedService!.id,
       serviceName: selectedService!.name,
-      startAt: new Date(selectedDate + 'T' + selectedTime).toISOString(),
+      // Usamos string pura (naive) para evitar deslocamento de timezone (toISOString causava bugs)
+      startAt: `${selectedDate} ${selectedTime}:00`,
       duration: selectedService!.duration,
       clientName: normalizedName,
       clientPhone: clientData.phone,

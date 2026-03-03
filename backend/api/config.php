@@ -29,3 +29,7 @@ define('DB_CHARSET', get_env_var('DB_CHARSET', 'utf8mb4'));
 // App Configuration
 define('API_VERSION', get_env_var('API_VERSION', '1.0.0'));
 define('DEBUG_MODE', filter_var(get_env_var('DEBUG_MODE', 'true'), FILTER_VALIDATE_BOOLEAN));
+
+// Timezone
+date_default_timezone_set('Asia/Tokyo');
+

@@ -116,8 +116,8 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   const getJSTDate = (dateStr: string | number | Date) => {
     let d: Date;
     if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
-      // Assume UTC if missing timezone (MySQL DATETIME), replace space with T for Safari compat
-      d = new Date(dateStr.replace(' ', 'T') + 'Z');
+      // Treat as local wall-clock time (do NOT add Z)
+      d = new Date(dateStr.replace(' ', 'T'));
     } else {
       d = new Date(dateStr);
     }
