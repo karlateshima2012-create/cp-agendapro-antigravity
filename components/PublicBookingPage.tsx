@@ -680,13 +680,12 @@ export const PublicBookingPage: React.FC<Props> = ({
               <div className="w-32 h-32 bg-green-50 text-green-500 rounded-[3rem] flex items-center justify-center mb-10 shadow-inner animate-bounce">
                 <CheckCircle size={64} />
               </div>
-              <h2 className="text-5xl font-black text-gray-900 tracking-tight mb-4">Agendamento Solicitado!</h2>
+              <h2 className="text-5xl font-black text-gray-900 tracking-tight mb-4">Agendamento Confirmado!</h2>
               <p className="text-gray-500 mb-12 max-w-sm mx-auto font-medium text-lg leading-relaxed">
-                Olá <b>{clientData.name}</b>, seu agendamento foi solicitado. <br />
-                Em breve <b>{companyName}</b> entrará em contato para confirmação.
+                Olá, <b>{clientData.name}</b>! Seu agendamento foi realizado com sucesso.
               </p>
               <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 mb-12 w-full max-w-xs text-left">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Detalhes do Agendamento</p>
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">DETALHES DO AGENDAMENTO</p>
                 <p className="font-bold text-gray-900 text-sm mb-1">{selectedService?.name}</p>
                 <p className="text-xs text-gray-500">{new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })} às {selectedTime}</p>
               </div>
