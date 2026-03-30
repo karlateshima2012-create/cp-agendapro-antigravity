@@ -22,10 +22,15 @@ jobs:
       run: |
         npm install
         npm run build
+    - name: Configurar PHP (Para o Firewall)
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        tools: composer:v2
 
     - name: Instalar dependências completas (para o Firewall)
       working-directory: ./backend
-      run: composer install --optimize-autoloader
+      run: composer install --optimize-autoloader --ignore-platform-reqs --no-interaction
 
     - name: Run Static Analysis (PHPStan Firewall)
       working-directory: ./backend
@@ -37,7 +42,7 @@ jobs:
       working-directory: ./backend
       run: |
         # Se passar, removemos o dev pesado para economizar armazenamento
-        composer install --no-dev --optimize-autoloader
+        composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-interaction
 
     - name: Preparar Pacotes de Deploy
       run: |
