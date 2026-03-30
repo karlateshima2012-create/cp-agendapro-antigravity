@@ -23,6 +23,22 @@ jobs:
         npm install
         npm run build
 
+    - name: Instalar dependências completas (para o Firewall)
+      working-directory: ./backend
+      run: composer install --optimize-autoloader
+
+    - name: Run Static Analysis (PHPStan Firewall)
+      working-directory: ./backend
+      run: |
+        # Se o código quebrar aqui, o Action morre e evita derrubar a produção
+        ./vendor/bin/phpstan analyse --error-format=github
+
+    - name: Limpar pastas de Dev antes do deploy
+      working-directory: ./backend
+      run: |
+        # Se passar, removemos o dev pesado para economizar armazenamento
+        composer install --no-dev --optimize-autoloader
+
     - name: Preparar Pacotes de Deploy
       run: |
         # Zipar Frontend (dist agora é a raiz pública)

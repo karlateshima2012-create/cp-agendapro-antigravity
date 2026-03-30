@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { AccountInfo } from '../types';
 import {
@@ -6,6 +5,7 @@ import {
   Image as ImageIcon, Layout, Upload,
   Info, Lock, HelpCircle
 } from 'lucide-react';
+import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
 interface Props {
   account: AccountInfo;
@@ -16,6 +16,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   const [telegramToken, setTelegramToken] = useState(account.telegramBotToken || '');
   const [telegramChatId, setTelegramChatId] = useState(account.telegramChatId || '');
@@ -357,6 +358,28 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
           {isSaving ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </div>
+
+      {/* FOOTER & TERMOS */}
+      <div className="flex flex-col items-center justify-center pt-8 pb-12 opacity-60 hover:opacity-100 transition-opacity mt-8">
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">
+          © {new Date().getFullYear()} CREATIVE PRINT. TODOS OS DIREITOS RESERVADOS.
+        </p>
+        <button 
+          onClick={() => setShowTermsModal(true)}
+          className="text-xs font-bold text-blue-500 hover:text-blue-700 hover:underline tracking-wide transition-all"
+        >
+          TERMOS DE USO E POLÍTICA DE PRIVACIDADE
+        </button>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">SISTEMA OPERACIONAL • V2.1.0</span>
+        </div>
+      </div>
+
+      <TermsAndPoliciesModal 
+        isOpen={showTermsModal} 
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 };

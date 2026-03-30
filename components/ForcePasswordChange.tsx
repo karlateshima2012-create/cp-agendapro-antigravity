@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
+import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
 interface Props {
   onPasswordChanged: (newPass: string) => void;
@@ -12,6 +13,9 @@ export const ForcePasswordChange: React.FC<Props> = ({ onPasswordChanged, onLogo
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
   const [error, setError] = useState('');
+  
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // ✅ FUNÇÃO DE VALIDAÇÃO DE SENHA FORTE (igual ao ResetPasswordPage)
   const validatePassword = (pwd: string) => {
@@ -210,11 +214,44 @@ export const ForcePasswordChange: React.FC<Props> = ({ onPasswordChanged, onLogo
               </div>
             )}
           </div>
+          {/* Checkbox de Termos */}
+          <div className="flex items-start gap-3 p-4 bg-gray-50/80 rounded-2xl border border-gray-100 shadow-sm mt-6 mb-2">
+            <button
+              type="button"
+              onClick={() => setAcceptedTerms(!acceptedTerms)}
+              className={`flex-shrink-0 w-6 h-6 mt-0.5 rounded-lg border-2 flex items-center justify-center transition-all shadow-sm ${
+                acceptedTerms 
+                  ? 'bg-blue-500 border-blue-500 text-white shadow-blue-500/30' 
+                  : 'bg-white border-gray-300 text-transparent hover:border-blue-400'
+              }`}
+            >
+              <Check size={14} className="stroke-[3]" />
+            </button>
+            <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
+              Li e concordo com os{' '}
+              <button
+                type="button"
+                className="text-blue-600 font-bold hover:underline transition-all"
+                onClick={() => setShowTermsModal(true)}
+              >
+                Termos de Uso
+              </button>{' '}
+              e{' '}
+              <button
+                type="button"
+                className="text-blue-600 font-bold hover:underline transition-all"
+                onClick={() => setShowTermsModal(true)}
+              >
+                Política de Privacidade
+              </button>
+              .
+            </p>
+          </div>
           
           <button 
             type="submit" 
-            disabled={!passwordRequirements.allValid || pass1 !== pass2}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!passwordRequirements.allValid || pass1 !== pass2 || !acceptedTerms}
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 active:scale-[0.98]"
           >
             Salvar Senha e Entrar
           </button>
@@ -223,6 +260,15 @@ export const ForcePasswordChange: React.FC<Props> = ({ onPasswordChanged, onLogo
           </button>
         </form>
       </div>
+      
+      <TermsAndPoliciesModal 
+        isOpen={showTermsModal} 
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => {
+          setAcceptedTerms(true);
+          setShowTermsModal(false);
+        }}
+      />
     </div>
   );
 };
