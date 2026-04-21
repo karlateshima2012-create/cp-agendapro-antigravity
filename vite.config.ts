@@ -9,13 +9,13 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-    // ✅ QUALITY FIX: Automatically strip all console.log & debugger statements in production builds
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // ✅ QUALITY FIX: Auto-strip console.log & debugger in production builds
+    // Using esbuild (bundled with Vite) — no extra dependency needed
+    minify: 'esbuild',
+    target: 'es2015',
+  },
+
+  esbuild: {
+    drop: ['console', 'debugger'],
   },
 });
