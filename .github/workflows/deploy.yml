@@ -46,21 +46,19 @@ jobs:
 
     - name: Gerar arquivo .env de produção
       run: |
-        # ✅ Cria o .env com os valores dos GitHub Secrets
-        # O separador EOF deve estar no início da linha para fechar corretamente o heredoc
-        cat > backend/.env << 'ENVEOF'
-DB_HOST=${{ secrets.DB_HOST }}
-DB_PORT=${{ secrets.DB_PORT }}
-DB_NAME=${{ secrets.DB_NAME }}
-DB_USER=${{ secrets.DB_USER }}
-DB_PASS=${{ secrets.DB_PASS }}
-DB_CHARSET=utf8mb4
-API_VERSION=1.0.0
-DEBUG_MODE=false
-TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-ENVEOF
+        # ✅ Cria o .env de forma robusta usando printf (evita problemas de indentação do heredoc)
+        printf "DB_HOST=%s\n" "${{ secrets.DB_HOST }}" > backend/.env
+        printf "DB_PORT=%s\n" "${{ secrets.DB_PORT }}" >> backend/.env
+        printf "DB_NAME=%s\n" "${{ secrets.DB_NAME }}" >> backend/.env
+        printf "DB_USER=%s\n" "${{ secrets.DB_USER }}" >> backend/.env
+        printf "DB_PASS=%s\n" "${{ secrets.DB_PASS }}" >> backend/.env
+        printf "DB_CHARSET=utf8mb4\n" >> backend/.env
+        printf "API_VERSION=1.0.0\n" >> backend/.env
+        printf "DEBUG_MODE=false\n" >> backend/.env
+        printf "TELEGRAM_BOT_TOKEN=%s\n" "${{ secrets.TELEGRAM_BOT_TOKEN }}" >> backend/.env
+        
         echo "✅ .env gerado com sucesso"
-        head -n 1 backend/.env | sed 's/=.*/=***/' # Log da primeira linha para sanity check
+        head -n 1 backend/.env | sed 's/=.*/=***/'
 
     - name: Preparar Pacotes de Deploy
       run: |
@@ -104,7 +102,7 @@ ENVEOF
           unzip -o backend.zip
           rm backend.zip
 
-          # ✅ Proteger o .env: leitura pública permitida para o processo PHP ler, mas sem escrita
+          # ✅ Proteger o .env
           chmod 644 .env
 
           # Rodar Migrações de Banco de Dados
