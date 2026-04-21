@@ -414,31 +414,33 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               <div>
                 <p className="text-base font-black text-gray-900 mb-2">Divulgue sua Agenda</p>
                 <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                  Utilize este QR Code em seus cartões de visita, balcão de atendimento ou adesivos. 
-                  Ao escanear, seu cliente será levado diretamente para sua página de agendamentos.
+                  Utilize este QR Code em seus materiais impressos. Ao escanear, seu cliente será levado diretamente para sua página de agendamentos.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={handleCopyLink}
-                  className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-sm font-black transition-all border ${copied
-                    ? 'bg-green-50 text-green-600 border-green-100'
-                    : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                    }`}
-                >
-                  {copied ? <Check size={20} /> : <Copy size={20} />}
-                  {copied ? 'Link Copiado!' : 'Copiar Link'}
-                </button>
-
-                <button
-                  onClick={() => {
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(account.publicLink || '')}`;
-                    window.open(qrUrl, '_blank');
+                  onClick={async () => {
+                    try {
+                      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(account.publicLink || '')}`;
+                      const response = await fetch(qrUrl);
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `QRCode_Agendamento_${account.companyName.replace(/\s+/g, '_')}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                      console.error('Erro ao baixar QR Code:', error);
+                      alert('Erro ao baixar o QR Code. Tente abrir em uma nova aba.');
+                    }
                   }}
-                  className="flex-1 flex items-center justify-center gap-3 bg-primary text-white px-6 py-4 rounded-2xl text-sm font-black transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                  className="w-full flex items-center justify-center gap-3 bg-primary text-white px-6 py-5 rounded-2xl text-sm font-black transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
                 >
-                  <Upload size={20} className="rotate-180" /> Baixar QR Code
+                  <Upload size={20} className="rotate-180" /> Baixar QR Code (PNG)
                 </button>
               </div>
 
