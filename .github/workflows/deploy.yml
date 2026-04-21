@@ -46,29 +46,28 @@ jobs:
 
     - name: Gerar arquivo .env de produção
       run: |
-        # ✅ Cria o .env com os valores dos GitHub Secrets (seguro, nunca fica no código)
+        # ✅ Cria o .env com os valores dos GitHub Secrets
+        # O separador EOF deve estar no início da linha para fechar corretamente o heredoc
         cat > backend/.env << 'ENVEOF'
-        DB_HOST=${{ secrets.DB_HOST }}
-        DB_PORT=${{ secrets.DB_PORT }}
-        DB_NAME=${{ secrets.DB_NAME }}
-        DB_USER=${{ secrets.DB_USER }}
-        DB_PASS=${{ secrets.DB_PASS }}
-        DB_CHARSET=utf8mb4
-        API_VERSION=1.0.0
-        DEBUG_MODE=false
-        TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-        ENVEOF
-        # Remover espaços em branco no início de cada linha (heredoc indentation)
-        sed -i 's/^[[:space:]]*//' backend/.env
+DB_HOST=${{ secrets.DB_HOST }}
+DB_PORT=${{ secrets.DB_PORT }}
+DB_NAME=${{ secrets.DB_NAME }}
+DB_USER=${{ secrets.DB_USER }}
+DB_PASS=${{ secrets.DB_PASS }}
+DB_CHARSET=utf8mb4
+API_VERSION=1.0.0
+DEBUG_MODE=false
+TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+ENVEOF
         echo "✅ .env gerado com sucesso"
-        cat backend/.env | sed 's/=.*/=***/' # Log das chaves (sem os valores)
+        head -n 1 backend/.env | sed 's/=.*/=***/' # Log da primeira linha para sanity check
 
     - name: Preparar Pacotes de Deploy
       run: |
         # Zipar Frontend
         cd dist && zip -r ../dist.zip * && cd ..
         
-        # Zipar Backend (inclui o .env gerado e todos os arquivos necessários)
+        # Zipar Backend
         cd backend && zip -r ../backend.zip api database migrate.php .env && cd ..
 
     - name: Testar Conexão SSH
@@ -101,7 +100,7 @@ jobs:
           mkdir -p backup_viva
           cp -r api database index.html assets backup_viva/ 2>/dev/null || true
 
-          # Descompactar Backend (inclui o .env gerado)
+          # Descompactar Backend
           unzip -o backend.zip
           rm backend.zip
 
@@ -116,5 +115,3 @@ jobs:
           rm dist.zip
 
           echo "✅ Deploy Finalizado com Sucesso!"
-          echo "📋 Verificando .env (apenas chaves, sem valores):"
-          cat .env | sed 's/=.*/=***/'
