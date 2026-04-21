@@ -76,7 +76,7 @@ export const ClientDashboard: React.FC<Props> = ({
       <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
         {/* SIDEBAR DESKTOP */}
         <aside className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-screen sticky top-0 z-10">
-          <div className="p-6 border-b border-gray-100 hidden md:flex items-center gap-3">
+          <div className="p-6 border-b border-gray-100 hidden md:flex justify-center">
             <Logo size="sm" />
           </div>
 
