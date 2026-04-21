@@ -1,15 +1,15 @@
 <?php
-// deploy_hostinger/public_html/api/routes/admin.php
+// backend/api/routes/admin.php
 
 $user = Auth::requireAuth();
-file_put_contents(__DIR__ . '/../debug.log', date('Y-m-d H:i:s') . " - ADMIN: Path=$path | Method=$method | Role={$user['role']}\n", FILE_APPEND);
+// ✅ SECURITY FIX: Debug logging only when DEBUG_MODE=true in .env
+if (DEBUG_MODE) {
+    file_put_contents(__DIR__ . '/../debug.log', date('Y-m-d H:i:s') . " - ADMIN: Path=$path | Method=$method | Role={$user['role']}\n", FILE_APPEND);
+}
 if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') Response::fail('Forbidden', 403);
 
 if ($path === 'admin/profiles' && $method === 'GET') {
-    // Debug log
-    error_log("Fetching admin profiles...");
     $profiles = Db::fetchAll("SELECT u.id, u.email, u.role, a.name as companyName, a.owner_name as ownerName, a.status as accountStatus, a.plan_type as planType, a.plan_expires_at as planExpiresAt, a.contact_phone as contactPhone, a.lifetime_appointments as appointmentCount, a.created_at as createdAt FROM cp_agenda_users u JOIN cp_agenda_accounts a ON u.account_id = a.id WHERE u.role = 'client' ORDER BY a.created_at DESC");
-    error_log("Found " . count($profiles) . " profiles");
     Response::ok($profiles);
 }
 

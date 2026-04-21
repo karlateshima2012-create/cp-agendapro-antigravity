@@ -69,7 +69,7 @@ const App: React.FC = () => {
   const [currentAccountStatus, setCurrentAccountStatus] = useState<AccountStatus>('active');
   const [blockedReason, setBlockedReason] = useState<string>(''); // NOVO: motivo do bloqueio
 
-  const [view, setView] = useState<'login'>('login');
+  const [view, setView] = useState<'login'>('login'); // Remove if not used
   const [publicUserId, setPublicUserId] = useState<string | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
 
@@ -522,15 +522,15 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     try {
       await api.logout();
+      clearAllStates(); // ✅ QUALITY FIX: Clear all local state on logout to prevent data leakage
       setSession(null);
-      // clearAllStates(); // Assuming this function exists or needs to be added
       showToast("Até logo!");
     } catch (e) {
       console.error("Erro logout:", e);
+      setSession(null); // Ensure logout on any error
     }
   };
 
-  console.log('🖥️ Rendering App:', { loading, session: !!session, isGuestMode, profile: !!profile });
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

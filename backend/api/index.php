@@ -1,5 +1,5 @@
 <?php
-// deploy_hostinger/public_html/api/index.php
+// backend/api/index.php
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/lib/Db.php';
@@ -7,25 +7,38 @@ require_once __DIR__ . '/lib/Auth.php';
 require_once __DIR__ . '/lib/Response.php';
 require_once __DIR__ . '/lib/Mail.php';
 
-// Essential headers
-header('Access-Control-Allow-Origin: ' . ($_SERVER['HTTP_ORIGIN'] ?? '*'));
+// ✅ SECURITY FIX: CORS Allowlist — only accept requests from known, trusted origins
+$allowedOrigins = [
+    'https://cpagendapro.creativeprintjp.com',
+    'http://localhost:5173',
+    'http://localhost:5174',
+];
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($origin, $allowedOrigins, true)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} elseif (empty($origin)) {
+    // Server-to-server requests (no browser Origin header) — allow with prod default
+    header('Access-Control-Allow-Origin: https://cpagendapro.creativeprintjp.com');
+}
+// If origin is not in allowlist and is not empty, no CORS header is sent = blocked by browser.
+
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
     exit;
 }
 
-// Better Router
+// Router
 $method = $_SERVER['REQUEST_METHOD'];
 $path = '';
+$uri = $_SERVER['REQUEST_URI'] ?? '';
 
 if (isset($_GET['path'])) {
     $path = $_GET['path'];
 } else {
-    $uri = $_SERVER['REQUEST_URI'] ?? '';
-    // Pegar o path da URL e remover qualquer prefixo até o /api/
     $full_path = parse_url($uri, PHP_URL_PATH);
     if (strpos($full_path, '/api/') !== false) {
         $path = substr($full_path, strpos($full_path, '/api/') + 5);
@@ -35,15 +48,18 @@ if (isset($_GET['path'])) {
 }
 
 $path = trim($path, '/');
-// Debug log if needed (comment out in prod)
-file_put_contents('debug.log', date('Y-m-d H:i:s') . " - URI: $uri | Path: $path | Method: $method\n", FILE_APPEND);
+
+// ✅ SECURITY FIX: Debug logging ONLY when DEBUG_MODE is explicitly enabled via .env
+if (DEBUG_MODE) {
+    file_put_contents(__DIR__ . '/debug.log', date('Y-m-d H:i:s') . " - URI: $uri | Path: $path | Method: $method\n", FILE_APPEND);
+}
 
 // Initialize Auth
 Auth::init();
 
 // Diagnostic Routes
 if ($path === 'ping') {
-    Response::ok(['msg' => 'PONG']);
+    Response::ok(['msg' => 'PONG', 'version' => API_VERSION]);
 }
 
 if ($path === 'db') {
@@ -88,12 +104,15 @@ switch ($module) {
         require_once __DIR__ . '/routes/telegram_webhook.php';
         break;
     case 'telegram-register':
-        // Script simples para registrar o webhook para o token oficial
-        $token = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
+        // ✅ SECURITY FIX: Token loaded from environment variable — never hardcoded
+        $token = get_env_var('TELEGRAM_BOT_TOKEN', '');
+        if (empty($token)) {
+            Response::fail('TELEGRAM_BOT_TOKEN not configured in environment', 500);
+        }
         $domain = $_SERVER['HTTP_HOST'];
         $webhookUrl = "https://{$domain}/api/telegram-webhook";
         $url = "https://api.telegram.org/bot{$token}/setWebhook?url=" . urlencode($webhookUrl);
-        $res = file_get_contents($url);
+        $res = @file_get_contents($url);
         Response::ok(['status' => 'webhook_registered', 'response' => json_decode($res, true), 'url' => $webhookUrl]);
         break;
     default:
