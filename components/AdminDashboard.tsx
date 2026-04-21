@@ -410,36 +410,32 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                 <div className="space-y-3">
                   {/* NOVO: Campo para editar data de vencimento manualmente */}
                   <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block flex items-center gap-2">
-                      <Calendar size={12} /> Assinatura
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block flex items-center gap-2">
+                      <Calendar size={14} className="text-primary" /> Dados da Assinatura
                     </label>
-                    <div className="space-y-1 mb-2">
-                      <p className="text-[9px] text-gray-400 font-bold ml-1">
-                        Início: {detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString('pt-BR') : '---'}
-                      </p>
-                      <p className="text-[9px] text-gray-400 font-bold ml-1">
-                        Expira: {detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
-                      </p>
+                    <div className="grid grid-cols-1 gap-3 mb-4">
+                      <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100/50">
+                        <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1 block">Início do Plano</label>
+                        <p className="text-base font-black text-blue-700">
+                          {detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString('pt-BR') : '---'}
+                        </p>
+                      </div>
+                      <div className="bg-red-50 p-4 rounded-2xl border border-red-100/50">
+                        <label className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1 block">PRÓXIMO VENCIMENTO</label>
+                        <p className="text-base font-black text-red-700">
+                          {detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
+                        </p>
+                      </div>
                     </div>
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Alterar Data Manualmente</label>
                     <input
                       type="date"
                       value={manualExpiryDate}
                       onChange={(e) => setManualExpiryDate(e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white transition-all shadow-sm"
                     />
                   </div>
 
-                  <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Prévia de Renovação</p>
-                    <div className="flex flex-col gap-2">
-                      <p className={`text-xl font-black ${renewalPeriod === 0 ? 'text-gray-400' : 'text-gray-900'}`}>
-                        {renewalPeriod === 0 ? '---' : getPreviewExpiryDate()}
-                      </p>
-                      <p className="text-[10px] text-gray-500 font-bold">
-                        {renewalPeriod === 0 ? 'Selecione um período abaixo' : `+${renewalPeriod} meses da data base`}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -452,7 +448,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Estender plano do profissional</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
                 <button
                   type="button"
                   onClick={() => setRenewalPeriod(0)}
@@ -494,16 +490,34 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   <span className="text-[10px] font-black">+12 Meses</span>
                 </button>
               </div>
-              <button
-                onClick={handleSaveModalUpdates}
-                disabled={isRenewingInModal}
-                className="w-full bg-gray-400 hover:bg-primary text-white py-3.5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-                SALVAR ALTERAÇÕES
-              </button>
+
+              {renewalPeriod > 0 && (
+                <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                      <RefreshCw size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nova data prevista</p>
+                      <p className="text-base font-black text-primary">{getPreviewExpiryDate()}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold text-gray-500">+{renewalPeriod} meses</p>
+                  </div>
+                </div>
+              )}
             </div>
-            <button onClick={() => setDetailsUser(null)} className="w-full mt-6 text-gray-400 font-bold uppercase text-[9px] hover:underline">Descartar e Fechar</button>
+
+            <button
+              onClick={handleSaveModalUpdates}
+              disabled={isRenewingInModal}
+              className="w-full bg-[#0EA5E9] hover:bg-[#0284c7] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-8 mb-4 border-b-4 border-black/10"
+            >
+              {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
+              SALVAR ALTERAÇÕES
+            </button>
+            <button onClick={() => setDetailsUser(null)} className="w-full text-gray-400 font-bold uppercase text-[9px] hover:underline mb-4">Descartar e Fechar</button>
           </div>
         </div>
       )}
