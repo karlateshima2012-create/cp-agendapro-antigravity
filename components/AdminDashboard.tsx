@@ -375,7 +375,14 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                       </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => handleOpenDetails(client)} className="p-2.5 text-gray-500 bg-white border border-gray-200 hover:text-primary rounded-xl transition-all shadow-sm">
+                          <button onClick={() => {
+                            const link = `${window.location.origin}/?p=${client.id}`;
+                            navigator.clipboard.writeText(link);
+                            if (showToast) showToast("Link público copiado!");
+                          }} className="p-2.5 text-blue-500 bg-white border border-gray-200 hover:bg-blue-50 rounded-xl transition-all shadow-sm" title="Copiar Link Público">
+                            <Copy size={16} />
+                          </button>
+                          <button onClick={() => handleOpenDetails(client)} className="p-2.5 text-gray-500 bg-white border border-gray-200 hover:text-primary rounded-xl transition-all shadow-sm" title="Editar Profissional">
                             <Edit2 size={16} />
                           </button>
                           <button
@@ -537,6 +544,61 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* NOVO: QR CODE SECTION */}
+            <div className="bg-gray-50 rounded-[2.5rem] p-8 border border-gray-100 mt-6 mb-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary">
+                  <ExternalLink size={20} />
+                </div>
+                <div>
+                  <h4 className="text-lg font-black text-gray-900 tracking-tight">Link de Agendamento (QR Code)</h4>
+                  <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Acesso rápido para agendamentos</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 shrink-0">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`}
+                    alt="QR Code Agendamento"
+                    className="w-32 h-32 md:w-40 md:h-40"
+                  />
+                </div>
+                
+                <div className="flex-1 space-y-4 w-full">
+                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-200 text-xs font-mono text-gray-400 truncate shadow-inner">
+                    {window.location.origin}/?p={detailsUser.id}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => {
+                        const link = `${window.location.origin}/?p=${detailsUser.id}`;
+                        navigator.clipboard.writeText(link);
+                        if (showToast) showToast("Link copiado!");
+                      }}
+                      className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+                    >
+                      <Copy size={16} /> Copiar Link
+                    </button>
+                    <button
+                      onClick={() => {
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`;
+                        window.open(qrUrl, '_blank');
+                      }}
+                      className="flex items-center justify-center gap-2 bg-white text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95"
+                    >
+                      <Upload size={16} className="rotate-180" /> Baixar QR
+                    </button>
+                  </div>
+                  
+                  <p className="text-[10px] text-gray-500 font-bold leading-relaxed px-1">
+                    Este QR Code leva diretamente para a página de reservas do profissional. Útil para materiais impressos ou cartões de visita.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <button

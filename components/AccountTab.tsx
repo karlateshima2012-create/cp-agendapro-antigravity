@@ -3,7 +3,7 @@ import { AccountInfo } from '../types';
 import {
   Shield, User, Bell, Save,
   Image as ImageIcon, Layout, Upload,
-  Info, Lock, HelpCircle, Copy, ExternalLink, Check
+  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
@@ -389,6 +389,63 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                 <Info size={16} className="text-gray-400 mt-1 flex-shrink-0" />
                 <p className="text-[10px] text-gray-500 font-bold leading-relaxed uppercase tracking-tight">
                   Após inserir o ID, lembre-se de clicar no botão "Salvar Alterações" no fim da página.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* QR CODE CARD */}
+        <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
+          <h3 className="font-bold text-gray-900 mb-8 flex items-center gap-3">
+            <QrCode size={20} className="text-primary" /> QR Code de Agendamento
+          </h3>
+
+          <div className="flex flex-col md:flex-row items-center gap-10">
+            <div className="bg-gray-50 p-6 rounded-[2.5rem] border border-gray-100 shadow-inner group transition-all hover:bg-white hover:shadow-xl">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(account.publicLink || '')}`}
+                alt="QR Code de Agendamento"
+                className="w-48 h-48 md:w-56 md:h-56 mix-blend-multiply"
+              />
+            </div>
+
+            <div className="flex-1 space-y-6 w-full">
+              <div>
+                <p className="text-base font-black text-gray-900 mb-2">Divulgue sua Agenda</p>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                  Utilize este QR Code em seus cartões de visita, balcão de atendimento ou adesivos. 
+                  Ao escanear, seu cliente será levado diretamente para sua página de agendamentos.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={handleCopyLink}
+                  className={`flex-1 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-sm font-black transition-all border ${copied
+                    ? 'bg-green-50 text-green-600 border-green-100'
+                    : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
+                    }`}
+                >
+                  {copied ? <Check size={20} /> : <Copy size={20} />}
+                  {copied ? 'Link Copiado!' : 'Copiar Link'}
+                </button>
+
+                <button
+                  onClick={() => {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(account.publicLink || '')}`;
+                    window.open(qrUrl, '_blank');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-3 bg-primary text-white px-6 py-4 rounded-2xl text-sm font-black transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                >
+                  <Upload size={20} className="rotate-180" /> Baixar QR Code
+                </button>
+              </div>
+
+              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex items-start gap-3">
+                <Info size={18} className="text-blue-400 mt-0.5" />
+                <p className="text-[10px] text-blue-500 font-bold uppercase tracking-tight leading-relaxed">
+                  Dica: Para melhores resultados em materiais impressos, baixe a versão em alta resolução clicando no botão acima.
                 </p>
               </div>
             </div>
