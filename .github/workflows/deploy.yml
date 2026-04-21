@@ -105,8 +105,8 @@ jobs:
           unzip -o backend.zip
           rm backend.zip
 
-          # ✅ Proteger o .env: apenas o dono pode ler (segurança no servidor)
-          chmod 600 .env
+          # ✅ Proteger o .env: leitura pública permitida para o processo PHP ler, mas sem escrita
+          chmod 644 .env
 
           # Rodar Migrações de Banco de Dados
           php migrate.php
