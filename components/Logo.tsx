@@ -7,16 +7,17 @@ interface LogoProps {
 
 export const Logo: React.FC<LogoProps> = ({ variant = 'dark', size = 'md' }) => {
   const sizeClasses = {
-    sm: 'h-8',
-    md: 'h-12',
-    lg: 'h-16'
+    sm: 'scale-75 origin-left',
+    md: 'scale-100',
+    lg: 'scale-125'
   };
 
   const textColor = variant === 'light' ? 'text-white' : 'text-gray-900';
+  const subColor = variant === 'light' ? 'text-white/60' : 'text-gray-400';
 
   return (
     <div className={`flex items-center gap-4 ${sizeClasses[size]}`}>
-      {/* Brand Mark: Geometric Grid */}
+      {/* Brand Mark: Geometric Grid (Definitive) */}
       <div className="grid grid-cols-2 gap-[3px] w-12 h-12 flex-shrink-0">
         <div className="bg-[#E5157A] rounded-[2px]" /> {/* Top Left */}
         <div className="grid grid-cols-2 gap-[2px]"> {/* Top Right Mini-Grid */}
@@ -29,16 +30,19 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'dark', size = 'md' }) => 
         <div className="bg-[#FFF200] rounded-[2px]" /> {/* Bottom Right */}
       </div>
 
-      {/* Typography */}
+      {/* Typography: Aligned Widths */}
       <div className="flex flex-col leading-none">
-        <span className={`${textColor} font-black text-2xl tracking-tighter uppercase`}>
-          CP Agenda
-        </span>
-        <span className="text-[#38B6FF] font-black text-sm tracking-[0.3em] uppercase mt-1">
-          PRO
-        </span>
+        <h1 className={`${textColor} font-black text-2xl tracking-tighter uppercase mb-0.5`}>
+          CP AGENDA
+        </h1>
+        <div className="w-full flex justify-between uppercase">
+          <p className={`${subColor} text-[8px] font-bold tracking-[0.28em] w-full text-justify`} style={{ textAlignLast: 'justify' }}>
+            CREATIVE PRINT
+          </p>
+        </div>
       </div>
     </div>
   );
 };
+
 
