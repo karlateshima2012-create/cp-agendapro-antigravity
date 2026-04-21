@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   CalendarDays,
   Clock,
+  Briefcase,
   MessageCircle,
   Settings,
   LogOut
