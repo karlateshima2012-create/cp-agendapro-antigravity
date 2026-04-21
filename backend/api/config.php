@@ -8,9 +8,16 @@ function get_env_var($key, $default = '') {
     return ($val !== false) ? $val : $default;
 }
 
-// Load .env file if it exists (local dev)
+// Load .env file if it exists
+$envPath = null;
 if (file_exists(__DIR__ . '/../../.env')) {
-    $lines = file(__DIR__ . '/../../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $envPath = __DIR__ . '/../../.env';
+} elseif (file_exists(__DIR__ . '/../.env')) {
+    $envPath = __DIR__ . '/../.env';
+}
+
+if ($envPath) {
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
         if (strpos($line, '=') === false) continue;
