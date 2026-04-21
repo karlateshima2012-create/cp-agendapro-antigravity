@@ -36,7 +36,6 @@ jobs:
     - name: Run Static Analysis (PHPStan Firewall)
       working-directory: ./backend
       run: |
-        # Se o código quebrar aqui, o Action morre e evita derrubar a produção
         ./vendor/bin/phpstan analyse --error-format=github
 
     - name: Limpar pastas de Dev antes do deploy
@@ -45,32 +44,42 @@ jobs:
         composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-interaction
 
     - name: Gerar arquivo .env de produção
+      # ✅ FIX CRÍTICO: Secrets expostos como env vars do step ANTES do shell processar.
+      # Isso evita que caracteres especiais como $ na senha sejam interpretados pelo bash.
+      env:
+        _DB_HOST: ${{ secrets.DB_HOST }}
+        _DB_PORT: ${{ secrets.DB_PORT }}
+        _DB_NAME: ${{ secrets.DB_NAME }}
+        _DB_USER: ${{ secrets.DB_USER }}
+        _DB_PASS: ${{ secrets.DB_PASS }}
+        _TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       run: |
-        # ✅ Cria o .env de forma robusta usando printf (evita problemas de indentação do heredoc)
-        printf "DB_HOST=%s\n" "${{ secrets.DB_HOST }}" > backend/.env
-        printf "DB_PORT=%s\n" "${{ secrets.DB_PORT }}" >> backend/.env
-        printf "DB_NAME=%s\n" "${{ secrets.DB_NAME }}" >> backend/.env
-        printf "DB_USER=%s\n" "${{ secrets.DB_USER }}" >> backend/.env
-        printf "DB_PASS=%s\n" "${{ secrets.DB_PASS }}" >> backend/.env
-        printf "DB_CHARSET=utf8mb4\n" >> backend/.env
-        printf "API_VERSION=1.0.0\n" >> backend/.env
-        printf "DEBUG_MODE=false\n" >> backend/.env
-        printf "TELEGRAM_BOT_TOKEN=%s\n" "${{ secrets.TELEGRAM_BOT_TOKEN }}" >> backend/.env
-        
-        echo "✅ .env gerado com sucesso"
-        head -n 1 backend/.env | sed 's/=.*/=***/'
+        # Usando env vars do step (valores literais, sem interpretação de $)
+        # O heredoc SEM aspas expande variáveis de ambiente — seguro pois $4 em $_DB_PASS
+        # NÃO é reinterpretado, o shell expande apenas ${_DB_PASS}
+        cat > backend/.env << ENVEOF
+DB_HOST=${_DB_HOST}
+DB_PORT=${_DB_PORT}
+DB_NAME=${_DB_NAME}
+DB_USER=${_DB_USER}
+DB_PASS=${_DB_PASS}
+DB_CHARSET=utf8mb4
+API_VERSION=1.0.0
+DEBUG_MODE=false
+TELEGRAM_BOT_TOKEN=${_TELEGRAM_BOT_TOKEN}
+ENVEOF
+        echo "✅ .env gerado com $(wc -l < backend/.env) linhas"
+        # Loga apenas as chaves para verificação (nunca os valores)
+        cut -d= -f1 backend/.env
 
     - name: Preparar Pacotes de Deploy
       run: |
-        # Zipar Frontend
         cd dist && zip -r ../dist.zip * && cd ..
-        
-        # Zipar Backend
         cd backend && zip -r ../backend.zip api database migrate.php .env && cd ..
 
     - name: Testar Conexão SSH
       run: |
-        nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "⚠️ Servidor Hostinger não respondeu na porta ${{ secrets.SSH_PORT }}"
+        nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "⚠️ Sem resposta SSH"
 
     - name: Enviar Arquivos via SCP (Hostinger)
       uses: appleboy/scp-action@v0.1.7
@@ -84,7 +93,7 @@ jobs:
         source: "dist.zip,backend.zip"
         target: "domains/creativeprintjp.com/public_html/cpagendapro/"
 
-    - name: Executar Comandos SSH (Unzip, Migrations e Proteção do .env)
+    - name: Executar Comandos SSH (Unzip, Migrations)
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -94,21 +103,16 @@ jobs:
         script: |
           cd domains/creativeprintjp.com/public_html/cpagendapro/
 
-          # Backup rápido da versão anterior
           mkdir -p backup_viva
           cp -r api database index.html assets backup_viva/ 2>/dev/null || true
 
-          # Descompactar Backend
           unzip -o backend.zip
           rm backend.zip
 
-          # ✅ Proteger o .env
           chmod 644 .env
 
-          # Rodar Migrações de Banco de Dados
           php migrate.php
 
-          # Descompactar Frontend
           unzip -o dist.zip
           rm dist.zip
 
