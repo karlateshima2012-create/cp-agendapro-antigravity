@@ -84,7 +84,7 @@ export const ClientDashboard: React.FC<Props> = ({
         <aside className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-screen sticky top-0 z-10">
           <div className="p-6 border-b border-gray-100 hidden md:flex items-center gap-3">
             <CPLogo />
-            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">CP - Agenda Pro</h1>
+            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight uppercase">CP AGENDA PRO</h1>
           </div>
 
           <nav className="p-4 flex flex-col gap-2">

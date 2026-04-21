@@ -219,8 +219,8 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
               style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
             />
             <div>
-              <h1 className="text-xl font-black text-gray-900">Painel Master</h1>
-              <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">CP Gestão Admin</p>
+              <h1 className="text-xl font-black text-gray-900 uppercase">PAINEL MASTER</h1>
+              <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">CP AGENDA PRO ADMIN</p>
             </div>
           </div>
           <button onClick={onLogout} className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition-all">

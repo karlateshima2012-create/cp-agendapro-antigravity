@@ -150,11 +150,13 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
-          <div className="flex items-center gap-3 mb-4">
-            <CPLogo />
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">CP Agenda Pro</h1>
+          <div className="flex flex-col items-center mb-8">
+            <div className="mb-4">
+              <CPLogo />
+            </div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">CP AGENDA PRO</h1>
           </div>
-          <p className="text-gray-500 text-sm mb-10 font-medium">Faça login para gerenciar seu negócio</p>
+          <p className="text-gray-500 text-sm mb-10 font-medium text-center">Faça login para gerenciar seu negócio</p>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3">
