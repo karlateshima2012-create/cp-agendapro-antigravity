@@ -17,6 +17,7 @@ import { AvailabilityTab } from './AvailabilityTab';
 import { ServicesTab } from './ServicesTab';
 import { AccountTab } from './AccountTab';
 import { OnboardingModal } from './OnboardingModal';
+import { Logo } from './Logo';
 
 interface Props {
   account: AccountInfo;
@@ -34,13 +35,7 @@ interface Props {
   onUpdateAccount: (settings: Partial<AccountInfo>) => void;
 }
 
-const CPLogo = () => (
-  <img
-    src="/nova-logo-cp.png"
-    alt="CP Agenda Pro Logo"
-    style={{ height: '32px', width: 'auto' }}
-  />
-);
+
 
 export const ClientDashboard: React.FC<Props> = ({
   account,
@@ -82,11 +77,7 @@ export const ClientDashboard: React.FC<Props> = ({
         {/* SIDEBAR DESKTOP */}
         <aside className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-screen sticky top-0 z-10">
           <div className="p-6 border-b border-gray-100 hidden md:flex items-center gap-3">
-            <CPLogo />
-            <h1 className="text-base font-black tracking-tighter uppercase leading-tight">
-              <span className="text-gray-900">CP AGENDA</span><br />
-              <span className="text-[#E91E63]">PRO</span>
-            </h1>
+            <Logo size={32} />
           </div>
 
           <nav className="p-4 flex flex-col gap-2">

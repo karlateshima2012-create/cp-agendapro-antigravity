@@ -1,24 +1,13 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { api } from '../src/api';
+import { Logo } from './Logo';
 
 interface Props {
   onLogin: (email: string, pass: string) => void;
 }
 
-const CPLogo = () => (
-  <div className="flex flex-col items-center">
-    <img
-      src="/nova-logo-cp.png"
-      alt="CP Agenda Pro Logo"
-      style={{ height: '60px', width: 'auto', marginBottom: '24px' }}
-    />
-    <h1 className="text-4xl font-black tracking-tighter uppercase leading-[0.9] text-center">
-      <span className="text-gray-900 block">CP AGENDA</span>
-      <span className="text-[#E91E63] block">PRO</span>
-    </h1>
-  </div>
-);
+
 
 export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   const [view, setView] = useState<'login' | 'forgot'>('login');
@@ -156,7 +145,7 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
           <div className="mb-10">
-            <CPLogo />
+            <Logo variant="vertical" size={50} />
           </div>
           <p className="text-gray-500 text-sm mb-10 font-medium text-center">Faça login para gerenciar seu negócio</p>
 

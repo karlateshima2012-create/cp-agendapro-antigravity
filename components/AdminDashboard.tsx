@@ -4,6 +4,7 @@ import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
   X, RefreshCw, MessageSquare, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, Check, ExternalLink, Upload
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface Props {
   users: User[];
@@ -213,15 +214,7 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
       <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img
-              src="/nova-logo-cp.png"
-              alt="CP Agenda Pro Logo"
-              style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
-            />
-            <div>
-              <h1 className="text-xl font-black text-gray-900 uppercase">PAINEL MASTER</h1>
-              <p className="text-[#E91E63] text-[9px] font-black uppercase tracking-widest">CP AGENDA PRO ADMIN</p>
-            </div>
+             <Logo size={40} />
           </div>
           <button onClick={onLogout} className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition-all">
             <LogOut size={16} /> Sair
