@@ -145,7 +145,9 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
           <div className="mb-10">
-            <Logo variant="vertical" size={50} />
+            <div className="flex justify-center">
+              <Logo variant="dark" size="lg" />
+            </div>
           </div>
           <p className="text-gray-500 text-sm mb-10 font-medium text-center">Faça login para gerenciar seu negócio</p>
 
