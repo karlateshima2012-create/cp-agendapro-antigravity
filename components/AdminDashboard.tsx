@@ -213,7 +213,11 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
       <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black">CP</div>
+            <img
+              src="/nova-logo-cp.png"
+              alt="CP Agenda Pro Logo"
+              style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
+            />
             <div>
               <h1 className="text-xl font-black text-gray-900">Painel Master</h1>
               <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">CP Gestão Admin</p>

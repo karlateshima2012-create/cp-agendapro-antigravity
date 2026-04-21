@@ -7,14 +7,12 @@ interface Props {
 }
 
 const CPLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="10" height="10" rx="2" fill="#E91E63" />
-    <rect x="1" y="13" width="10" height="10" rx="2" fill="#0EA5E9" />
-    <rect x="13" y="13" width="10" height="10" rx="2" fill="#FACC15" />
-    <rect x="13" y="1" width="4.5" height="4.5" rx="1" fill="#FACC15" />
-    <rect x="13" y="6.5" width="4.5" height="4.5" rx="1" fill="#0EA5E9" />
-    <rect x="18.5" y="6.5" width="4.5" height="4.5" rx="1" fill="#E91E63" />
-  </svg>
+  <img
+    src="/nova-logo-cp.png"
+    alt="CP Agenda Pro Logo"
+    style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
+    className={className}
+  />
 );
 
 export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
@@ -153,7 +151,7 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
       <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
           <div className="flex items-center gap-3 mb-4">
-            <CPLogo className="w-10 h-10" />
+            <CPLogo />
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">CP Agenda Pro</h1>
           </div>
           <p className="text-gray-500 text-sm mb-10 font-medium">Faça login para gerenciar seu negócio</p>

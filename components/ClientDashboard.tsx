@@ -35,14 +35,12 @@ interface Props {
 }
 
 const CPLogo = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="10" height="10" rx="2" fill="#E91E63" />
-    <rect x="1" y="13" width="10" height="10" rx="2" fill="#0EA5E9" />
-    <rect x="13" y="13" width="10" height="10" rx="2" fill="#FACC15" />
-    <rect x="13" y="1" width="4.5" height="4.5" rx="1" fill="#FACC15" />
-    <rect x="13" y="6.5" width="4.5" height="4.5" rx="1" fill="#0EA5E9" />
-    <rect x="18.5" y="6.5" width="4.5" height="4.5" rx="1" fill="#E91E63" />
-  </svg>
+  <img
+    src="/nova-logo-cp.png"
+    alt="CP Agenda Pro Logo"
+    style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
+    className={className}
+  />
 );
 
 export const ClientDashboard: React.FC<Props> = ({
@@ -85,7 +83,7 @@ export const ClientDashboard: React.FC<Props> = ({
         {/* SIDEBAR DESKTOP */}
         <aside className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-screen sticky top-0 z-10">
           <div className="p-6 border-b border-gray-100 hidden md:flex items-center gap-3">
-            <CPLogo className="w-8 h-8 flex-shrink-0" />
+            <CPLogo />
             <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">CP - Agenda Pro</h1>
           </div>
 
