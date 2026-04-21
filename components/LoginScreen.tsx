@@ -6,13 +6,18 @@ interface Props {
   onLogin: (email: string, pass: string) => void;
 }
 
-const CPLogo = ({ className }: { className?: string }) => (
-  <img
-    src="/nova-logo-cp.png"
-    alt="CP Agenda Pro Logo"
-    style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
-    className={className}
-  />
+const CPLogo = () => (
+  <div className="flex flex-col items-center">
+    <img
+      src="/nova-logo-cp.png"
+      alt="CP Agenda Pro Logo"
+      style={{ height: '60px', width: 'auto', marginBottom: '24px' }}
+    />
+    <h1 className="text-4xl font-black tracking-tighter uppercase leading-[0.9] text-center">
+      <span className="text-gray-900 block">CP AGENDA</span>
+      <span className="text-[#E91E63] block">PRO</span>
+    </h1>
+  </div>
 );
 
 export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
@@ -150,11 +155,8 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
-          <div className="flex flex-col items-center mb-8">
-            <div className="mb-4">
-              <CPLogo />
-            </div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">CP AGENDA PRO</h1>
+          <div className="mb-10">
+            <CPLogo />
           </div>
           <p className="text-gray-500 text-sm mb-10 font-medium text-center">Faça login para gerenciar seu negócio</p>
 
