@@ -66,18 +66,19 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
   const clients = sortedClients || [];
 
+  const expire3d = clients.filter(c => {
+    if (!c.planExpiresAt) return false;
+    const exp = new Date(c.planExpiresAt);
+    const diff = exp.getTime() - now.getTime();
+    return diff > 0 && diff <= 3 * dayInMs;
+  }).length;
+
   const expire7d = clients.filter(c => {
     if (!c.planExpiresAt) return false;
     const exp = new Date(c.planExpiresAt);
     const diff = exp.getTime() - now.getTime();
-    return diff > 0 && diff <= 7 * dayInMs;
-  }).length;
-
-  const expire30d = clients.filter(c => {
-    if (!c.planExpiresAt) return false;
-    const exp = new Date(c.planExpiresAt);
-    const diff = exp.getTime() - now.getTime();
-    return diff > 7 * dayInMs && diff <= 30 * dayInMs;
+    // Excluímos os que já estão no filtro de 3 dias para não duplicar
+    return diff > 3 * dayInMs && diff <= 7 * dayInMs;
   }).length;
 
   const activeClients = clients.filter(c => c.accountStatus === 'active').length;
@@ -263,9 +264,9 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
             <p className="text-3xl font-black text-gray-900 mt-1">{expire7d}</p>
           </div>
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-            <AlertTriangle className="text-orange-500 mb-3" size={20} />
-            <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Vence em 30 dias</h3>
-            <p className="text-3xl font-black text-gray-900 mt-1">{expire30d}</p>
+            <AlertTriangle className="text-orange-600 animate-pulse mb-3" size={20} />
+            <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Vence em 3 dias</h3>
+            <p className="text-3xl font-black text-gray-900 mt-1">{expire3d}</p>
           </div>
           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
@@ -320,7 +321,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                     <tr key={client.id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex flex-col">
-                          <p className="font-black text-gray-900 uppercase text-xs">{client.companyName}</p>
+                          <p className="font-black text-gray-900 uppercase text-sm">{client.companyName}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <UserIcon size={10} className="text-primary" />
                             <p className="text-[10px] text-gray-500 font-bold">{client.ownerName || 'Não informado'}</p>
@@ -329,14 +330,43 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                          <div className="flex flex-col gap-1.5 mt-2">
-                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100 w-fit flex items-center gap-2">
-                              🚀 INÍCIO: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '---'}
-                            </span>
-                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border w-fit flex items-center gap-2 ${isExp ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
-                              📅 EXPIRA: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
-                            </span>
-                          </div>
+                        <div className="flex flex-col gap-1.5">
+                          {(() => {
+                            const exp = new Date(client.planExpiresAt || 0);
+                            const diff = exp.getTime() - now.getTime();
+                            const isExpired = exp.getTime() <= now.getTime();
+                            const isUrgent3d = diff > 0 && diff <= 3 * dayInMs;
+                            const isUrgent7d = diff > 3 * dayInMs && diff <= 7 * dayInMs;
+
+                            let bgColor = "bg-gray-50";
+                            let textColor = "text-gray-500";
+                            let borderColor = "border-gray-100";
+                            let label = "VENCIMENTO";
+
+                            if (isExpired) {
+                              bgColor = "bg-red-600";
+                              textColor = "text-white";
+                              borderColor = "border-red-700";
+                              label = "VENCIDO";
+                            } else if (isUrgent3d) {
+                              bgColor = "bg-orange-500";
+                              textColor = "text-white";
+                              borderColor = "border-orange-600";
+                              label = "URGENTE: 3 DIAS";
+                            } else if (isUrgent7d) {
+                              bgColor = "bg-yellow-400";
+                              textColor = "text-gray-900";
+                              borderColor = "border-yellow-500";
+                              label = "ATENÇÃO: 7 DIAS";
+                            }
+
+                            return (
+                              <span className={`${bgColor} ${textColor} px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest border ${borderColor} w-fit flex items-center gap-2 shadow-sm`}>
+                                📅 {label}: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="px-8 py-6 text-center">
                         <div className="inline-flex flex-col items-center p-3 bg-gray-50 rounded-2xl border border-gray-100 min-w-[140px]">
