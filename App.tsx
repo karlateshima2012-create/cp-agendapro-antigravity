@@ -483,7 +483,6 @@ const App: React.FC = () => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm("⚠️ Excluir permanentemente este profissional?")) return;
     try {
       const resp: any = await api.adminDeleteUser(id);
       if (!resp.ok) throw new Error(resp.error);
