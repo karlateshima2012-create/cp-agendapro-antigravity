@@ -27,7 +27,9 @@ if ($envPath) {
         $name = trim($name);
         $value = trim($value);
         
-        putenv("{$name}={$value}");
+        if (function_exists('putenv')) {
+            putenv("{$name}={$value}");
+        }
         $_ENV[$name] = $value;
         $_SERVER[$name] = $value;
     }
