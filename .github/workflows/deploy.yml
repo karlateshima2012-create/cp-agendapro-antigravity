@@ -3,7 +3,7 @@ name: CP Agenda Pro - Deploy Automático
 on:
   push:
     branches:
-      - main  # Ou sua branch principal
+      - main
 
 jobs:
   build-and-deploy:
@@ -22,6 +22,7 @@ jobs:
       run: |
         npm install
         npm run build
+
     - name: Configurar PHP (Para o Firewall)
       uses: shivammathur/setup-php@v2
       with:
@@ -41,20 +42,38 @@ jobs:
     - name: Limpar pastas de Dev antes do deploy
       working-directory: ./backend
       run: |
-        # Se passar, removemos o dev pesado para economizar armazenamento
         composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-interaction
+
+    - name: Gerar arquivo .env de produção
+      run: |
+        # ✅ Cria o .env com os valores dos GitHub Secrets (seguro, nunca fica no código)
+        cat > backend/.env << 'ENVEOF'
+        DB_HOST=${{ secrets.DB_HOST }}
+        DB_PORT=${{ secrets.DB_PORT }}
+        DB_NAME=${{ secrets.DB_NAME }}
+        DB_USER=${{ secrets.DB_USER }}
+        DB_PASS=${{ secrets.DB_PASS }}
+        DB_CHARSET=utf8mb4
+        API_VERSION=1.0.0
+        DEBUG_MODE=false
+        TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+        ENVEOF
+        # Remover espaços em branco no início de cada linha (heredoc indentation)
+        sed -i 's/^[[:space:]]*//' backend/.env
+        echo "✅ .env gerado com sucesso"
+        cat backend/.env | sed 's/=.*/=***/' # Log das chaves (sem os valores)
 
     - name: Preparar Pacotes de Deploy
       run: |
-        # Zipar Frontend (dist agora é a raiz pública)
+        # Zipar Frontend
         cd dist && zip -r ../dist.zip * && cd ..
         
-        # Zipar Backend (somente arquivos necessários)
-        cd backend && zip -r ../backend.zip api database migrate.php .env.example && cd ..
+        # Zipar Backend (inclui o .env gerado e todos os arquivos necessários)
+        cd backend && zip -r ../backend.zip api database migrate.php .env && cd ..
 
     - name: Testar Conexão SSH
       run: |
-        nc -zv -w 5 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "⚠️ Servidor Hostinger não respondeu na porta ${{ secrets.SSH_PORT }}"
+        nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "⚠️ Servidor Hostinger não respondeu na porta ${{ secrets.SSH_PORT }}"
 
     - name: Enviar Arquivos via SCP (Hostinger)
       uses: appleboy/scp-action@v0.1.7
@@ -63,12 +82,12 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
-        timeout: 60s
+        timeout: 120s
         command_timeout: 10m
         source: "dist.zip,backend.zip"
         target: "domains/creativeprintjp.com/public_html/cpagendapro/"
 
-    - name: Executar Comandos SSH (Unzip e Migrations)
+    - name: Executar Comandos SSH (Unzip, Migrations e Proteção do .env)
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -77,21 +96,25 @@ jobs:
         port: ${{ secrets.SSH_PORT }}
         script: |
           cd domains/creativeprintjp.com/public_html/cpagendapro/
-          
-          # Backup rápido da versão anterior (opcional)
+
+          # Backup rápido da versão anterior
           mkdir -p backup_viva
           cp -r api database index.html assets backup_viva/ 2>/dev/null || true
-          
-          # Descompactar Backend
+
+          # Descompactar Backend (inclui o .env gerado)
           unzip -o backend.zip
           rm backend.zip
-          
+
+          # ✅ Proteger o .env: apenas o dono pode ler (segurança no servidor)
+          chmod 600 .env
+
           # Rodar Migrações de Banco de Dados
           php migrate.php
-          
-          # Descompactar Frontend (dist)
-          # Atenção: isso sobrescreve index.html e a pasta assets
+
+          # Descompactar Frontend
           unzip -o dist.zip
           rm dist.zip
-          
+
           echo "✅ Deploy Finalizado com Sucesso!"
+          echo "📋 Verificando .env (apenas chaves, sem valores):"
+          cat .env | sed 's/=.*/=***/'
