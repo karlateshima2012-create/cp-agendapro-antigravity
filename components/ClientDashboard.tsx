@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import {
   CalendarDays,
   Clock,
-  User as UserIcon,
-  Briefcase,
-  MessageCircle
+  MessageCircle,
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { AccountInfo, Appointment, AvailabilityConfig, Service, AppointmentStatus } from '../types';
 import { DashboardHeader } from './DashboardHeader';
@@ -88,21 +88,16 @@ export const ClientDashboard: React.FC<Props> = ({
             <NavItem id="appointments" label="Agenda" icon={CalendarDays} />
             <NavItem id="availability" label="Disponibilidade" icon={Clock} />
             <NavItem id="services" label="Serviços" icon={Briefcase} />
-            <NavItem id="account" label="Minha Conta" icon={UserIcon} />
+            <NavItem id="account" label="Configurações" icon={Settings} />
           </nav>
 
-          <div className="mt-auto p-6 hidden md:block space-y-4">
-            <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-2xl border border-primary/10 text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Suporte ao Sistema</p>
-              <a
-                href="https://wa.me/819011886491"
-                target="_blank"
-                rel="noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-white text-green-600 border border-green-200 hover:bg-green-50 px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
-              >
-                <MessageCircle size={14} /> Creative Print
-              </a>
-            </div>
+          <div className="mt-auto p-4 hidden md:block">
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-3 rounded-xl text-sm font-bold transition-all border border-red-100 shadow-sm"
+            >
+              <LogOut size={18} /> SAIR
+            </button>
           </div>
         </aside>
 
@@ -152,17 +147,12 @@ export const ClientDashboard: React.FC<Props> = ({
             <div className="mt-8 space-y-6 md:hidden">
               <div className="space-y-4">
 
-                <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-2xl border border-primary/10 text-center">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Suporte ao Sistema</p>
-                  <a
-                    href="https://wa.me/819011886491"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-2 bg-white text-green-600 border border-green-200 hover:bg-green-50 px-3 py-3 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                  >
-                    <MessageCircle size={14} /> Falar com Suporte
-                  </a>
-                </div>
+                <button
+                  onClick={onLogout}
+                  className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-4 rounded-xl text-sm font-bold transition-all border border-red-100 shadow-sm"
+                >
+                  <LogOut size={18} /> SAIR DA CONTA
+                </button>
               </div>
             </div>
 
