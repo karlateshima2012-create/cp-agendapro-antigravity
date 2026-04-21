@@ -22,13 +22,11 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdUser, setCreatedUser] = useState<any | null>(null);
   const [detailsUser, setDetailsUser] = useState<User | null>(null);
-  // IMPORTANTE: por padrão NÃO aplica renovação.
-  // A renovação deve ser uma ação explícita (6 ou 12 meses).
   const [renewalPeriod, setRenewalPeriod] = useState<number>(0);
   const [isRenewingInModal, setIsRenewingInModal] = useState(false);
-
   const [editData, setEditData] = useState<Partial<User>>({});
-  const [manualExpiryDate, setManualExpiryDate] = useState<string>(''); // NOVO: para editar data manualmente
+  const [manualExpiryDate, setManualExpiryDate] = useState<string>(''); 
+  const [userToDelete, setUserToDelete] = useState<User | null>(null); 
 
   const [newUser, setNewUser] = useState({
     email: '',
@@ -42,23 +40,17 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const now = new Date();
   const dayInMs = 24 * 60 * 60 * 1000;
 
-  // Lógica de Hierarquia e Ordenação: 
-  // 1. Peso de Status (Ativos = 0, Expirados = 1, Bloqueados = 2)
-  // 2. Ordem Alfabética da Empresa
   const sortedClients = [...(users || []).filter(u => u && u.email !== 'suporte@creativeprintjp.com')].sort((a, b) => {
     const getStatusWeight = (u: User) => {
       const isExp = u.planExpiresAt && new Date(u.planExpiresAt).getTime() < now.getTime();
       if (u.accountStatus === 'blocked') return 2;
       if (isExp) return 1;
-      return 0; // Ativos no topo
+      return 0;
     };
 
     const weightA = getStatusWeight(a);
     const weightB = getStatusWeight(b);
-
     if (weightA !== weightB) return weightA - weightB;
-
-    // Sort by creation date DESC (Newest first)
     const dateA = new Date(a.createdAt || 0).getTime();
     const dateB = new Date(b.createdAt || 0).getTime();
     return dateB - dateA;
@@ -77,12 +69,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     if (!c.planExpiresAt) return false;
     const exp = new Date(c.planExpiresAt);
     const diff = exp.getTime() - now.getTime();
-    // Excluímos os que já estão no filtro de 3 dias para não duplicar
     return diff > 3 * dayInMs && diff <= 7 * dayInMs;
   }).length;
 
   const activeClients = clients.filter(c => c.accountStatus === 'active').length;
-  // Metric: Plano Vencido (Expired Plans)
   const expiredPlans = clients.filter(c => {
     if (!c.planExpiresAt) return false;
     const exp = new Date(c.planExpiresAt);
@@ -93,12 +83,9 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   }).length;
   const blockedClients = clients.filter(c => c.accountStatus === 'blocked').length;
 
-  // NOVO: Função para calcular a prévia da nova data de vencimento
   const getPreviewExpiryDate = () => {
-    // Usa a data manual se estiver definida, senão usa a data atual do usuário
     const baseDateStr = manualExpiryDate || detailsUser?.planExpiresAt;
     if (!baseDateStr) return '---';
-
     const baseDate = new Date(baseDateStr);
     const dateToRenewFrom = baseDate < now ? now : baseDate;
     const newDate = new Date(dateToRenewFrom);
@@ -115,7 +102,6 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
   const handleOpenDetails = (user: User) => {
     setDetailsUser(user);
-    // Não renova automaticamente ao abrir o modal.
     setRenewalPeriod(0);
     setEditData({
       companyName: user.companyName,
@@ -124,7 +110,6 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       email: user.email,
       planType: user.planType
     });
-    // NOVO: Inicializa a data manual com a data atual do usuário formatada para input date
     if (user.planExpiresAt) {
       const date = new Date(user.planExpiresAt);
       const year = date.getFullYear();
@@ -168,14 +153,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
   const openWhatsAppMessage = () => {
     if (!createdUser) return;
-
     const baseUrl = window.location.origin;
-
     let phone = createdUser.contactPhone.replace(/\D/g, '');
     if (phone.startsWith('0')) phone = phone.substring(1);
-
     const cleanPhone = phone.startsWith('81') ? phone : '81' + phone;
-
     const message =
       `*Sua agenda profissional está pronta*
 
@@ -196,19 +177,12 @@ ${createdUser.password}
 
 No primeiro acesso, o sistema irá redirecionar automaticamente para a alteração de senha, que é obrigatória para sua segurança.`;
 
-    window.open(
-      `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`,
-      '_blank'
-    );
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-
-  // NOVO: Função atualizada para salvar
   const handleSaveModalUpdates = async () => {
     if (!detailsUser) return;
     setIsRenewingInModal(true);
-
-    // Prepara os dados para atualização
     const updateData: Partial<User> = {
       companyName: editData.companyName,
       ownerName: editData.ownerName,
@@ -216,26 +190,17 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
       email: editData.email,
       planType: editData.planType,
     };
-
-    // Se houver data manual, inclui no update
     if (manualExpiryDate) {
       const manualDate = new Date(manualExpiryDate);
-      // Garante que a data seja no final do dia (23:59:59)
       manualDate.setHours(23, 59, 59, 999);
       updateData.planExpiresAt = manualDate.toISOString();
     }
-
-    // Primeiro atualiza os dados do usuário
     const updateSuccess = await onUpdateAdminUser(detailsUser.id, updateData);
-
-    // Se renovação foi selecionada, aplica a renovação
     let renewalSuccess = true;
     if (renewalPeriod > 0) {
-      // Usa a data manual como base se existir, senão usa a data do usuário
       const baseDate = manualExpiryDate ? manualExpiryDate : detailsUser.planExpiresAt;
       renewalSuccess = await onRenewPlan(detailsUser.id, baseDate, renewalPeriod);
     }
-
     setIsRenewingInModal(false);
     if (updateSuccess && renewalSuccess) {
       if (showToast) showToast("Dados atualizados com sucesso!");
@@ -311,15 +276,7 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {(clients || []).map(client => {
-                  const isExp = client.planExpiresAt && (() => {
-                    const exp = new Date(client.planExpiresAt);
-                    const today = new Date();
-                    // Reset time to compare only dates
-                    exp.setHours(0, 0, 0, 0);
-                    today.setHours(0, 0, 0, 0);
-                    return exp.getTime() <= today.getTime();
-                  })();
+                {clients.map(client => {
                   const isActive = client.accountStatus === 'active';
                   return (
                     <tr key={client.id} className="hover:bg-gray-50/50 transition-colors group">
@@ -341,29 +298,10 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                             const isExpired = exp.getTime() <= now.getTime();
                             const isUrgent3d = diff > 0 && diff <= 3 * dayInMs;
                             const isUrgent7d = diff > 3 * dayInMs && diff <= 7 * dayInMs;
-
-                            let bgColor = "bg-gray-50";
-                            let textColor = "text-gray-500";
-                            let borderColor = "border-gray-100";
-                            let label = "VENCIMENTO";
-
-                            if (isExpired) {
-                              bgColor = "bg-red-600";
-                              textColor = "text-white";
-                              borderColor = "border-red-700";
-                              label = "VENCIDO";
-                            } else if (isUrgent3d) {
-                              bgColor = "bg-orange-500";
-                              textColor = "text-white";
-                              borderColor = "border-orange-600";
-                              label = "URGENTE: 3 DIAS";
-                            } else if (isUrgent7d) {
-                              bgColor = "bg-yellow-400";
-                              textColor = "text-gray-900";
-                              borderColor = "border-yellow-500";
-                              label = "ATENÇÃO: 7 DIAS";
-                            }
-
+                            let bgColor = "bg-gray-50", textColor = "text-gray-500", borderColor = "border-gray-100", label = "VENCIMENTO";
+                            if (isExpired) { bgColor = "bg-red-600"; textColor = "text-white"; borderColor = "border-red-700"; label = "VENCIDO"; }
+                            else if (isUrgent3d) { bgColor = "bg-orange-500"; textColor = "text-white"; borderColor = "border-orange-600"; label = "URGENTE: 3 DIAS"; }
+                            else if (isUrgent7d) { bgColor = "bg-yellow-400"; textColor = "text-gray-900"; borderColor = "border-yellow-500"; label = "ATENÇÃO: 7 DIAS"; }
                             return (
                               <span className={`${bgColor} ${textColor} px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest border ${borderColor} w-fit flex items-center gap-2 shadow-sm`}>
                                 📅 {label}: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
@@ -395,7 +333,14 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                           >
                             {isActive ? <Unlock size={16} /> : <Lock size={16} />}
                           </button>
-                          <button onClick={() => onDeleteUser(client.id)} className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUserToDelete(client);
+                            }} 
+                            className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm"
+                            title="Excluir Profissional"
+                          >
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -414,7 +359,6 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[999] backdrop-blur-sm animate-fade-in overflow-hidden">
           <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 shadow-2xl border-t-8 border-primary relative flex flex-col max-h-[95vh] no-scrollbar overflow-y-auto">
             <button onClick={() => setDetailsUser(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors p-2"><X size={28} /></button>
-
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Briefcase size={32} />
@@ -422,7 +366,6 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
               <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Ficha e Edição</h3>
               <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">Status: {detailsUser.accountStatus}</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div className="space-y-4">
                 <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Admin - Cadastro</h4>
@@ -445,11 +388,9 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                   </div>
                 </div>
               </div>
-
               <div className="space-y-4">
                 <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Assinatura</h4>
                 <div className="space-y-3">
-                  {/* NOVO: Campo para editar data de vencimento manualmente */}
                   <div>
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block flex items-center gap-2">
                       <Calendar size={14} className="text-primary" /> Dados da Assinatura
@@ -457,26 +398,16 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                     <div className="grid grid-cols-1 gap-3 mb-4">
                       <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100/50">
                         <label className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1 block">Início do Plano</label>
-                        <p className="text-base font-black text-blue-700">
-                          {detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString('pt-BR') : '---'}
-                        </p>
+                        <p className="text-base font-black text-blue-700">{detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString('pt-BR') : '---'}</p>
                       </div>
                       <div className="bg-red-50 p-4 rounded-2xl border border-red-100/50">
                         <label className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-1 block">PRÓXIMO VENCIMENTO</label>
-                        <p className="text-base font-black text-red-700">
-                          {detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
-                        </p>
+                        <p className="text-base font-black text-red-700">{detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}</p>
                       </div>
                     </div>
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Alterar Data Manualmente</label>
-                    <input
-                      type="date"
-                      value={manualExpiryDate}
-                      onChange={(e) => setManualExpiryDate(e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white transition-all shadow-sm"
-                    />
+                    <input type="date" value={manualExpiryDate} onChange={(e) => setManualExpiryDate(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white transition-all shadow-sm" />
                   </div>
-
                 </div>
               </div>
             </div>
@@ -490,128 +421,66 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-                <button
-                  type="button"
-                  onClick={() => setRenewalPeriod(0)}
-                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
-                >
+                <button type="button" onClick={() => setRenewalPeriod(0)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
                   <span className="text-[8px] font-black uppercase mb-1">Pausa</span>
                   <span className="text-[10px] font-black">0 meses</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRenewalPeriod(1)}
-                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 1 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
-                >
+                <button type="button" onClick={() => setRenewalPeriod(1)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 1 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
                   <span className="text-[8px] font-black uppercase mb-1">Mensal</span>
                   <span className="text-[10px] font-black">+1 Mês</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRenewalPeriod(3)}
-                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 3 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
-                >
+                <button type="button" onClick={() => setRenewalPeriod(3)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 3 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
                   <span className="text-[8px] font-black uppercase mb-1">Trimestral</span>
                   <span className="text-[10px] font-black">+3 Meses</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRenewalPeriod(6)}
-                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 6 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
-                >
+                <button type="button" onClick={() => setRenewalPeriod(6)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 6 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
                   <span className="text-[8px] font-black uppercase mb-1">Semestral</span>
                   <span className="text-[10px] font-black">+6 Meses</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setRenewalPeriod(12)}
-                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 12 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
-                >
+                <button type="button" onClick={() => setRenewalPeriod(12)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 12 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
                   <span className="text-[8px] font-black uppercase mb-1">Anual</span>
                   <span className="text-[10px] font-black">+12 Meses</span>
                 </button>
               </div>
-
               {renewalPeriod > 0 && (
                 <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
-                      <RefreshCw size={18} />
-                    </div>
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"><RefreshCw size={18} /></div>
                     <div>
                       <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nova data prevista</p>
                       <p className="text-base font-black text-primary">{getPreviewExpiryDate()}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold text-gray-500">+{renewalPeriod} meses</p>
-                  </div>
+                  <div className="text-right"><p className="text-[9px] font-bold text-gray-500">+{renewalPeriod} meses</p></div>
                 </div>
               )}
             </div>
 
-            {/* NOVO: QR CODE SECTION */}
             <div className="bg-gray-50 rounded-[2.5rem] p-8 border border-gray-100 mt-6 mb-2">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary">
-                  <ExternalLink size={20} />
-                </div>
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary"><ExternalLink size={20} /></div>
                 <div>
                   <h4 className="text-lg font-black text-gray-900 tracking-tight">Link de Agendamento (QR Code)</h4>
                   <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Acesso rápido para agendamentos</p>
                 </div>
               </div>
-
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 shrink-0">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`}
-                    alt="QR Code Agendamento"
-                    className="w-32 h-32 md:w-40 md:h-40"
-                  />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`} alt="QR Code Agendamento" className="w-32 h-32 md:w-40 md:h-40" />
                 </div>
-                
                 <div className="flex-1 space-y-4 w-full">
-                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-200 text-xs font-mono text-gray-400 truncate shadow-inner">
-                    {window.location.origin}/?p={detailsUser.id}
-                  </div>
-                  
+                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-200 text-xs font-mono text-gray-400 truncate shadow-inner">{window.location.origin}/?p={detailsUser.id}</div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => {
-                        const link = `${window.location.origin}/?p=${detailsUser.id}`;
-                        navigator.clipboard.writeText(link);
-                        if (showToast) showToast("Link copiado!");
-                      }}
-                      className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
-                    >
-                      <Copy size={16} /> Copiar Link
-                    </button>
-                    <button
-                      onClick={() => {
-                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`;
-                        window.open(qrUrl, '_blank');
-                      }}
-                      className="flex items-center justify-center gap-2 bg-white text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95"
-                    >
-                      <Upload size={16} className="rotate-180" /> Baixar QR
-                    </button>
+                    <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?p=${detailsUser.id}`); if (showToast) showToast("Link copiado!"); }} className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"><Copy size={16} /> Copiar Link</button>
+                    <button onClick={() => { window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`, '_blank'); }} className="flex items-center justify-center gap-2 bg-white text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95"><Upload size={16} className="rotate-180" /> Baixar QR</button>
                   </div>
-                  
-                  <p className="text-[10px] text-gray-500 font-bold leading-relaxed px-1">
-                    Este QR Code leva diretamente para a página de reservas do profissional. Útil para materiais impressos ou cartões de visita.
-                  </p>
+                  <p className="text-[10px] text-gray-500 font-bold leading-relaxed px-1">Este QR Code leva diretamente para a página de reservas do profissional.</p>
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={handleSaveModalUpdates}
-              disabled={isRenewingInModal}
-              className="w-full bg-[#0EA5E9] hover:bg-[#0284c7] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-8 mb-4 border-b-4 border-black/10"
-            >
-              {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-              SALVAR ALTERAÇÕES
+            <button onClick={handleSaveModalUpdates} disabled={isRenewingInModal} className="w-full bg-[#0EA5E9] hover:bg-[#0284c7] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-8 mb-4 border-b-4 border-black/10">
+              {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />} SALVAR ALTERAÇÕES
             </button>
             <button onClick={() => setDetailsUser(null)} className="w-full text-gray-400 font-bold uppercase text-[9px] hover:underline mb-4">Descartar e Fechar</button>
           </div>
@@ -651,100 +520,53 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex justify-between">Senha Temporária <button type="button" onClick={generateRandomPassword} className="text-primary hover:underline lowercase font-bold">gerar nova</button></label>
                 <input required className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-mono font-bold transition-all" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
               </div>
-
               <div className="space-y-3 pt-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Período da Assinatura</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setNewUser({ ...newUser, planType: '1m' })}
-                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '1m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
-                  >
-                    Mensal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewUser({ ...newUser, planType: '3m' })}
-                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '3m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
-                  >
-                    3 Meses
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewUser({ ...newUser, planType: '6m' })}
-                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '6m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
-                  >
-                    6 Meses
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNewUser({ ...newUser, planType: '12m' })}
-                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '12m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
-                  >
-                    Anual
-                  </button>
+                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '1m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '1m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>Mensal</button>
+                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '3m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '3m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>3 Meses</button>
+                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '6m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '6m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>6 Meses</button>
+                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '12m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '12m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>Anual</button>
                 </div>
               </div>
-
-              <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4">
-                {isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : 'Finalizar e Ativar Conta'}
-              </button>
+              <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4">{isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : 'Finalizar e Ativar Conta'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL SUCESSO PÓS-CADASTRO (ESTILO CRM) */}
+      {/* MODAL SUCESSO PÓS-CADASTRO */}
       {createdUser && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9999] backdrop-blur-md animate-fade-in">
           <div className="bg-white rounded-[3rem] w-full max-w-md p-10 text-center shadow-2xl relative">
-            <button onClick={() => setCreatedUser(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors">
-              <X size={24} />
-            </button>
-
-            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle size={48} />
-            </div>
-
+            <button onClick={() => setCreatedUser(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors"><X size={24} /></button>
+            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle size={48} /></div>
             <h3 className="text-2xl font-black mb-1 text-gray-900">Configuração Concluída!</h3>
             <p className="text-gray-400 text-sm mb-8 font-medium">O acesso para {createdUser.companyName} foi gerado.</p>
-
             <div className="bg-gray-50/50 rounded-[2rem] p-6 text-left border border-gray-100 mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Mensagem de Boas-vindas</span>
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tight">Pronta para Envio</span>
-              </div>
-
+              <div className="flex justify-between items-center mb-4"><span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Mensagem de Boas-vindas</span><span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tight">Pronta para Envio</span></div>
               <div className="bg-white rounded-2xl p-6 border border-gray-100 text-xs text-gray-600 font-medium leading-relaxed shadow-sm whitespace-pre-wrap">
-                {`Olá *${createdUser.companyName}*! 👋
-
-Seu acesso ao sistema CP Agenda foi configurado com sucesso.
-
-📍 *Dados de Acesso:*
-📧 Login: ${createdUser.email}
-🔑 Senha: ${createdUser.password}
-
-🔗 *Painel de Gestão:*
-${window.location.origin}
-
-⚠️ *OBS:* Por segurança, sua senha deve ser redefinida no primeiro acesso.`}
+                {`Olá *${createdUser.companyName}*! 👋\n\nSeu acesso ao sistema CP Agenda foi configurado com sucesso.\n\n📍 *Dados de Acesso:*\n📧 Login: ${createdUser.email}\n🔑 Senha: ${createdUser.password}\n\n🔗 *Painel de Gestão:*\n${window.location.origin}\n\n⚠️ *OBS:* Por segurança, sua senha deve ser redefinida no primeiro acesso.`}
               </div>
             </div>
-
             <div className="space-y-3">
-              <button
-                onClick={openWhatsAppMessage}
-                className="w-full bg-primary text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg shadow-primary/20 text-sm transition-all active:scale-95"
-              >
-                <Copy size={18} /> Copiar para WhatsApp
-              </button>
+              <button onClick={openWhatsAppMessage} className="w-full bg-primary text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg shadow-primary/20 text-sm transition-all active:scale-95"><Copy size={18} /> Copiar para WhatsApp</button>
+              <button onClick={() => setCreatedUser(null)} className="w-full bg-gray-50 text-gray-400 py-4 rounded-2xl font-black text-sm transition-all hover:bg-gray-100">Fechar e Continuar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <button
-                onClick={() => setCreatedUser(null)}
-                className="w-full bg-gray-50 text-gray-400 py-4 rounded-2xl font-black text-sm transition-all hover:bg-gray-100"
-              >
-                Fechar e Continuar
-              </button>
+      {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1000] backdrop-blur-md animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border-t-8 border-red-500 text-center">
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><Trash2 size={40} /></div>
+            <h3 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Excluir Profissional?</h3>
+            <p className="text-gray-500 text-sm mb-8 leading-relaxed">Você está prestes a remover permanentemente a empresa <br/><strong className="text-gray-900 uppercase tracking-wide">{userToDelete.companyName}</strong>.<br/>Esta ação não pode ser desfeita.</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => { onDeleteUser(userToDelete.id); setUserToDelete(null); }} className="w-full bg-red-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-95">Sim, Excluir Agora</button>
+              <button onClick={() => setUserToDelete(null)} className="w-full bg-gray-100 text-gray-500 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-all">Cancelar</button>
             </div>
           </div>
         </div>

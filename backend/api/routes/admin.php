@@ -134,11 +134,26 @@ if ($path === 'admin/users' && $method === 'POST') {
 
 if (preg_match('/^admin\/users\/(\d+)$/', $path, $matches) && $method === 'DELETE') {
     $userId = $matches[1];
-    $usr = Db::fetch('SELECT account_id FROM cp_agenda_users WHERE id = ?', [$userId]);
-    if ($usr) {
-        Db::query('DELETE FROM cp_agenda_accounts WHERE id = ?', [$usr['account_id']]); // Cascades to user
+    try {
+        $pdo = Db::getInstance()->getPdo();
+        $pdo->beginTransaction();
+
+        $usr = Db::fetch('SELECT account_id FROM cp_agenda_users WHERE id = ?', [$userId]);
+        if (!$usr) {
+            $pdo->rollBack();
+            Response::fail('Profissional não encontrado.', 404);
+        }
+
+        // The schema uses ON DELETE CASCADE, but for extra safety (in case of manual changes or variations)
+        // we delete the account which triggers the cascade to users, services, appointments, etc.
+        Db::query('DELETE FROM cp_agenda_accounts WHERE id = ?', [$usr['account_id']]);
+        
+        $pdo->commit();
+        Response::ok(['msg' => 'Profissional excluído com sucesso.']);
+    } catch (Exception $e) {
+        if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
+        Response::fail('Erro técnico ao excluir profissional: ' . $e->getMessage(), 500);
     }
-    Response::ok(['msg' => 'Deleted']);
 }
 
 Response::fail("Not Found: '$path'", 404);
