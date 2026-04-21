@@ -1,7 +1,7 @@
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'canceled' | 'rejected';
 export type UserRole = 'admin' | 'client' | 'super_admin';
-export type PlanType = '6m' | '12m';
+export type PlanType = '1m' | '3m' | '6m' | '12m';
 export type AccountStatus = 'active' | 'expired' | 'blocked';
 
 export interface Service {

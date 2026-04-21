@@ -141,8 +141,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     setIsSubmitting(true);
 
     const expiresAt = new Date();
-    if (newUser.planType === '6m') expiresAt.setMonth(expiresAt.getMonth() + 6);
-    else expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    const months = newUser.planType === '12m' ? 12 : 
+                   newUser.planType === '6m' ? 6 : 
+                   newUser.planType === '3m' ? 3 : 1;
+    expiresAt.setMonth(expiresAt.getMonth() + months);
 
     const userData = {
       email: newUser.email.trim().toLowerCase(),
@@ -327,18 +329,14 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <div className="flex flex-col gap-1">
-                          <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest border w-fit ${isActive ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'
-                            }`}>
-                            {isActive ? 'Ativo' : 'Bloqueado'}
-                          </span>
-                          <span className="text-[10px] font-bold ml-1 text-gray-400">
-                            🚀 Início: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '---'}
-                          </span>
-                          <span className={`text-[10px] font-bold ml-1 ${isExp ? 'text-red-600' : 'text-gray-500'}`}>
-                            📅 Expira: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
-                          </span>
-                        </div>
+                          <div className="flex flex-col gap-1.5 mt-2">
+                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100 w-fit flex items-center gap-2">
+                              🚀 INÍCIO: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '---'}
+                            </span>
+                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border w-fit flex items-center gap-2 ${isExp ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-50 text-gray-500 border-gray-100'}`}>
+                              📅 EXPIRA: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
+                            </span>
+                          </div>
                       </td>
                       <td className="px-8 py-6 text-center">
                         <div className="inline-flex flex-col items-center p-3 bg-gray-50 rounded-2xl border border-gray-100 min-w-[140px]">
@@ -454,27 +452,46 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Estender plano do profissional</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
                 <button
+                  type="button"
                   onClick={() => setRenewalPeriod(0)}
-                  className={`flex flex-col items-center p-5 rounded-2xl border-2 transition-all ${renewalPeriod === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
                 >
-                  <span className="text-[10px] font-black uppercase mb-1">Sem renovar</span>
-                  <span className="text-xs font-black">0 meses</span>
+                  <span className="text-[8px] font-black uppercase mb-1">Pausa</span>
+                  <span className="text-[10px] font-black">0 meses</span>
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setRenewalPeriod(1)}
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 1 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
+                >
+                  <span className="text-[8px] font-black uppercase mb-1">Mensal</span>
+                  <span className="text-[10px] font-black">+1 Mês</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRenewalPeriod(3)}
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 3 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
+                >
+                  <span className="text-[8px] font-black uppercase mb-1">Trimestral</span>
+                  <span className="text-[10px] font-black">+3 Meses</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setRenewalPeriod(6)}
-                  className={`flex flex-col items-center p-5 rounded-2xl border-2 transition-all ${renewalPeriod === 6 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 6 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
                 >
-                  <span className="text-[10px] font-black uppercase mb-1">Semestral</span>
-                  <span className="text-xl font-black">+6 Meses</span>
+                  <span className="text-[8px] font-black uppercase mb-1">Semestral</span>
+                  <span className="text-[10px] font-black">+6 Meses</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setRenewalPeriod(12)}
-                  className={`flex flex-col items-center p-5 rounded-2xl border-2 transition-all ${renewalPeriod === 12 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
+                  className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 12 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}
                 >
-                  <span className="text-[10px] font-black uppercase mb-1">Anual</span>
-                  <span className="text-xl font-black">+12 Meses</span>
+                  <span className="text-[8px] font-black uppercase mb-1">Anual</span>
+                  <span className="text-[10px] font-black">+12 Meses</span>
                 </button>
               </div>
               <button
@@ -527,20 +544,34 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
               <div className="space-y-3 pt-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Período da Assinatura</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setNewUser({ ...newUser, planType: '1m' })}
+                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '1m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
+                  >
+                    Mensal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewUser({ ...newUser, planType: '3m' })}
+                    className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '3m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
+                  >
+                    3 Meses
+                  </button>
                   <button
                     type="button"
                     onClick={() => setNewUser({ ...newUser, planType: '6m' })}
                     className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '6m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
                   >
-                    6 Meses (Semestral)
+                    6 Meses
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewUser({ ...newUser, planType: '12m' })}
                     className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '12m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}
                   >
-                    12 Meses (Anual)
+                    Anual
                   </button>
                 </div>
               </div>

@@ -66,7 +66,13 @@ if ($path === 'admin/users' && $method === 'POST') {
         
         
         $planType = $data['planType'] ?? '6m';
-        $months = ($planType === '12m') ? 12 : 6;
+        $months = match($planType) {
+            '12m' => 12,
+            '6m' => 6,
+            '3m' => 3,
+            '1m' => 1,
+            default => 6
+        };
         $expiresAt = date('Y-m-d H:i:s', strtotime("+$months months"));
         
         Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at) VALUES (?, ?, ?, ?, ?, ?)', 
