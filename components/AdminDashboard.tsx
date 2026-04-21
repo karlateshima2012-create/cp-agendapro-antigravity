@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, PlanType, AccountStatus } from '../types';
 import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
-  X, RefreshCw, MessageSquare, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, Check
+  X, RefreshCw, MessageSquare, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, Check, ExternalLink, Upload
 } from 'lucide-react';
 
 interface Props {
