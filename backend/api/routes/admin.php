@@ -89,6 +89,42 @@ if ($path === 'admin/users' && $method === 'POST') {
         ]);
         
         $pdo->commit();
+
+        // ✅ AUTOMATION: Send Welcome Email
+        $userName = $data['ownerName'];
+        $userEmail = $data['email'];
+        $password = $data['password'];
+        $loginUrl = "https://" . $_SERVER['HTTP_HOST'];
+        $landingPage = "https://saibamaiscpagendapro.creativeprintjp.com/";
+
+        $subject = "Bem-vindo ao CP Agenda Pro!";
+        $body = "
+        <div style='font-family: sans-serif; color: #333; max-width: 600px;'>
+            <h2 style='color: #4F46E5;'>Sua agenda profissional está pronta!</h2>
+            <p>Olá, <strong>{$userName}</strong>,</p>
+            <p>É um prazer ter você conosco! Seu acesso ao <strong>CP Agenda Pro</strong> foi criado com sucesso.</p>
+            
+            <div style='background: #f3f4f6; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                <p style='margin: 0 0 10px 0;'><strong>Dados de Acesso:</strong></p>
+                <p style='margin: 5px 0;'>E-mail: <code>{$userEmail}</code></p>
+                <p style='margin: 5px 0;'>Senha Temporária: <code>{$password}</code></p>
+            </div>
+
+            <p>Você pode acessar seu painel de duas formas:</p>
+            <ol>
+                <li>Pelo nosso <strong>Site Oficial</strong>: <a href='{$landingPage}'>{$landingPage}</a> (clique em Login)</li>
+                <li>Pelo <strong>Link Direto</strong>: <a href='{$loginUrl}'>{$loginUrl}</a></li>
+            </ol>
+
+            <p style='color: #ef4444; font-size: 0.9em;'><em>* Por segurança, você deverá alterar sua senha logo no primeiro acesso.</em></p>
+
+            <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
+            <p style='font-size: 0.8em; color: #999;'>Este é um e-mail automático. Se precisar de suporte, responda a este e-mail ou entre em contato via WhatsApp.</p>
+        </div>
+        ";
+
+        Mail::send($userEmail, $subject, $body);
+
         Response::ok(['id' => $pdo->lastInsertId()]);
     } catch (Exception $e) {
         $pdo->rollBack();
