@@ -701,13 +701,10 @@ export const PublicBookingPage: React.FC<Props> = ({
         </main>
       </div>
 
-      <footer className="mt-12 mb-16 flex flex-col items-center opacity-30 group cursor-default">
-        <div className="flex items-center gap-3 grayscale group-hover:grayscale-0 transition-all duration-500">
-          <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white font-black text-[11px] shadow-xl">CP</div>
-          <div className="flex flex-col">
-            <span className="text-xs font-black text-gray-900 tracking-tighter leading-none">CP - Agenda Pro</span>
-          </div>
-        </div>
+      <footer className="mt-12 mb-16 flex flex-col items-center opacity-40">
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest text-center">
+          © {new Date().getFullYear()} Creative Print. Todos os direitos reservados.
+        </p>
       </footer>
     </div>
   );
