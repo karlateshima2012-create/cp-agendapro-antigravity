@@ -155,14 +155,26 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Empresa</label>
               <p className="text-lg font-bold text-gray-900 capitalize">{account.companyName}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-y-4 gap-x-4">
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</label>
-                <p className="text-gray-600 font-medium text-xs truncate">{account.contactEmail}</p>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">WhatsApp</label>
+                <p className="text-gray-900 font-bold text-xs">{account.contactPhone || 'Não informado'}</p>
               </div>
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Vencimento</label>
-                <p className="text-gray-600 font-medium text-xs">{new Date(account.planExpiresAt).toLocaleDateString('pt-BR')}</p>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</label>
+                <p className="text-gray-600 font-medium text-xs truncate" title={account.contactEmail}>{account.contactEmail}</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Início do Plano</label>
+                <p className="text-gray-600 font-medium text-xs">
+                  {account.createdAt ? new Date(account.createdAt).toLocaleDateString('pt-BR') : '---'}
+                </p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Próximo Vencimento</label>
+                <p className="text-red-600 font-bold text-xs">
+                  {new Date(account.planExpiresAt).toLocaleDateString('pt-BR')}
+                </p>
               </div>
             </div>
           </div>
@@ -410,10 +422,15 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
         >
           TERMOS DE USO E POLÍTICA DE PRIVACIDADE
         </button>
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">SISTEMA OPERACIONAL • V2.1.0</span>
-        </div>
+        <a 
+          href="https://wa.me/819011886491"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-6 px-6 py-2.5 bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2"
+        >
+          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+          FALAR COM SUPORTE
+        </a>
       </div>
 
       <TermsAndPoliciesModal 

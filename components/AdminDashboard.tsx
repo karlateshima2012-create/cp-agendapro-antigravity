@@ -332,6 +332,9 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                             }`}>
                             {isActive ? 'Ativo' : 'Bloqueado'}
                           </span>
+                          <span className="text-[10px] font-bold ml-1 text-gray-400">
+                            🚀 Início: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '---'}
+                          </span>
                           <span className={`text-[10px] font-bold ml-1 ${isExp ? 'text-red-600' : 'text-gray-500'}`}>
                             📅 Expira: {client.planExpiresAt ? new Date(client.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
                           </span>
@@ -410,17 +413,22 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   {/* NOVO: Campo para editar data de vencimento manualmente */}
                   <div>
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block flex items-center gap-2">
-                      <Calendar size={12} /> Vencimento Atual
+                      <Calendar size={12} /> Assinatura
                     </label>
+                    <div className="space-y-1 mb-2">
+                      <p className="text-[9px] text-gray-400 font-bold ml-1">
+                        Início: {detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString('pt-BR') : '---'}
+                      </p>
+                      <p className="text-[9px] text-gray-400 font-bold ml-1">
+                        Expira: {detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
+                      </p>
+                    </div>
                     <input
                       type="date"
                       value={manualExpiryDate}
                       onChange={(e) => setManualExpiryDate(e.target.value)}
                       className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white"
                     />
-                    <p className="text-[9px] text-gray-400 font-bold mt-1 ml-1">
-                      Atual: {detailsUser.planExpiresAt ? new Date(detailsUser.planExpiresAt).toLocaleDateString('pt-BR') : '---'}
-                    </p>
                   </div>
 
                   <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">

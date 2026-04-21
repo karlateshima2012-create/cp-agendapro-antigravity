@@ -95,5 +95,6 @@ export interface AccountInfo {
   telegramChatId?: string;
   lifetimeAppointments?: number;
   onboardingSeen?: boolean;
+  createdAt?: string;
 
 }
