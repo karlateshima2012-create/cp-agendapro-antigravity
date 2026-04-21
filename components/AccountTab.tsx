@@ -3,20 +3,22 @@ import { AccountInfo } from '../types';
 import {
   Shield, User, Bell, Save,
   Image as ImageIcon, Layout, Upload,
-  Info, Lock, HelpCircle
+  Info, Lock, HelpCircle, Copy, ExternalLink, Check
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
 interface Props {
   account: AccountInfo;
   onUpdateSettings?: (settings: Partial<AccountInfo>) => void;
+  onOpenPublic?: () => void;
 }
 
-export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
+export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenPublic }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [telegramToken, setTelegramToken] = useState(account.telegramBotToken || '');
   const [telegramChatId, setTelegramChatId] = useState(account.telegramChatId || '');
@@ -78,6 +80,27 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
 
 
   const OFFICIAL_BOT_TOKEN = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
+
+  const handleCopyLink = async () => {
+    const linkToCopy = account.publicLink || window.location.origin;
+
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(linkToCopy);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = linkToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+    }
+  };
 
   const handleSaveSettings = async () => {
     if (onUpdateSettings) {
@@ -145,17 +168,34 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings }) => {
           </div>
         </div>
 
-        {/* STATUS */}
+        {/* LINK PÚBLICO */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
           <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Shield size={20} className="text-green-600" /> Status da Conta
+            <ExternalLink size={20} style={{ color: primaryColor }} /> Link Público
           </h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="font-bold text-green-700 uppercase text-xs tracking-wider">Assinatura Ativa</span>
-            </div>
-            <p className="text-xs text-gray-500">Recursos liberados.</p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleCopyLink}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all border ${copied
+                ? 'bg-green-50 text-green-600 border-green-100'
+                : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
+                }`}
+            >
+              {copied ? <Check size={18} /> : <Copy size={18} />}
+              {copied ? 'Copiado!' : 'Copiar link'}
+            </button>
+
+            <button
+              onClick={onOpenPublic}
+              className="w-full flex items-center justify-center gap-2 text-white px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <ExternalLink size={18} /> Abrir Página
+            </button>
+
+            <p className="text-[10px] text-gray-400 font-medium text-center mt-1">
+              Envie este link para seus clientes agendarem.
+            </p>
           </div>
         </div>
 

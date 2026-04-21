@@ -4,10 +4,7 @@ import {
   Clock,
   User as UserIcon,
   Briefcase,
-  MessageCircle,
-  Copy,
-  ExternalLink,
-  Check
+  MessageCircle
 } from 'lucide-react';
 import { AccountInfo, Appointment, AvailabilityConfig, Service, AppointmentStatus } from '../types';
 import { DashboardHeader } from './DashboardHeader';
@@ -59,28 +56,6 @@ export const ClientDashboard: React.FC<Props> = ({
   onUpdateAccount
 }) => {
   const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'account'>('appointments');
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyLink = async () => {
-    const linkToCopy = account.publicLink || window.location.origin;
-
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(linkToCopy);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = linkToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Erro ao copiar:', err);
-    }
-  };
 
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
     <button
@@ -117,29 +92,6 @@ export const ClientDashboard: React.FC<Props> = ({
           </nav>
 
           <div className="mt-auto p-6 hidden md:block space-y-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <p className="text-sm font-bold text-gray-800 mb-3">Link Público</p>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={handleCopyLink}
-                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${copied
-                    ? 'bg-green-50 text-green-600 border-green-100'
-                    : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                    }`}
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  {copied ? 'Copiado!' : 'Copiar link'}
-                </button>
-
-                <button
-                  onClick={onOpenPublic}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                >
-                  <ExternalLink size={14} /> Abrir Página
-                </button>
-              </div>
-            </div>
-
             <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-2xl border border-primary/10 text-center">
               <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Suporte ao Sistema</p>
               <a
@@ -191,6 +143,7 @@ export const ClientDashboard: React.FC<Props> = ({
                   key={JSON.stringify(account)}
                   account={account}
                   onUpdateSettings={onUpdateAccount}
+                  onOpenPublic={onOpenPublic}
                 />
               </div>
             </div>
@@ -198,32 +151,6 @@ export const ClientDashboard: React.FC<Props> = ({
             {/* MOBILE ONLY: Cards Extras e Logout antes do Rodapé */}
             <div className="mt-8 space-y-6 md:hidden">
               <div className="space-y-4">
-                <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-                  <p className="text-sm font-bold text-gray-800 mb-3">Link Público</p>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={handleCopyLink}
-                      className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs font-bold transition-all border ${copied
-                        ? 'bg-green-50 text-green-600 border-green-100'
-                        : 'bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200'
-                        }`}
-                    >
-                      {copied ? <Check size={14} /> : <Copy size={14} />}
-                      {copied ? 'Copiado!' : 'Copiar link'}
-                    </button>
-
-                    <button
-                      onClick={onOpenPublic}
-                      className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-3 py-3 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                    >
-                      <ExternalLink size={14} /> Abrir Página
-                    </button>
-
-                    <p className="text-[10px] text-gray-400 font-medium text-center mt-1">
-                      Envie este link para seus clientes agendarem.
-                    </p>
-                  </div>
-                </div>
 
                 <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-2xl border border-primary/10 text-center">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Suporte ao Sistema</p>
