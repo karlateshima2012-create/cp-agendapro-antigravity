@@ -245,14 +245,24 @@ export const PublicBookingPage: React.FC<Props> = ({
 
       const isBlockedInSlot = (availability.blockedDates || []).some(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
-        const bStart = Date.UTC(
-          parseInt(bDate.split('-')[0]),
-          parseInt(bDate.split('-')[1]) - 1,
-          parseInt(bDate.split('-')[2]),
-          0, 0
-        );
-        const bEnd = bStart + (24 * 60 * 60000);
-        return (slotStartTimestamp < bEnd && slotEndTimestamp > bStart);
+        if (bDate !== date) return false;
+
+        // Se for um bloqueio de dia inteiro (sem startTime), bloqueia o slot
+        if (!b.startTime) return true;
+
+        const toMin = (t: string) => {
+          const [h, m] = t.split(':').map(Number);
+          return h * 60 + m;
+        };
+
+        const bStart = toMin(b.startTime);
+        const bEnd = b.endTime ? toMin(b.endTime) : bStart + (availability.intervalMinutes || 30);
+        
+        const slotStart = toMin(timeStr);
+        const slotEnd = slotStart + (selectedService.duration || 30);
+
+        // Verifica sobreposição entre [slotStart, slotEnd] e [bStart, bEnd]
+        return (slotStart < bEnd && slotEnd > bStart);
       });
 
       if (!isBusy && !isBlockedInSlot) times.push(timeStr);
@@ -284,9 +294,9 @@ export const PublicBookingPage: React.FC<Props> = ({
       const isSelected = selectedDate === dateStr;
       const scheduleForDay = normalizedHours.find(w => w.day === dayString);
       const isDayOff = !scheduleForDay || !scheduleForDay.enabled;
-      const isBlocked = (availability.blockedDates || []).some(b => b.date?.split('T')[0] === dateStr);
+      const isFullDayBlocked = (availability.blockedDates || []).some(b => (b.date?.split('T')[0] === dateStr) && !b.startTime);
       const isDayFull = selectedService ? getSlotsForDate(dateStr).length === 0 : false;
-      const isUnavailable = isPastOrToday || isDayOff || isBlocked || isDayFull;
+      const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull;
       days.push(
         <button
           key={d}

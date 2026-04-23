@@ -73,37 +73,47 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
     if (!newBlockDate) return;
 
     let newBlocks: BlockedDate[] = [];
+    const existingBlocks = localConfig.blockedDates || [];
 
     if (selectedSlots.length === 0) {
-      // Block full day
-      newBlocks.push({
-        id: Date.now(),
-        date: newBlockDate,
-        reason: newBlockReason,
-        startTime: null,
-        endTime: null
-      });
-    } else {
-      // Block specific slots
-      selectedSlots.forEach((slot, idx) => {
-        const [h, m] = slot.split(':').map(Number);
-        const endMin = (h * 60 + m) + (localConfig.intervalMinutes || 30);
-        const endTimeStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
-        
+      // Verifica se já existe um bloqueio de dia inteiro para esta data
+      const hasFullDay = existingBlocks.some(b => b.date === newBlockDate && !b.startTime);
+      if (!hasFullDay) {
         newBlocks.push({
-          id: Date.now() + idx,
+          id: Date.now(),
           date: newBlockDate,
           reason: newBlockReason,
-          startTime: slot,
-          endTime: endTimeStr
+          startTime: null,
+          endTime: null
         });
+      }
+    } else {
+      // Bloqueia slots específicos
+      selectedSlots.forEach((slot, idx) => {
+        // Verifica se este slot específico já está bloqueado
+        const isAlreadyBlocked = existingBlocks.some(b => b.date === newBlockDate && b.startTime === slot);
+        if (!isAlreadyBlocked) {
+          const [h, m] = slot.split(':').map(Number);
+          const endMin = (h * 60 + m) + (localConfig.intervalMinutes || 30);
+          const endTimeStr = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+          
+          newBlocks.push({
+            id: Date.now() + idx,
+            date: newBlockDate,
+            reason: newBlockReason,
+            startTime: slot,
+            endTime: endTimeStr
+          });
+        }
       });
     }
 
-    setLocalConfig({
-      ...localConfig,
-      blockedDates: [...localConfig.blockedDates, ...newBlocks]
-    });
+    if (newBlocks.length > 0) {
+      setLocalConfig({
+        ...localConfig,
+        blockedDates: [...existingBlocks, ...newBlocks]
+      });
+    }
 
     setNewBlockDate('');
     setSelectedSlots([]);
@@ -346,22 +356,40 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
             </div>
 
             <div className="p-10 bg-gray-50 flex flex-col gap-4">
-              <button
-                onClick={() => {
-                  setSelectedSlots([]);
-                  handleAddBlocks();
-                }}
-                className="w-full py-6 bg-gray-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-black transition-all shadow-xl shadow-black/10"
-              >
-                Bloquear Dia Inteiro
-              </button>
-              <button
-                disabled={selectedSlots.length === 0}
-                onClick={() => setShowSlotsModal(false)}
-                className="w-full py-6 bg-primary text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 disabled:opacity-50 disabled:grayscale"
-              >
-                Concluir Seleção ({selectedSlots.length})
-              </button>
+              {selectedSlots.length > 0 ? (
+                <>
+                  <button
+                    onClick={() => setShowSlotsModal(false)}
+                    className="w-full py-6 bg-primary text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+                  >
+                    Concluir Seleção ({selectedSlots.length})
+                  </button>
+                  <button
+                    onClick={() => setSelectedSlots([])}
+                    className="w-full py-4 text-gray-400 font-bold uppercase text-[9px] hover:text-red-500 transition-colors"
+                  >
+                    Limpar Seleção
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedSlots([]);
+                      handleAddBlocks();
+                    }}
+                    className="w-full py-6 bg-gray-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-black transition-all shadow-xl shadow-black/10"
+                  >
+                    Bloquear Dia Inteiro
+                  </button>
+                  <button
+                    onClick={() => setShowSlotsModal(false)}
+                    className="w-full py-4 text-gray-400 font-bold uppercase text-[9px] hover:underline"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
