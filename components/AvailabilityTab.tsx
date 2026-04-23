@@ -16,6 +16,8 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
   });
   const [newBlockDate, setNewBlockDate] = useState('');
   const [newBlockReason, setNewBlockReason] = useState('');
+  const [newBlockStartTime, setNewBlockStartTime] = useState('');
+  const [newBlockEndTime, setNewBlockEndTime] = useState('');
 
 
   const handleHourChange = (index: number, field: keyof WorkingHour, value: any) => {
@@ -36,11 +38,19 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
       ...localConfig,
       blockedDates: [
         ...localConfig.blockedDates,
-        { id: Date.now(), date: newBlockDate, reason: newBlockReason }
+        { 
+          id: Date.now(), 
+          date: newBlockDate, 
+          reason: newBlockReason,
+          startTime: newBlockStartTime || null,
+          endTime: newBlockEndTime || null
+        }
       ]
     });
     setNewBlockDate('');
     setNewBlockReason('');
+    setNewBlockStartTime('');
+    setNewBlockEndTime('');
   };
 
   const removeBlock = (id: number) => {
@@ -138,26 +148,46 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Bloqueio de Dias (Folgas/Feriados)</h3>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <input
-            type="date"
-            value={newBlockDate}
-            onChange={(e) => setNewBlockDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Motivo (ex: Feriado)"
-            value={newBlockReason}
-            onChange={(e) => setNewBlockReason(e.target.value)}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none capitalize"
-          />
-          <button
-            onClick={handleAddBlock}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-          >
-            <Plus size={18} /> Adicionar
-          </button>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="date"
+              value={newBlockDate}
+              onChange={(e) => setNewBlockDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Motivo (ex: Feriado)"
+              value={newBlockReason}
+              onChange={(e) => setNewBlockReason(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none capitalize"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs font-semibold text-gray-500 uppercase">Bloquear Horário (opcional):</span>
+              <input
+                type="time"
+                value={newBlockStartTime}
+                onChange={(e) => setNewBlockStartTime(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none text-sm"
+              />
+              <span className="text-gray-400 text-xs">até</span>
+              <input
+                type="time"
+                value={newBlockEndTime}
+                onChange={(e) => setNewBlockEndTime(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none text-sm"
+              />
+            </div>
+            <button
+              onClick={handleAddBlock}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors w-full sm:w-auto justify-center"
+            >
+              <Plus size={18} /> Adicionar Bloqueio
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -165,7 +195,9 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
           {(localConfig?.blockedDates || []).map(block => (
             <div key={block.id} className="flex justify-between items-center p-3 bg-red-50 text-red-700 rounded-lg border border-red-100">
               <span className="font-medium">
-                {new Date(block.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - <span className="font-normal capitalize">{block.reason}</span>
+                {new Date(block.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} 
+                {block.startTime && block.endTime && ` (${block.startTime} - ${block.endTime})`} - 
+                <span className="font-normal capitalize ml-1">{block.reason}</span>
               </span>
               <button onClick={() => removeBlock(block.id)} className="text-red-600 hover:text-red-800 p-1 hover:bg-red-100 rounded">
                 <Trash2 size={16} />

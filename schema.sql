@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_blocked_dates` (
     `account_id` INT NOT NULL,
     `user_id` INT DEFAULT NULL,
     `blocked_date` DATE NOT NULL,
+    `start_time` TIME DEFAULT NULL,
+    `end_time` TIME DEFAULT NULL,
     `reason` VARCHAR(255) DEFAULT '',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_blocked_account` FOREIGN KEY (`account_id`) REFERENCES `cp_agenda_accounts` (`id`) ON DELETE CASCADE
@@ -96,10 +98,24 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_appointments` (
     `duration` INT NOT NULL,
     `status` ENUM('pending', 'confirmed', 'done', 'canceled', 'rejected') DEFAULT 'pending',
     `notes` TEXT,
+    `deleted_at` TIMESTAMP NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_start_at` (`start_at`),
     CONSTRAINT `fk_appointment_account` FOREIGN KEY (`account_id`) REFERENCES `cp_agenda_accounts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Clients (CRM)
+CREATE TABLE IF NOT EXISTS `cp_agenda_clients` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `account_id` INT NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
+    `phone` VARCHAR(50) NOT NULL,
+    `email` VARCHAR(255) DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_account_phone` (`account_id`, `phone`),
+    CONSTRAINT `fk_client_account` FOREIGN KEY (`account_id`) REFERENCES `cp_agenda_accounts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

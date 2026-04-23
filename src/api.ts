@@ -47,7 +47,7 @@ export const api = {
         return apiClient.get('/blocked-dates');
     },
 
-    async addBlockedDate(data: { date: string, reason: string }): Promise<any> {
+    async addBlockedDate(data: { date: string, reason: string, startTime?: string | null, endTime?: string | null }): Promise<any> {
         return apiClient.post('/blocked-dates', data);
     },
 
@@ -56,7 +56,7 @@ export const api = {
     },
 
     // Appointments
-    async listAppointments(filters?: { from?: string, to?: string }): Promise<any> {
+    async listAppointments(filters?: { from?: string, to?: string, history?: boolean }): Promise<any> {
         return apiClient.get('/appointments', { params: filters });
     },
 
@@ -83,6 +83,15 @@ export const api = {
 
     async updateProfile(data: any): Promise<any> {
         return apiClient.patch('/me/profile', data);
+    },
+
+    // Clients (CRM)
+    async listClients(search?: string): Promise<any> {
+        return apiClient.get('/clients', { params: { search } });
+    },
+
+    async deleteClient(id: number): Promise<any> {
+        return apiClient.delete(`/clients/${id}`);
     },
 
     // Admin

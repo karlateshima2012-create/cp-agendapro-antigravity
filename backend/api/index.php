@@ -103,6 +103,9 @@ switch ($module) {
     case 'telegram-webhook':
         require_once __DIR__ . '/routes/telegram_webhook.php';
         break;
+    case 'clients':
+        require_once __DIR__ . '/routes/clients.php';
+        break;
     case 'telegram-register':
         // ✅ SECURITY FIX: Token loaded from environment variable — never hardcoded
         $token = get_env_var('TELEGRAM_BOT_TOKEN', '');

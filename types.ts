@@ -26,6 +26,7 @@ export interface Appointment {
   status: AppointmentStatus;
   createdAt: string;
   user_id?: string;
+  deleted_at?: string | null;
 }
 
 export interface WorkingHour {
@@ -40,6 +41,17 @@ export interface BlockedDate {
   id: number;
   date: string;
   reason: string;
+  startTime?: string | null;
+  endTime?: string | null;
+}
+
+export interface Client {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AvailabilityConfig {

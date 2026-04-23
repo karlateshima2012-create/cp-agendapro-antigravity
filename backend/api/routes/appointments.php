@@ -60,16 +60,20 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
         }
 
         // 2. VALIDATION: Check Blocked Dates (Intersection Check)
-        // Overlap if: appt_start < (block_date + 1 day) AND appt_end > block_date
+        // Overlap if: appt_start < block_end AND appt_end > block_start
+        // If start_time/end_time are NULL, it blocks the whole day.
         $blocked = Db::fetch(
             "SELECT count(*) as total FROM cp_agenda_blocked_dates 
              WHERE account_id = ? 
-             AND ? < DATE_ADD(blocked_date, INTERVAL 1 DAY)
-             AND ? > blocked_date", 
-            [$accId, $newStart, $newEnd]
+             AND blocked_date = DATE(?)
+             AND (
+                (start_time IS NULL AND end_time IS NULL) OR
+                (TIME(?) < end_time AND TIME(?) > start_time)
+             )", 
+            [$accId, $newStart, $newStart, $newEnd]
         );
         if ($blocked && $blocked['total'] > 0) {
-            throw new Exception('Esta reserva entra em conflito com uma data bloqueada manualmente.');
+            throw new Exception('Esta reserva entra em conflito com uma data ou horário bloqueado.');
         }
 
         // 3. VALIDATION: Operating Hours (Simplified check)
@@ -97,15 +101,29 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
             throw new Exception('Este horário acabou de ser reservado. Por favor, escolha outro.');
         }
 
-        // 5. INSERT
+        // 5. UPSERT CLIENT (CRM)
+        $clientName = $data['clientName'] ?? '';
+        $clientPhone = $data['clientPhone'] ?? '';
+        $clientEmail = $data['clientEmail'] ?? '';
+        
+        if (!empty($clientPhone)) {
+            Db::query(
+                'INSERT INTO cp_agenda_clients (account_id, name, phone, email) 
+                 VALUES (?, ?, ?, ?) 
+                 ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), updated_at = NOW()',
+                [$accId, $clientName, $clientPhone, $clientEmail]
+            );
+        }
+
+        // 6. INSERT APPOINTMENT
         Db::query(
             'INSERT INTO cp_agenda_appointments (account_id, user_id, client_name, client_email, client_phone, service_id, service_name, start_at, end_datetime, duration, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $accId,
                 $data['professional_id'] ?? null,
-                $data['clientName'] ?? '',
-                $data['clientEmail'] ?? '',
-                $data['clientPhone'] ?? '',
+                $clientName,
+                $clientEmail,
+                $clientPhone,
                 $data['serviceId'] ?? 0,
                 $data['serviceName'] ?? '',
                 $newStart,
@@ -167,6 +185,11 @@ if ($path === 'appointments' && $method === 'GET') {
     $sql = 'SELECT * FROM cp_agenda_appointments WHERE account_id = ?';
     $params = [$accountId];
     
+    $showDeleted = filter_var($_GET['history'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
+    if (!$showDeleted) {
+        $sql .= ' AND deleted_at IS NULL';
+    }
+    
     if ($from) {
         $sql .= ' AND start_at >= ?';
         $params[] = $from;
@@ -200,8 +223,8 @@ if (preg_match('/^appointments\/(\d+)\/status$/', $path, $matches) && $method ==
 
 if (preg_match('/^appointments\/(\d+)$/', $path, $matches) && $method === 'DELETE') {
     $id = $matches[1];
-    Db::query('DELETE FROM cp_agenda_appointments WHERE id = ? AND account_id = ?', [$id, $accountId]);
-    Response::ok(['msg' => 'Deleted']);
+    Db::query('UPDATE cp_agenda_appointments SET deleted_at = NOW() WHERE id = ? AND account_id = ?', [$id, $accountId]);
+    Response::ok(['msg' => 'Marked as deleted (Soft Delete)']);
 }
 
 if (preg_match('/^appointments\/bulk-delete$/', $path) && $method === 'POST') {
@@ -219,9 +242,9 @@ if (preg_match('/^appointments\/bulk-delete$/', $path) && $method === 'POST') {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         
         $params = array_merge([$accountId], $ids);
-        Db::query("DELETE FROM cp_agenda_appointments WHERE account_id = ? AND id IN ($placeholders)", $params);
+        Db::query("UPDATE cp_agenda_appointments SET deleted_at = NOW() WHERE account_id = ? AND id IN ($placeholders)", $params);
         
-        Response::ok(['msg' => count($ids) . ' agendamentos excluídos com sucesso.']);
+        Response::ok(['msg' => count($ids) . ' agendamentos marcados como excluídos.']);
     } catch (Exception $e) {
         Response::fail('Erro ao processar exclusão em massa: ' . $e->getMessage(), 500);
     }

@@ -13,12 +13,14 @@ if ($path === 'blocked-dates' && $method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     $date = $data['date'] ?? null;
     $reason = $data['reason'] ?? '';
+    $startTime = $data['startTime'] ?? null;
+    $endTime = $data['endTime'] ?? null;
 
     if (!$date) Response::fail('Date is required');
 
     Db::query(
-        'INSERT INTO cp_agenda_blocked_dates (account_id, blocked_date, reason) VALUES (?, ?, ?)',
-        [$accountId, $date, $reason]
+        'INSERT INTO cp_agenda_blocked_dates (account_id, blocked_date, start_time, end_time, reason) VALUES (?, ?, ?, ?, ?)',
+        [$accountId, $date, $startTime, $endTime, $reason]
     );
     Response::ok(['id' => Db::getInstance()->getPdo()->lastInsertId()]);
 }

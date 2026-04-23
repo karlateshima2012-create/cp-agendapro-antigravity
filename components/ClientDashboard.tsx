@@ -8,7 +8,10 @@ import {
   LayoutGrid,
   Activity,
   Star,
-  Users
+  Star,
+  Users,
+  History,
+  Contact2
 } from 'lucide-react';
 import { AccountInfo, Appointment, AvailabilityConfig, Service, AppointmentStatus } from '../types';
 import { DashboardHeader } from './DashboardHeader';
@@ -18,6 +21,8 @@ import { ServicesTab } from './ServicesTab';
 import { AccountTab } from './AccountTab';
 import { OnboardingModal } from './OnboardingModal';
 import { Logo } from './Logo';
+import { ClientsTab } from './ClientsTab';
+import { HistoryTab } from './HistoryTab';
 
 interface Props {
   account: AccountInfo;
@@ -51,7 +56,7 @@ export const ClientDashboard: React.FC<Props> = ({
   onUpdateAvailability,
   onUpdateAccount
 }) => {
-  const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'account'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'clients' | 'history' | 'account'>('appointments');
 
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
     <button
@@ -84,6 +89,8 @@ export const ClientDashboard: React.FC<Props> = ({
             <NavItem id="appointments" label="Agenda" icon={CalendarDays} />
             <NavItem id="availability" label="Disponibilidade" icon={Clock} />
             <NavItem id="services" label="Serviços" icon={Briefcase} />
+            <NavItem id="clients" label="Clientes" icon={Contact2} />
+            <NavItem id="history" label="Histórico" icon={History} />
             <NavItem id="account" label="Configurações" icon={Settings} />
           </nav>
 
@@ -127,6 +134,14 @@ export const ClientDashboard: React.FC<Props> = ({
                   services={services}
                   onUpdateServices={onUpdateServices}
                 />
+              </div>
+
+              <div className={activeTab === 'clients' ? 'block' : 'hidden'}>
+                <ClientsTab />
+              </div>
+
+              <div className={activeTab === 'history' ? 'block' : 'hidden'}>
+                <HistoryTab />
               </div>
 
               <div className={activeTab === 'account' ? 'block' : 'hidden'}>
