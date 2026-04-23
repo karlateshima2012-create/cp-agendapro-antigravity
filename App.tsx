@@ -123,7 +123,7 @@ const App: React.FC = () => {
         contactPhone: prof.contact_phone || '',
         status: prof.status || 'active',
         planType: prof.plan_type || '6m',
-        planExpiresAt: prof.plan_expires_at || new Date().toISOString(),
+        planExpiresAt: (prof.plan_expires_at || new Date().toISOString()).replace(' ', 'T'),
         publicLink: `${window.location.origin}/?p=${userId}`,
         primaryColor: prof.primary_color || '#25aae1',
         secondaryColor: prof.secondary_color || '#1f2937',
@@ -133,6 +133,7 @@ const App: React.FC = () => {
         coverImage: prof.cover_image || '',
         profileImage: prof.profile_image || '',
         lifetimeAppointments: prof.lifetime_appointments || 0,
+        createdAt: (prof.created_at || '').replace(' ', 'T'),
       };
 
       if (prof.status === 'deleted' || prof.status === 'blocked' || prof.status === 'expired') {
@@ -168,8 +169,13 @@ const App: React.FC = () => {
         const resp: any = await api.adminListProfiles();
         console.log('📦 [App] Admin profiles response:', resp);
         if (resp.ok) {
-          console.log('✅ [App] Setting allUsers with:', resp.data);
-          setAllUsers(resp.data);
+          console.log('✅ [App] Setting allUsers with mapped data');
+          const mappedUsers = (resp.data || []).map((u: any) => ({
+            ...u,
+            planExpiresAt: u.planExpiresAt ? u.planExpiresAt.replace(' ', 'T') : '',
+            createdAt: u.createdAt ? u.createdAt.replace(' ', 'T') : ''
+          }));
+          setAllUsers(mappedUsers);
         } else {
           console.error('❌ [App] Failed to fetch profiles:', resp);
         }
@@ -194,7 +200,7 @@ const App: React.FC = () => {
         contactPhone: account.contact_phone || '',
         status: account.status || 'active',
         planType: account.plan_type || '6m',
-        planExpiresAt: account.plan_expires_at || new Date().toISOString(),
+        planExpiresAt: (account.plan_expires_at || new Date().toISOString()).replace(' ', 'T'),
         publicLink: `${window.location.origin}/?p=${user.id}`,
         primaryColor: account.primary_color || '#25aae1',
         secondaryColor: account.secondary_color || '#1f2937',
@@ -207,6 +213,7 @@ const App: React.FC = () => {
         telegramChatId: account.telegram_chat_id || '',
         lifetimeAppointments: account.lifetime_appointments || 0,
         onboardingSeen: !!account.onboarding_seen,
+        createdAt: (account.created_at || '').replace(' ', 'T'),
       };
       setProfile(accountInfo);
 
@@ -373,7 +380,7 @@ const App: React.FC = () => {
       const resp: any = await api.adminRenewPlan(userId, months);
       if (!resp.ok) throw new Error(resp.error);
 
-      const newExpiryDate = resp.data.newExpiryDate;
+      const newExpiryDate = resp.data.newExpiryDate.replace(' ', 'T');
       setAllUsers(prev => prev.map(u => u.id === userId ? {
         ...u,
         planExpiresAt: newExpiryDate,

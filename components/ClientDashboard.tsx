@@ -8,7 +8,6 @@ import {
   LayoutGrid,
   Activity,
   Star,
-  Star,
   Users,
   History,
   Contact2
