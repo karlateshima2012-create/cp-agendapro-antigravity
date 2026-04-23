@@ -197,8 +197,6 @@ export const PublicBookingPage: React.FC<Props> = ({
     let startTime = config.start;
     let endTime = config.end;
 
-    // Para diárias (24h+), o horário padrão é o de início da disponibilidade (Check-in)
-    // Mostramos apenas este slot se for o caso
     if (selectedService.duration >= 1440) {
       endTime = startTime;
     }
@@ -209,7 +207,7 @@ export const PublicBookingPage: React.FC<Props> = ({
     };
 
     const interval = availability.intervalMinutes || 30;
-    const times: string[] = [];
+    const times: { time: string, isAvailable: boolean }[] = [];
     let curr = toMin(startTime);
     const end = (selectedService.duration >= 1440) ? curr : toMin(endTime);
 
@@ -227,46 +225,22 @@ export const PublicBookingPage: React.FC<Props> = ({
         if (a.status === 'canceled' || a.status === 'rejected') return false;
         const apptStartTimestamp = toTimestamp(a.startAt);
         const apptEndTimestamp = a.endAt ? toTimestamp(a.endAt) : apptStartTimestamp + (a.duration * 60000);
-
-        const overlaps = (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
-
-        if (overlaps) {
-          console.log(`[Conflict Found] Slot ${timeStr} with appt:`, {
-            appt: a,
-            apptStart: new Date(apptStartTimestamp).toISOString(),
-            apptEnd: new Date(apptEndTimestamp).toISOString(),
-            slotStart: new Date(slotStartTimestamp).toISOString(),
-            slotEnd: new Date(slotEndTimestamp).toISOString()
-          });
-        }
-
-        return overlaps;
+        return (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
       });
 
       const isBlockedInSlot = (availability.blockedDates || []).some(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
         if (bDate !== date) return false;
-
-        // Se for um bloqueio de dia inteiro (sem startTime), bloqueia o slot
         if (!b.startTime) return true;
-
-        const toMin = (t: string) => {
-          const [h, m] = t.split(':').map(Number);
-          return h * 60 + m;
-        };
-
         const bStart = toMin(b.startTime);
         const bEnd = b.endTime ? toMin(b.endTime) : bStart + (availability.intervalMinutes || 30);
-        
         const slotStart = toMin(timeStr);
         const slotEnd = slotStart + (selectedService.duration || 30);
-
-        // Verifica sobreposição entre [slotStart, slotEnd] e [bStart, bEnd]
         return (slotStart < bEnd && slotEnd > bStart);
       });
 
-      if (!isBusy && !isBlockedInSlot) times.push(timeStr);
-      if (selectedService.duration >= 1440) break; // Só 1 slot para diárias
+      times.push({ time: timeStr, isAvailable: !isBusy && !isBlockedInSlot });
+      if (selectedService.duration >= 1440) break;
       curr += interval;
     }
     return times;
@@ -295,8 +269,15 @@ export const PublicBookingPage: React.FC<Props> = ({
       const scheduleForDay = normalizedHours.find(w => w.day === dayString);
       const isDayOff = !scheduleForDay || !scheduleForDay.enabled;
       const isFullDayBlocked = (availability.blockedDates || []).some(b => (b.date?.split('T')[0] === dateStr) && !b.startTime);
-      const isDayFull = selectedService ? getSlotsForDate(dateStr).length === 0 : false;
+      const daySlots = selectedService ? getSlotsForDate(dateStr) : [];
+      const isDayFull = selectedService ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false;
       const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull;
+
+      // Cores para os finais de semana
+      let weekendStyle = {};
+      if (jsDayOfWeek === 0) weekendStyle = { backgroundColor: '#f9fafb' }; // Domingo (Cinza muito claro)
+      if (jsDayOfWeek === 6) weekendStyle = { backgroundColor: '#f3f4f6' }; // Sábado (Cinza claro)
+
       days.push(
         <button
           key={d}
@@ -308,7 +289,10 @@ export const PublicBookingPage: React.FC<Props> = ({
               ? 'text-white shadow-lg scale-110'
               : 'text-gray-700 hover:bg-gray-100 hover:text-primary hover:scale-105'
             }`}
-          style={!isUnavailable && isSelected ? { backgroundColor: primaryColor, boxShadow: `0 8px 15px -4px ${primaryColor}66` } : {}}
+          style={{
+            ...weekendStyle,
+            ...(!isUnavailable && isSelected ? { backgroundColor: primaryColor, boxShadow: `0 8px 15px -4px ${primaryColor}66` } : {})
+          }}
         >
           {d}
         </button>
@@ -525,14 +509,21 @@ export const PublicBookingPage: React.FC<Props> = ({
 
                   {selectedDate ? (
                     <div className="grid grid-cols-3 gap-3">
-                      {(slots || []).map(t => (
+                      {(slots || []).map(s => (
                         <button
-                          key={t}
-                          onClick={() => setSelectedTime(t)}
-                          className={`py-4 rounded-2xl text-xs font-black border transition-all ${selectedTime === t ? 'text-white shadow-xl scale-105' : 'bg-white text-gray-700 border-gray-100 hover:border-primary'}`}
-                          style={selectedTime === t ? { backgroundColor: primaryColor, borderColor: primaryColor, boxShadow: `0 8px 20px -5px ${primaryColor}88` } : {}}
+                          key={s.time}
+                          disabled={!s.isAvailable}
+                          onClick={() => setSelectedTime(s.time)}
+                          className={`py-4 rounded-2xl text-xs font-black border transition-all ${
+                            selectedTime === s.time 
+                            ? 'text-white shadow-xl scale-105' 
+                            : !s.isAvailable 
+                              ? 'bg-gray-50 text-gray-300 border-gray-100 line-through cursor-not-allowed'
+                              : 'bg-white text-gray-700 border-gray-100 hover:border-primary'
+                          }`}
+                          style={selectedTime === s.time ? { backgroundColor: primaryColor, borderColor: primaryColor, boxShadow: `0 8px 20px -5px ${primaryColor}88` } : {}}
                         >
-                          {t}
+                          {s.time}
                         </button>
                       ))}
                       {slots.length === 0 && (
