@@ -28,7 +28,7 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     $availability = Db::fetch('SELECT working_hours, interval_minutes FROM cp_agenda_availability WHERE account_id = ?', [$profile['id']]);
     
     // Fetch Blocked Dates
-    $blocked = Db::fetchAll('SELECT blocked_date as date, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$profile['id']]);
+    $blocked = Db::fetchAll('SELECT blocked_date as date, start_time as startTime, end_time as endTime, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$profile['id']]);
 
     if ($availability) {
         $availability['workingHours'] = json_decode($availability['working_hours'] ?? '[]', true);

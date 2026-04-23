@@ -6,7 +6,7 @@ $accountId = $user['account_id'];
 
 if ($path === 'availability' && $method === 'GET') {
     $availability = Db::fetch('SELECT working_hours, interval_minutes FROM cp_agenda_availability WHERE account_id = ?', [$accountId]);
-    $blocked = Db::fetchAll('SELECT id, blocked_date as date, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$accountId]);
+    $blocked = Db::fetchAll('SELECT id, blocked_date as date, start_time as startTime, end_time as endTime, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$accountId]);
 
     $resp = [
         'workingHours' => [],
@@ -52,8 +52,8 @@ if ($path === 'availability' && $method === 'PUT') {
         foreach ($blockedDates as $b) {
             if (empty($b['date'])) continue;
             Db::query(
-                'INSERT INTO cp_agenda_blocked_dates (account_id, blocked_date, reason) VALUES (?, ?, ?)',
-                [$accountId, $b['date'], $b['reason'] ?? '']
+                'INSERT INTO cp_agenda_blocked_dates (account_id, blocked_date, start_time, end_time, reason) VALUES (?, ?, ?, ?, ?)',
+                [$accountId, $b['date'], $b['startTime'] ?? null, $b['endTime'] ?? null, $b['reason'] ?? '']
             );
         }
 
