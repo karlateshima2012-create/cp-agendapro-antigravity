@@ -12,8 +12,10 @@ export const ClientsTab: React.FC = () => {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const data = await api.listClients(search);
-      setClients(data);
+      const resp = await api.listClients(search);
+      if (resp.ok) {
+        setClients(resp.data || []);
+      }
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {

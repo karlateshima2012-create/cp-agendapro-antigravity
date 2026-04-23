@@ -30,8 +30,10 @@ export const HistoryTab: React.FC = () => {
       if (dateFrom) filters.from = `${dateFrom} 00:00:00`;
       if (dateTo) filters.to = `${dateTo} 23:59:59`;
       
-      const data = await api.listAppointments(filters);
-      setAppointments(data);
+      const resp = await api.listAppointments(filters);
+      if (resp.ok) {
+        setAppointments(resp.data || []);
+      }
     } catch (error) {
       console.error('Error fetching history:', error);
     } finally {
