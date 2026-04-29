@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Service, AvailabilityConfig, Appointment } from '../types';
+import { mapWorkingHours } from '../utils/availability';
 import {
   Calendar as CalendarIcon,
   Calendar,
@@ -60,27 +61,7 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [errorMsg, setErrorMsg] = useState('');
 
   const normalizedHours = React.useMemo(() => {
-    console.log('🚀 PublicBookingPage Build Version: 2026.02.18.10');
-    let hours = availability.workingHours;
-    if (typeof hours === 'string') {
-      try {
-        hours = JSON.parse(hours);
-        if (typeof hours === 'string') hours = JSON.parse(hours);
-      } catch (e) {
-        console.error('Failed defensive parse of workingHours:', e);
-        return [];
-      }
-    }
-
-    if (!Array.isArray(hours)) return [];
-
-    // Normalize keys
-    return hours.map(h => ({
-      ...h,
-      enabled: h.enabled ?? h.isWorking ?? h.is_working ?? true,
-      start: h.start ?? h.startTime ?? h.start_time ?? '09:00',
-      end: h.end ?? h.endTime ?? h.end_time ?? '18:00'
-    }));
+    return mapWorkingHours(availability.workingHours);
   }, [availability.workingHours]);
 
   console.log('AVAILABILITY OBJECT:', JSON.stringify(availability, null, 2));
@@ -192,10 +173,14 @@ export const PublicBookingPage: React.FC<Props> = ({
       1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo'
     };
     const dayName = jsDayToPtDay[jsDayOfWeek];
-    const config = normalizedHours.find(h => h.day === dayName);
-    if (!config || !config.enabled) return [];
-    let startTime = config.start;
-    let endTime = config.end;
+    const config = normalizedHours.find(h => {
+      const hDay = String(h.day).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return hDay === dayName || hDay === String(jsDayOfWeek);
+    });
+    
+    if (!config || !config.isWorking) return [];
+    let startTime = config.startTime || '09:00';
+    let endTime = config.endTime || '18:00';
 
     if (selectedService.duration >= 1440) {
       endTime = startTime;
@@ -266,8 +251,11 @@ export const PublicBookingPage: React.FC<Props> = ({
       const dayString = jsDayToPtDay[jsDayOfWeek];
       const isPastOrToday = dateStr <= todayStr;
       const isSelected = selectedDate === dateStr;
-      const scheduleForDay = normalizedHours.find(w => w.day === dayString);
-      const isDayOff = !scheduleForDay || !scheduleForDay.enabled;
+      const scheduleForDay = normalizedHours.find(h => {
+        const hDay = String(h.day).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return hDay === dayString || hDay === String(jsDayOfWeek);
+      });
+      const isDayOff = !scheduleForDay || !scheduleForDay.isWorking;
       const isFullDayBlocked = (availability.blockedDates || []).some(b => (b.date?.split('T')[0] === dateStr) && !b.startTime);
       const daySlots = selectedService ? getSlotsForDate(dateStr) : [];
       const isDayFull = selectedService ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false;
