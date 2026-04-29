@@ -92,10 +92,10 @@ export const ClientsTab: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {client.name.charAt(0).toUpperCase()}
+                          {(client.name || '?').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900">{client.name}</p>
+                          <p className="text-sm font-bold text-gray-900">{client.name || 'Sem Nome'}</p>
                         </div>
                       </div>
                     </td>

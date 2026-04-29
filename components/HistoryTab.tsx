@@ -46,11 +46,15 @@ export const HistoryTab: React.FC = () => {
   }, [dateFrom, dateTo]);
 
   const filteredAppointments = appointments.filter(app => {
-    const searchLower = search.toLowerCase();
+    const searchLower = (search || '').toLowerCase();
+    const clientName = (app.clientName || '').toLowerCase();
+    const serviceName = (app.serviceName || '').toLowerCase();
+    const clientPhone = (app.clientPhone || '');
+    
     return (
-      app.clientName.toLowerCase().includes(searchLower) ||
-      app.clientPhone.includes(searchLower) ||
-      app.serviceName.toLowerCase().includes(searchLower)
+      clientName.includes(searchLower) ||
+      clientPhone.includes(searchLower) ||
+      serviceName.includes(searchLower)
     );
   });
 
