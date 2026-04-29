@@ -64,7 +64,7 @@ jobs:
     - name: Preparar Pacotes de Deploy
       run: |
         cd dist && zip -r ../dist.zip * && cd ..
-        cd backend && zip -r ../backend.zip api database migrate.php .env && cd ..
+        cd backend && zip -r ../backend.zip api database migrate.php .env vendor && cd ..
 
     - name: Testar Conexão SSH
       run: nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "Sem resposta SSH"
