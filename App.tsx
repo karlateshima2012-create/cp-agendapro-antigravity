@@ -454,7 +454,7 @@ const App: React.FC = () => {
       const resp: any = await api.saveAvailability(payload);
       if (resp.ok) {
         setAvailability({
-          workingHours: payload.workingHours,
+          workingHours: mapWorkingHours(payload.workingHours),
           blockedDates: payload.blockedDates,
           intervalMinutes: payload.intervalMinutes
         });

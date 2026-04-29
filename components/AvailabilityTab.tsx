@@ -20,6 +20,13 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
   const [showSlotsModal, setShowSlotsModal] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
 
+  // Sincronizar estado local quando os props mudarem
+  React.useEffect(() => {
+    if (config) {
+      setLocalConfig(JSON.parse(JSON.stringify(config)));
+    }
+  }, [config]);
+
   // Slot generation logic similar to PublicBookingPage
   const availableSlots = useMemo(() => {
     if (!newBlockDate) return [];
@@ -57,6 +64,10 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
     const newHours = [...localConfig.workingHours];
     if (field === 'isWorking') {
       newHours[index] = { ...newHours[index], isWorking: value, enabled: value } as any;
+    } else if (field === 'startTime' || field === 'start') {
+      newHours[index] = { ...newHours[index], startTime: value, start: value } as any;
+    } else if (field === 'endTime' || field === 'end') {
+      newHours[index] = { ...newHours[index], endTime: value, end: value } as any;
     } else {
       newHours[index] = { ...newHours[index], [field]: value };
     }
