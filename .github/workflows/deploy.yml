@@ -67,18 +67,8 @@ jobs:
         cd backend && zip -r ../backend.zip api database migrate.php .env vendor && cd ..
 
     - name: Testar Conexão SSH
-      run: nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "Sem resposta SSH"
-
-    - name: Garantir Diretório de Destino via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        password: ${{ secrets.SSH_PASSWORD }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          mkdir -p domains/creativeprintjp.com/public_html/cpagendapro/
-          echo "Diretório verificado/criado."
+      run: |
+        nc -zv -w 20 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || (echo "ERRO: Servidor SSH da Hostinger inacessível no momento." && exit 1)
 
     - name: Enviar Arquivos via SCP (Hostinger)
       uses: appleboy/scp-action@v0.1.7
@@ -95,17 +85,18 @@ jobs:
         strip_components: 0
         overwrite: true
 
-    - name: Executar Comandos SSH (Unzip e Migrations)
+    - name: Finalizar Deploy via SSH (Unzip e Migrations)
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
+        timeout: 120s
+        command_timeout: 10m
         script: |
           cd domains/creativeprintjp.com/public_html/cpagendapro/
-          mkdir -p backup_viva
-          cp -r api database index.html assets backup_viva/ 2>/dev/null || true
+          mkdir -p api database vendor
           unzip -o backend.zip && rm backend.zip
           chmod 644 .env
           php migrate.php
