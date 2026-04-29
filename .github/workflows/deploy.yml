@@ -87,10 +87,12 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
-        timeout: 200s
-        command_timeout: 15m
+        timeout: 600s
+        command_timeout: 20m
         source: "dist.zip,backend.zip"
         target: "domains/creativeprintjp.com/public_html/cpagendapro/"
+        rm: false
+        strip_components: 0
 
     - name: Executar Comandos SSH (Unzip e Migrations)
       uses: appleboy/ssh-action@v1.0.3
