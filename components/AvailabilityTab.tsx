@@ -193,7 +193,7 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                 <input
                   type="time"
                   disabled={!wh.isWorking}
-                  value={wh.startTime}
+                  value={wh.startTime || wh.start || '09:00'}
                   onChange={(e) => handleHourChange(idx, 'startTime', e.target.value)}
                   className="w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
                 />
@@ -202,7 +202,7 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                 <input
                   type="time"
                   disabled={!wh.isWorking}
-                  value={wh.endTime}
+                  value={wh.endTime || wh.end || '18:00'}
                   onChange={(e) => handleHourChange(idx, 'endTime', e.target.value)}
                   className="w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
                 />

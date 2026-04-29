@@ -450,14 +450,17 @@ const App: React.FC = () => {
   };
 
   const handleUpdateAvailability = async (payload: any) => {
+    console.log('📤 Enviando disponibilidade:', JSON.stringify(payload, null, 2));
     try {
       const resp: any = await api.saveAvailability(payload);
       if (resp.ok) {
-        setAvailability({
+        const normalized = {
           workingHours: mapWorkingHours(payload.workingHours),
           blockedDates: payload.blockedDates,
           intervalMinutes: payload.intervalMinutes
-        });
+        };
+        console.log('✅ Disponibilidade salva e normalizada:', JSON.stringify(normalized, null, 2));
+        setAvailability(normalized);
         showToast("Agenda atualizada!");
       } else {
         throw new Error(resp.error);
