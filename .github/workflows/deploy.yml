@@ -69,6 +69,17 @@ jobs:
     - name: Testar Conexão SSH
       run: nc -zv -w 10 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || echo "Sem resposta SSH"
 
+    - name: Garantir Diretório de Destino via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          mkdir -p domains/creativeprintjp.com/public_html/cpagendapro/
+          echo "Diretório verificado/criado."
+
     - name: Enviar Arquivos via SCP (Hostinger)
       uses: appleboy/scp-action@v0.1.7
       with:
@@ -76,8 +87,8 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         password: ${{ secrets.SSH_PASSWORD }}
         port: ${{ secrets.SSH_PORT }}
-        timeout: 120s
-        command_timeout: 10m
+        timeout: 200s
+        command_timeout: 15m
         source: "dist.zip,backend.zip"
         target: "domains/creativeprintjp.com/public_html/cpagendapro/"
 
