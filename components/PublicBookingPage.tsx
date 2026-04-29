@@ -191,19 +191,24 @@ export const PublicBookingPage: React.FC<Props> = ({
       return h * 60 + m;
     };
 
+    const totalSlotDuration = selectedService.duration + (selectedService.cleaning_buffer || 0);
     const interval = availability.intervalMinutes || 30;
     const times: { time: string, isAvailable: boolean }[] = [];
     let curr = toMin(startTime);
     const end = (selectedService.duration >= 1440) ? curr : toMin(endTime);
 
     while (curr <= end) {
+      // Regra do Último Horário: O serviço + limpeza deve terminar dentro do expediente
+      if (selectedService.duration < 1440 && (curr + totalSlotDuration) > toMin(endTime)) {
+        break;
+      }
+
       if (isToday && curr <= currentMinutes + 15) {
         curr += interval;
         continue;
       }
       const timeStr = `${String(Math.floor(curr / 60)).padStart(2, '0')}:${String(curr % 60).padStart(2, '0')}`;
       const slotStartTimestamp = toTimestamp(`${date} ${timeStr}`);
-      const totalSlotDuration = selectedService.duration + (selectedService.cleaning_buffer || 0);
       const slotEndTimestamp = slotStartTimestamp + (totalSlotDuration * 60000);
 
       const isBusy = (busyAppointments || []).some(a => {
