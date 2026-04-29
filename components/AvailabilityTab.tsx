@@ -172,16 +172,27 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="divide-y divide-gray-100">
-          <div className="bg-gray-50 px-6 py-3 grid grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            <div className="col-span-2">Dia</div>
+          <div className="hidden md:grid bg-gray-50 px-6 py-3 grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <div className="col-span-4">Dia</div>
             <div className="col-span-2 text-center">Atende?</div>
-            <div className="col-span-4">Início</div>
-            <div className="col-span-4">Fim</div>
+            <div className="col-span-3">Início</div>
+            <div className="col-span-3">Fim</div>
           </div>
           {(localConfig?.workingHours || []).map((wh, idx) => (
-            <div key={wh.day} className={`px-6 py-4 grid grid-cols-12 gap-4 items-center ${!wh.isWorking ? 'opacity-50 bg-gray-50' : ''}`}>
-              <div className="col-span-2 font-medium text-gray-900">{wh.name}</div>
-              <div className="col-span-2 flex justify-center">
+            <div key={wh.day} className={`px-4 md:px-6 py-4 flex flex-col md:grid md:grid-cols-12 gap-4 md:items-center ${!wh.isWorking ? 'opacity-50 bg-gray-50' : ''}`}>
+              <div className="flex items-center justify-between md:col-span-4">
+                <div className="font-bold md:font-medium text-gray-900">{wh.name}</div>
+                <div className="md:hidden">
+                  <button
+                    onClick={() => handleHourChange(idx, 'isWorking', !wh.isWorking)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${wh.isWorking ? 'bg-primary' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wh.isWorking ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="hidden md:flex md:col-span-2 justify-center">
                 <button
                   onClick={() => handleHourChange(idx, 'isWorking', !wh.isWorking)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${wh.isWorking ? 'bg-primary' : 'bg-gray-200'}`}
@@ -189,23 +200,28 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wh.isWorking ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
               </div>
-              <div className="col-span-4">
-                <input
-                  type="time"
-                  disabled={!wh.isWorking}
-                  value={wh.startTime || wh.start || '09:00'}
-                  onChange={(e) => handleHourChange(idx, 'startTime', e.target.value)}
-                  className="w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
-                />
-              </div>
-              <div className="col-span-4">
-                <input
-                  type="time"
-                  disabled={!wh.isWorking}
-                  value={wh.endTime || wh.end || '18:00'}
-                  onChange={(e) => handleHourChange(idx, 'endTime', e.target.value)}
-                  className="w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
-                />
+
+              <div className="grid grid-cols-2 gap-3 md:contents">
+                <div className="flex flex-col gap-1 md:col-span-3">
+                  <span className="md:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Início</span>
+                  <input
+                    type="time"
+                    disabled={!wh.isWorking}
+                    value={wh.startTime || wh.start || '09:00'}
+                    onChange={(e) => handleHourChange(idx, 'startTime', e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
+                  />
+                </div>
+                <div className="flex flex-col gap-1 md:col-span-3">
+                  <span className="md:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fim</span>
+                  <input
+                    type="time"
+                    disabled={!wh.isWorking}
+                    value={wh.endTime || wh.end || '18:00'}
+                    onChange={(e) => handleHourChange(idx, 'endTime', e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none disabled:bg-gray-100"
+                  />
+                </div>
               </div>
             </div>
           ))}
