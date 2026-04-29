@@ -52,13 +52,26 @@ export const PublicBookingPage: React.FC<Props> = ({
   onBack
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const toggleService = (service: Service) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(s => s.id === service.id);
+      if (exists) return prev.filter(s => s.id !== service.id);
+      return [...prev, service];
+    });
+  };
+
+  const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration, 0);
+  const totalBuffer = selectedServices.reduce((acc, s) => acc + (s.cleaning_buffer || 0), 0);
+  const totalPrice = selectedServices.reduce((acc, s) => acc + (s.price || 0), 0);
+  const combinedServiceNames = selectedServices.map(s => s.name).join(' + ');
 
   const normalizedHours = React.useMemo(() => {
     return mapWorkingHours(availability.workingHours);
@@ -163,7 +176,7 @@ export const PublicBookingPage: React.FC<Props> = ({
   };
 
   const getSlotsForDate = (date: string) => {
-    if (!selectedService) return [];
+    if (selectedServices.length === 0) return [];
     const nowJST = getNowJST();
     const todayStr = formatLiteralDate(nowJST);
     const isToday = date === todayStr;
@@ -191,15 +204,15 @@ export const PublicBookingPage: React.FC<Props> = ({
       return h * 60 + m;
     };
 
-    const totalSlotDuration = selectedService.duration + (selectedService.cleaning_buffer || 0);
+    const totalSlotDuration = totalDuration + totalBuffer;
     const interval = availability.intervalMinutes || 30;
     const times: { time: string, isAvailable: boolean }[] = [];
     let curr = toMin(startTime);
-    const end = (selectedService.duration >= 1440) ? curr : toMin(endTime);
+    const end = (totalDuration >= 1440) ? curr : toMin(endTime);
 
     while (curr <= end) {
       // Regra do Último Horário: O serviço + limpeza deve terminar dentro do expediente
-      if (selectedService.duration < 1440 && (curr + totalSlotDuration) > toMin(endTime)) {
+      if (totalDuration < 1440 && (curr + totalSlotDuration) > toMin(endTime)) {
         break;
       }
 
@@ -230,7 +243,7 @@ export const PublicBookingPage: React.FC<Props> = ({
       });
 
       times.push({ time: timeStr, isAvailable: !isBusy && !isBlockedInSlot });
-      if (selectedService.duration >= 1440) break;
+      if (totalDuration >= 1440) break;
       curr += interval;
     }
     return times;
@@ -262,8 +275,8 @@ export const PublicBookingPage: React.FC<Props> = ({
       });
       const isDayOff = !scheduleForDay || !scheduleForDay.isWorking;
       const isFullDayBlocked = (availability.blockedDates || []).some(b => (b.date?.split('T')[0] === dateStr) && !b.startTime);
-      const daySlots = selectedService ? getSlotsForDate(dateStr) : [];
-      const isDayFull = selectedService ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false;
+      const daySlots = selectedServices.length > 0 ? getSlotsForDate(dateStr) : [];
+      const isDayFull = selectedServices.length > 0 ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false;
       const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull;
 
       // Cores para os finais de semana
@@ -307,11 +320,11 @@ export const PublicBookingPage: React.FC<Props> = ({
     }
     const normalizedName = toTitleCase(clientData.name);
     const result = await onBook({
-      serviceId: selectedService!.id,
-      serviceName: selectedService!.name,
+      serviceId: 0, // Using 0 for combined services to avoid extra buffers in backend
+      serviceName: combinedServiceNames,
       // Usamos string pura (naive) para evitar deslocamento de timezone (toISOString causava bugs)
       startAt: `${selectedDate} ${selectedTime}:00`,
-      duration: selectedService!.duration,
+      duration: totalDuration + totalBuffer, // Send total occupied time
       clientName: normalizedName,
       clientPhone: clientData.phone,
       clientEmail: clientData.email || ''
@@ -433,36 +446,73 @@ export const PublicBookingPage: React.FC<Props> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(services || []).length > 0 ? (services || []).map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setSelectedService(s); setStep(2); }}
-                    className="p-8 bg-white border border-gray-100 rounded-[3rem] text-left hover:border-gray-300 transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full"
-                  >
-                    <div className="flex items-center gap-4 mb-5">
-                      <div className="p-3 rounded-2xl transition-all bg-gray-100 text-gray-500">
-                        <Briefcase size={22} />
+                {(services || []).length > 0 ? (services || []).map(s => {
+                  const isSelected = selectedServices.some(curr => curr.id === s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => toggleService(s)}
+                      className={`p-8 bg-white border rounded-[3rem] text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full ${
+                        isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4 mb-5">
+                        <div className={`p-3 rounded-2xl transition-all ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
+                          {isSelected ? <Check size={22} /> : <Briefcase size={22} />}
+                        </div>
+                        <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: isSelected ? primaryColor : '#111827' }}>{s.name}</h3>
                       </div>
-                      <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: primaryColor }}>{s.name}</h3>
-                    </div>
-                    <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3 flex-1">{s.description}</p>
-                    <div className="flex justify-between items-center border-t border-gray-50 pt-6">
-                      <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
-                        <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                      <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3 flex-1">{s.description}</p>
+                      <div className="flex justify-between items-center border-t border-gray-50 pt-6">
+                        <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
+                          <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                        </div>
+                        <div className="flex flex-col items-end">
+                          {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                          <span className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: primaryColor }}>
+                            {isSelected ? 'Selecionado' : 'Selecionar'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
-                        <span className="text-[9px] font-black uppercase tracking-widest mt-1 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: primaryColor }}>Selecionar</span>
-                      </div>
-                    </div>
-                  </button>
-                )) : (
+                    </button>
+                  );
+                }) : (
                   <div className="col-span-full py-24 text-center bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
                     <Briefcase size={40} className="mx-auto text-gray-300 mb-4" />
                     <p className="text-gray-400 font-black uppercase tracking-widest text-sm">Nenhum serviço disponível</p>
                   </div>
                 )}
               </div>
+
+              {selectedServices.length > 0 && (
+                <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 z-[100] animate-slide-up">
+                  <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div className="flex -space-x-3">
+                      {selectedServices.slice(0, 3).map((s, i) => (
+                        <div key={s.id} className="w-12 h-12 rounded-2xl bg-primary text-white border-4 border-white flex items-center justify-center shadow-lg font-black text-lg">
+                          {s.name.charAt(0).toUpperCase()}
+                        </div>
+                      ))}
+                      {selectedServices.length > 3 && (
+                        <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 border-4 border-white flex items-center justify-center font-black">
+                          +{selectedServices.length - 3}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-black text-gray-900 text-xl tracking-tight">{selectedServices.length} {selectedServices.length === 1 ? 'serviço selecionado' : 'serviços selecionados'}</p>
+                      <p className="text-gray-400 text-sm font-medium">Total: <b>{formatDurationFriendly(totalDuration)}</b> • <b>¥ {totalPrice.toLocaleString()}</b></p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setStep(2)}
+                    className="w-full md:w-auto px-12 py-5 bg-primary text-white font-black rounded-3xl shadow-2xl shadow-primary/30 uppercase tracking-[0.2em] text-[11px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    Ver horários disponíveis <ArrowRight size={20} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -471,11 +521,11 @@ export const PublicBookingPage: React.FC<Props> = ({
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-8">
                 <div>
                   <h2 className="text-3xl font-black text-gray-900 tracking-tight">Escolha a data</h2>
-                  <p className="text-gray-400 text-sm font-medium mt-1">Serviço: <span className="font-bold uppercase" style={{ color: primaryColor }}>{selectedService?.name}</span></p>
+                  <p className="text-gray-400 text-sm font-medium mt-1">Serviços: <span className="font-bold uppercase" style={{ color: primaryColor }}>{combinedServiceNames}</span></p>
                 </div>
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100">
                   <Clock size={16} style={{ color: primaryColor }} />
-                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{formatDurationFriendly(selectedService?.duration || 0)} de duração</span>
+                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{formatDurationFriendly(totalDuration)} totais (+ limpezas)</span>
                 </div>
               </div>
 
@@ -593,11 +643,11 @@ export const PublicBookingPage: React.FC<Props> = ({
               <div className="bg-gray-50 rounded-[3rem] p-10 space-y-8 text-left border border-gray-100 mb-8 shadow-inner relative overflow-hidden">
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-start">
-                    <p className="font-black text-2xl tracking-tight capitalize" style={{ color: primaryColor }}>{selectedService?.name}</p>
-                    {selectedService && selectedService.price > 0 && (
+                    <p className="font-black text-2xl tracking-tight capitalize leading-tight" style={{ color: primaryColor }}>{combinedServiceNames}</p>
+                    {totalPrice > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-lg font-black text-gray-900">
-                          {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(selectedService.price)}
+                          {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalPrice)}
                         </span>
                       </div>
                     )}
@@ -620,8 +670,8 @@ export const PublicBookingPage: React.FC<Props> = ({
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100" style={{ color: primaryColor }}><Clock size={18} /></div>
                     <div>
-                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Duração</p>
-                      <p className="font-bold text-gray-900">{formatDurationFriendly(selectedService?.duration || 0)}</p>
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Duração Total</p>
+                      <p className="font-bold text-gray-900">{formatDurationFriendly(totalDuration)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -681,7 +731,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               </p>
               <div className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100 mb-10 w-full max-w-md text-left shadow-sm">
                 <p className="text-[11px] font-black text-gray-300 uppercase tracking-[0.2em] mb-4">DETALHES DO AGENDAMENTO</p>
-                <p className="font-black text-gray-900 text-2xl mb-2 capitalize" style={{ color: primaryColor }}>{selectedService?.name}</p>
+                <p className="font-black text-gray-900 text-2xl mb-2 capitalize leading-tight" style={{ color: primaryColor }}>{combinedServiceNames}</p>
                 <div className="flex items-center gap-2 text-gray-600 font-bold text-lg">
                   <Calendar size={20} className="text-gray-300" />
                   {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })} às {selectedTime}
