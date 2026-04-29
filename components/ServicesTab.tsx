@@ -157,9 +157,21 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
                 <h3 className="font-bold text-lg text-gray-900 capitalize">{svc.name}</h3>
                 <p className="text-gray-500 text-sm mt-1 line-clamp-2 capitalize">{svc.description}</p>
               </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => startEdit(svc)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={18} /></button>
-                <button onClick={() => handleDelete(svc.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => startEdit(svc)} 
+                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                  title="Editar serviço"
+                >
+                  <Edit2 size={18} />
+                </button>
+                <button 
+                  onClick={() => handleDelete(svc.id)} 
+                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  title="Excluir serviço"
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
             </div>
             <div className="flex items-center gap-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100 pt-4">
