@@ -97,29 +97,39 @@ if ($path === 'admin/users' && $method === 'POST') {
         $loginUrl = "https://" . $_SERVER['HTTP_HOST'];
         $landingPage = "https://saibamaiscpagendapro.creativeprintjp.com/";
 
-        $subject = "Bem-vindo ao CP Agenda Pro!";
+        $subject = "Sua Agenda Profissional está pronta! - CP Agenda Pro";
         $body = "
-        <div style='font-family: sans-serif; color: #333; max-width: 600px;'>
-            <h2 style='color: #4F46E5;'>Sua agenda profissional está pronta!</h2>
-            <p>Olá, <strong>{$userName}</strong>,</p>
-            <p>É um prazer ter você conosco! Seu acesso ao <strong>CP Agenda Pro</strong> foi criado com sucesso.</p>
-            
-            <div style='background: #f3f4f6; padding: 20px; border-radius: 10px; margin: 20px 0;'>
-                <p style='margin: 0 0 10px 0;'><strong>Dados de Acesso:</strong></p>
-                <p style='margin: 5px 0;'>E-mail: <code>{$userEmail}</code></p>
-                <p style='margin: 5px 0;'>Senha Temporária: <code>{$password}</code></p>
+        <div style='font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 15px; overflow: hidden;'>
+            <div style='background: #25aae1; padding: 30px; text-align: center;'>
+                <h1 style='color: white; margin: 0; font-size: 24px;'>Bem-vindo ao CP Agenda Pro!</h1>
             </div>
+            <div style='padding: 30px;'>
+                <p>Olá, <strong>{$userName}</strong>,</p>
+                <p>Sua plataforma de agendamentos foi configurada com sucesso. Agora você já pode organizar seus horários e serviços de forma profissional.</p>
+                
+                <div style='background: #f8fafc; padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;'>
+                    <p style='margin: 0 0 15px 0; font-weight: bold; color: #1e293b;'>Suas Credenciais de Acesso:</p>
+                    <p style='margin: 8px 0; font-size: 14px;'><strong>E-mail:</strong> <span style='color: #25aae1;'>{$userEmail}</span></p>
+                    <p style='margin: 8px 0; font-size: 14px;'><strong>Senha Temporária:</strong> <span style='color: #25aae1;'>{$password}</span></p>
+                </div>
 
-            <p>Você pode acessar seu painel de duas formas:</p>
-            <ol>
-                <li>Pelo nosso <strong>Site Oficial</strong>: <a href='{$landingPage}'>{$landingPage}</a> (clique em Login)</li>
-                <li>Pelo <strong>Link Direto</strong>: <a href='{$loginUrl}'>{$loginUrl}</a></li>
-            </ol>
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='{$loginUrl}' style='background: #25aae1; color: white; padding: 15px 35px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;'>ACESSAR MEU PAINEL</a>
+                </div>
 
-            <p style='color: #ef4444; font-size: 0.9em;'><em>* Por segurança, você deverá alterar sua senha logo no primeiro acesso.</em></p>
-
-            <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
-            <p style='font-size: 0.8em; color: #999;'>Este é um e-mail automático. Se precisar de suporte, responda a este e-mail ou entre em contato via WhatsApp.</p>
+                <p style='font-size: 13px; color: #64748b;'><strong>Importante:</strong> Por segurança, o sistema solicitará a alteração desta senha no seu primeiro acesso.</p>
+                
+                <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
+                
+                <p style='font-size: 14px;'>Dúvidas? Acesse nosso site oficial ou entre em contato com nosso suporte.</p>
+                <p style='font-size: 14px;'>
+                    <a href='{$landingPage}' style='color: #25aae1; text-decoration: none;'>Página Oficial</a> | 
+                    <a href='https://wa.me/819011886491' style='color: #25aae1; text-decoration: none;'>Suporte WhatsApp</a>
+                </p>
+            </div>
+            <div style='background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;'>
+                © " . date('Y') . " Creative Print - CP Agenda Pro. Todos os direitos reservados.
+            </div>
         </div>
         ";
 
