@@ -14,12 +14,11 @@ class Mail {
 
         try {
             // Server settings
-            $mail->SMTPDebug = 2; // ✅ DEBUG: Show verbose output
             $mail->isSMTP();
             $mail->Host       = 'smtp.hostinger.com';
             $mail->SMTPAuth   = true;
             $mail->Username   = 'suporte@creativeprintjp.com';
-            $mail->Password   = 'CPgestaoCRM23%';
+            $mail->Password   = 'K!=DHdv23';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL
             $mail->Port       = 465;
             $mail->CharSet    = 'UTF-8';
