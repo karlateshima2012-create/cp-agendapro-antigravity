@@ -134,7 +134,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     expiresAt.setMonth(expiresAt.getMonth() + months);
 
     const userData = {
-      email: newUser.email.trim().toLowerCase(),
+      email: (newUser.email || '').trim().toLowerCase(),
       password: newUser.password.trim(),
       companyName: newUser.companyName.trim(),
       ownerName: newUser.ownerName.trim(),
@@ -381,7 +381,7 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                   </div>
                   <div>
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">E-mail</label>
-                    <input type="email" value={editData.email || ''} onChange={e => setEditData({ ...editData, email: e.target.value.toLowerCase() })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                    <input type="email" value={editData.email || ''} onChange={e => setEditData({ ...editData, email: (e.target.value || '').toLowerCase() })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
                   </div>
                 </div>
               </div>
@@ -506,7 +506,7 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">E-mail</label>
-                  <input required type="email" className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all" placeholder="profissional@email.com" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value.toLowerCase().trim() })} />
+                  <input required type="email" className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all" placeholder="profissional@email.com" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: (e.target.value || '').toLowerCase().trim() })} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp</label>

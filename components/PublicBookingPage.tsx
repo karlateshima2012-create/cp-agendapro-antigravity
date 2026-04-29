@@ -94,8 +94,8 @@ export const PublicBookingPage: React.FC<Props> = ({
     return `${y}-${m}-${d}`;
   };
 
-  const toTitleCase = (str: string) => {
-    if (!str) return '';
+  const toTitleCase = (str: any) => {
+    if (!str || typeof str !== 'string') return '';
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
