@@ -420,42 +420,45 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      <div className="flex flex-col gap-8 px-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h2 className="text-4xl font-black text-gray-900 tracking-tight">Agendamentos</h2>
+      <div className="flex flex-col gap-6 px-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight">Agendamentos</h2>
             <div className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest">
               {appointments.length} Total
             </div>
           </div>
 
-          <div className="flex items-center bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between md:justify-end bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full md:w-auto">
             <button
               onClick={() => setView('grid')}
-              className={`p-2.5 rounded-xl transition-all ${view === 'grid' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all ${view === 'grid' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
               title="Visualizar Grade"
             >
               <LayoutGrid size={18} />
+              <span className="md:hidden text-[10px] font-bold uppercase">Grade</span>
             </button>
             <button
               onClick={() => setView('list')}
-              className={`p-2.5 rounded-xl transition-all ${view === 'list' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all ${view === 'list' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
               title="Visualizar Lista"
             >
               <ListIcon size={18} />
+              <span className="md:hidden text-[10px] font-bold uppercase">Lista</span>
             </button>
             <button
               onClick={() => setView('calendar')}
-              className={`p-2.5 rounded-xl transition-all ${view === 'calendar' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`flex-1 md:flex-none flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all ${view === 'calendar' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
               title="Visualizar Calendário"
             >
               <CalendarDays size={18} />
+              <span className="md:hidden text-[10px] font-bold uppercase">Calend.</span>
             </button>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex overflow-x-auto no-scrollbar items-center gap-2 pb-2 md:pb-0 -mx-2 px-2">
             <button
               onClick={() => setDateFilter('all')}
               className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'all'
