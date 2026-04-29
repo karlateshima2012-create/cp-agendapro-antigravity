@@ -2,10 +2,16 @@
 // deploy_hostinger/public_html/api/routes/public.php
 
 if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 'GET') {
-    $idOrSlug = $matches[1];
+    $userId = $matches[1];
     
-    // Lookup by ID or Slug (assuming id for now for simplicity)
-    $profile = Db::fetch('SELECT id, name, status, plan_type, plan_expires_at, primary_color, secondary_color, short_description, services_title, services_subtitle, cover_image, profile_image, lifetime_appointments FROM cp_agenda_accounts WHERE id = ?', [$idOrSlug]);
+    // Lookup the account associated with this user ID
+    $profile = Db::fetch('
+        SELECT a.id, a.name, a.status, a.plan_type, a.plan_expires_at, a.primary_color, 
+               a.secondary_color, a.short_description, a.services_title, a.services_subtitle, 
+               a.cover_image, a.profile_image, a.lifetime_appointments 
+        FROM cp_agenda_accounts a
+        JOIN cp_agenda_users u ON u.account_id = a.id
+        WHERE u.id = ?', [$userId]);
     
     if (!$profile) {
         Response::fail('Profile not found', 404);
