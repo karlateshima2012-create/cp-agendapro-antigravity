@@ -143,7 +143,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   };
 
   return (
-    <div className="space-y-6 pb-24 relative animate-fade-in">
+    <div className="space-y-6 pb-32 animate-fade-in relative">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* PERFIL */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
@@ -455,20 +455,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
         </div>
       </div>
 
-      {/* BOTÃO SALVAR FIXO */}
-      <div className="fixed bottom-0 right-0 left-0 md:left-72 bg-white/95 backdrop-blur-md border-t border-gray-100 p-6 pb-[92px] md:pb-6 flex justify-end items-center z-40 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
-        <button
-          onClick={handleSaveSettings}
-          disabled={isSaving}
-          className="text-white px-10 py-3 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:scale-105 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-          style={{ backgroundColor: primaryColor }}
-        >
-          {isSaving ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : <Save size={20} />}
-          {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-        </button>
-      </div>
+
 
       {/* FOOTER & TERMOS */}
       <div className="flex flex-col items-center justify-center pt-8 pb-12 opacity-60 hover:opacity-100 transition-opacity mt-8">
@@ -490,6 +477,21 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
           FALAR COM SUPORTE
         </a>
+
+        {/* BOTÃO SALVAR AGORA ESTÁTICO NO FINAL */}
+        <div className="mt-12 w-full flex justify-center">
+          <button
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            className="w-full md:w-auto text-white px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+            style={{ backgroundColor: primaryColor }}
+          >
+            {isSaving ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : <Save size={20} />}
+            {isSaving ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
+          </button>
+        </div>
       </div>
 
       <TermsAndPoliciesModal 
