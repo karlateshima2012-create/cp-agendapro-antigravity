@@ -456,11 +456,11 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       </div>
 
       {/* BOTÃO SALVAR FIXO */}
-      <div className="fixed bottom-[72px] md:bottom-0 right-0 left-0 md:left-72 bg-white/90 backdrop-blur-md border-t border-gray-100 p-4 md:p-6 flex justify-center md:justify-end items-center z-40 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-[80px] md:bottom-0 right-0 left-0 md:left-72 bg-white/80 backdrop-blur-md border-t border-gray-100 p-6 flex justify-end items-center z-40">
         <button
           onClick={handleSaveSettings}
           disabled={isSaving}
-          className="w-full md:w-auto text-white px-10 py-3.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/30 hover:scale-105 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          className="text-white px-10 py-3 rounded-2xl font-bold shadow-lg shadow-primary/30 hover:scale-105 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
           style={{ backgroundColor: primaryColor }}
         >
           {isSaving ? (
