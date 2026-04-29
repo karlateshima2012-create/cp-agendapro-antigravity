@@ -456,7 +456,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       </div>
 
       {/* BOTÃO SALVAR FIXO */}
-      <div className="fixed bottom-[80px] md:bottom-0 right-0 left-0 md:left-72 bg-white/80 backdrop-blur-md border-t border-gray-100 p-6 flex justify-end items-center z-40">
+      <div className="fixed bottom-0 right-0 left-0 md:left-72 bg-white/95 backdrop-blur-md border-t border-gray-100 p-6 pb-[92px] md:pb-6 flex justify-end items-center z-40 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)]">
         <button
           onClick={handleSaveSettings}
           disabled={isSaving}
