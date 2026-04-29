@@ -39,6 +39,12 @@ if ($path === 'me/change-password' && $method === 'POST') {
     
     $hash = password_hash($newPass, PASSWORD_DEFAULT);
     Db::query('UPDATE cp_agenda_users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [$hash, $user['id']]);
+    
+    // ✅ FIX: Update session state so the change is reflected immediately without logout
+    if (isset($_SESSION['user'])) {
+        $_SESSION['user']['must_change_password'] = false;
+    }
+    
     Response::ok(['msg' => 'Password updated']);
 }
 
