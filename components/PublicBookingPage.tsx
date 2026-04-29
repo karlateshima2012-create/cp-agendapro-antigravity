@@ -195,7 +195,7 @@ export const PublicBookingPage: React.FC<Props> = ({
     let startTime = config.startTime || '09:00';
     let endTime = config.endTime || '18:00';
 
-    if (selectedService.duration >= 1440) {
+    if (totalDuration >= 1440) {
       endTime = startTime;
     }
 
@@ -238,7 +238,7 @@ export const PublicBookingPage: React.FC<Props> = ({
         const bStart = toMin(b.startTime);
         const bEnd = b.endTime ? toMin(b.endTime) : bStart + (availability.intervalMinutes || 30);
         const slotStart = toMin(timeStr);
-        const slotEnd = slotStart + (selectedService.duration || 30);
+        const slotEnd = slotStart + totalDuration;
         return (slotStart < bEnd && slotEnd > bStart);
       });
 
