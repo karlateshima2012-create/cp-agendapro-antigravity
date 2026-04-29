@@ -233,7 +233,6 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
             </div>
           ))}
         </div>
-      </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Bloqueio de Agenda</h3>
