@@ -198,7 +198,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     };
 
     const days = [];
-    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-32 bg-gray-50/20 border border-gray-100/50 rounded-xl"></div>);
+    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-20 md:h-32 bg-gray-50/20 border border-gray-100/50 rounded-xl"></div>);
 
     for (let d = 1; d <= daysInMonth; d++) {
       const currentLoopDate = new Date(year, month, d);
@@ -257,7 +257,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       }
 
       days.push(
-        <div key={d} className={`h-32 border p-3 flex flex-col gap-2 rounded-xl transition-all relative ${dayClass}`}>
+        <div key={d} className={`h-20 md:h-32 border p-2 md:p-3 flex flex-col gap-1 md:gap-2 rounded-xl transition-all relative ${dayClass}`}>
           <div className="flex justify-between items-start">
             <span className={`text-sm font-black ${dayTextClass}`}>
               {d}
@@ -287,7 +287,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
           {/* PONTINHOS DE AGENDAMENTOS (só mostra se dia estiver disponível, habilitado e não for passado) */}
           {!blocked && isDayEnabled && !isPast && (
-            <div className="flex gap-1 flex-wrap overflow-hidden h-10 mt-1 content-start">
+            <div className="flex gap-1 flex-wrap overflow-hidden h-6 md:h-10 mt-1 content-start">
               {dayAppts.map((_, idx) => (
                 <div key={idx} className={`w-2 h-2 rounded-full ${isPast ? 'bg-gray-300' : 'bg-primary shadow-sm'}`}></div>
               ))}
