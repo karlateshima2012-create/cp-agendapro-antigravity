@@ -14,6 +14,7 @@ class Mail {
 
         try {
             // Server settings
+            $mail->SMTPDebug = 2; // ✅ DEBUG: Show verbose output
             $mail->isSMTP();
             $mail->Host       = 'smtp.hostinger.com';
             $mail->SMTPAuth   = true;
