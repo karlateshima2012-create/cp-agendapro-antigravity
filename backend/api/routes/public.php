@@ -37,10 +37,11 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     $blocked = Db::fetchAll('SELECT blocked_date as date, start_time as startTime, end_time as endTime, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$profile['id']]);
 
     if ($availability) {
-        $availability['workingHours'] = json_decode($availability['working_hours'] ?? '[]', true);
-        unset($availability['working_hours']);
+        $rawHours = $availability['working_hours'] ?? '[]';
+        $availability['workingHours'] = is_string($rawHours) ? json_decode($rawHours, true) : $rawHours;
         $availability['blockedDates'] = $blocked;
-        $availability['intervalMinutes'] = $availability['interval_minutes']; // normalized key
+        $availability['intervalMinutes'] = (int)($availability['interval_minutes'] ?? 30);
+        unset($availability['working_hours']);
         unset($availability['interval_minutes']);
     } else {
         $availability = [

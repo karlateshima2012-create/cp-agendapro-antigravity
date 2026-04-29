@@ -15,8 +15,9 @@ if ($path === 'availability' && $method === 'GET') {
     ];
 
     if ($availability) {
-        $resp['workingHours'] = json_decode($availability['working_hours'], true);
-        $resp['intervalMinutes'] = (int)$availability['interval_minutes'];
+        $rawHours = $availability['working_hours'] ?? '[]';
+        $resp['workingHours'] = is_string($rawHours) ? json_decode($rawHours, true) : $rawHours;
+        $resp['intervalMinutes'] = (int)($availability['interval_minutes'] ?? 30);
     }
     
     Response::ok($resp);
@@ -34,6 +35,14 @@ if ($path === 'availability' && $method === 'PUT') {
 
         // 1. Upsert Availability
         $exists = Db::fetch('SELECT id FROM cp_agenda_availability WHERE account_id = ?', [$accountId]);
+        
+        // Defensive check: ensure $workingHours is valid JSON string
+        if (is_array($data['workingHours'] ?? null)) {
+            $workingHours = json_encode($data['workingHours']);
+        } else {
+            $workingHours = '[]';
+        }
+
         if ($exists) {
             Db::query(
                 'UPDATE cp_agenda_availability SET working_hours = ?, interval_minutes = ? WHERE account_id = ?',
