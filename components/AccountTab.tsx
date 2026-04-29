@@ -478,12 +478,12 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
           FALAR COM SUPORTE
         </a>
 
-        {/* BOTÃO SALVAR AGORA ESTÁTICO NO FINAL */}
+        {/* BOTÃO SALVAR AGORA ESTÁTICO NO FINAL - NITIDEZ CORRIGIDA */}
         <div className="mt-12 w-full flex justify-center">
           <button
             onClick={handleSaveSettings}
             disabled={isSaving}
-            className="w-full md:w-auto text-white px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+            className="w-full md:w-auto text-white px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-lg shadow-black/10 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
             style={{ backgroundColor: primaryColor }}
           >
             {isSaving ? (
