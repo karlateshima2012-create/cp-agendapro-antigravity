@@ -10,7 +10,10 @@ import {
   Star,
   Users,
   History,
-  Contact2
+  Contact2,
+  MoreHorizontal,
+  Menu as MenuIcon,
+  X
 } from 'lucide-react';
 import { AccountInfo, Appointment, AvailabilityConfig, Service, AppointmentStatus } from '../types';
 import { DashboardHeader } from './DashboardHeader';
@@ -56,6 +59,7 @@ export const ClientDashboard: React.FC<Props> = ({
   onUpdateAccount
 }) => {
   const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'clients' | 'history' | 'account'>('appointments');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
     <button
@@ -154,57 +158,100 @@ export const ClientDashboard: React.FC<Props> = ({
             </div>
 
             {/* MOBILE NAVIGATION BAR */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-3 flex items-center justify-around z-50 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] pb-safe-offset-3">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-2 flex items-center justify-around z-[60] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] pb-safe-offset-3">
               <button
-                onClick={() => setActiveTab('appointments')}
-                className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${activeTab === 'appointments' ? 'text-primary' : 'text-gray-400'}`}
+                onClick={() => { setActiveTab('appointments'); setShowMobileMenu(false); }}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'appointments' ? 'text-primary' : 'text-gray-400'}`}
               >
                 <div className={`p-2 rounded-xl transition-all ${activeTab === 'appointments' ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
-                  <LayoutGrid size={24} className={activeTab === 'appointments' ? 'fill-primary/20' : ''} />
+                  <CalendarDays size={22} />
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-widest">Geral</span>
+                <span className="text-[7px] font-black uppercase tracking-widest">Agenda</span>
               </button>
 
               <button
-                onClick={() => setActiveTab('availability')}
-                className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${activeTab === 'availability' ? 'text-primary' : 'text-gray-400'}`}
+                onClick={() => { setActiveTab('availability'); setShowMobileMenu(false); }}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'availability' ? 'text-primary' : 'text-gray-400'}`}
               >
                 <div className={`p-2 rounded-xl transition-all ${activeTab === 'availability' ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
-                  <Activity size={24} />
+                  <Clock size={22} />
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-widest">Agenda</span>
+                <span className="text-[7px] font-black uppercase tracking-widest">Horários</span>
               </button>
 
               <button
-                onClick={() => setActiveTab('services')}
-                className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${activeTab === 'services' ? 'text-primary' : 'text-gray-400'}`}
+                onClick={() => { setActiveTab('services'); setShowMobileMenu(false); }}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'services' ? 'text-primary' : 'text-gray-400'}`}
               >
                 <div className={`p-2 rounded-xl transition-all ${activeTab === 'services' ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
-                  <Star size={24} />
+                  <Briefcase size={22} />
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-widest">Serviços</span>
+                <span className="text-[7px] font-black uppercase tracking-widest">Serviços</span>
               </button>
 
               <button
-                onClick={() => setActiveTab('account')}
-                className={`flex flex-col items-center gap-1 min-w-[64px] transition-all ${activeTab === 'account' ? 'text-primary' : 'text-gray-400'}`}
+                onClick={() => { setActiveTab('clients'); setShowMobileMenu(false); }}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'clients' ? 'text-primary' : 'text-gray-400'}`}
               >
-                <div className={`p-2 rounded-xl transition-all ${activeTab === 'account' ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
-                  <Users size={24} />
+                <div className={`p-2 rounded-xl transition-all ${activeTab === 'clients' ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
+                  <Contact2 size={22} />
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-widest">Perfil</span>
+                <span className="text-[7px] font-black uppercase tracking-widest">Clientes</span>
               </button>
 
               <button
-                onClick={onLogout}
-                className="flex flex-col items-center gap-1 min-w-[64px] text-gray-400"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${showMobileMenu ? 'text-primary' : 'text-gray-400'}`}
               >
-                <div className="p-2">
-                  <LogOut size={24} />
+                <div className={`p-2 rounded-xl transition-all ${showMobileMenu ? 'bg-primary/10 shadow-lg shadow-primary/20' : ''}`}>
+                  <MoreHorizontal size={22} />
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-widest">Sair</span>
+                <span className="text-[7px] font-black uppercase tracking-widest">Mais</span>
               </button>
             </div>
+
+            {/* MOBILE OVERFLOW MENU */}
+            {showMobileMenu && (
+              <div className="md:hidden fixed inset-0 z-[55] flex flex-col justify-end bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowMobileMenu(false)}>
+                <div 
+                  className="bg-white rounded-t-[2.5rem] p-6 shadow-2xl animate-slide-up"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      onClick={() => { setActiveTab('history'); setShowMobileMenu(false); }}
+                      className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === 'history' ? 'bg-primary text-white shadow-lg' : 'bg-gray-50 text-gray-700'}`}
+                    >
+                      <History size={20} />
+                      <span className="font-bold">Histórico de Agendamentos</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => { setActiveTab('account'); setShowMobileMenu(false); }}
+                      className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === 'account' ? 'bg-primary text-white shadow-lg' : 'bg-gray-50 text-gray-700'}`}
+                    >
+                      <Settings size={20} />
+                      <span className="font-bold">Configurações do Perfil</span>
+                    </button>
+
+                    <button
+                      onClick={onLogout}
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-red-50 text-red-600 transition-all border border-red-100"
+                    >
+                      <LogOut size={20} />
+                      <span className="font-bold">Sair do Sistema</span>
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => setShowMobileMenu(false)}
+                    className="w-full mt-6 py-4 text-gray-400 font-bold text-sm uppercase tracking-widest"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            )}
 
           </div>
         </main>
