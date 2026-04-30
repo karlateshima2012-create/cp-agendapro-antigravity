@@ -33,6 +33,20 @@ export const ClientsTab: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Japanese phone format helper
+  const formatJapanesePhone = (raw: string): string => {
+    const digits = raw.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3)  return digits;
+    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+  };
+
+  const handlePhoneChange = (val: string) => {
+    setFormData({ ...formData, phone: formatJapanesePhone(val) });
+  };
+
+  const rawPhoneDigits = (formData.phone || '').replace(/\D/g, '');
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim()) return;
@@ -199,17 +213,28 @@ export const ClientsTab: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Telefone (só números)</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Telefone</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                   <input
                     required
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={13}
                     value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
-                    placeholder="Ex: 09012345678"
+                    onChange={e => handlePhoneChange(e.target.value)}
+                    placeholder="090 0000 0000"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-mono font-bold"
                   />
+                </div>
+                {/* Digit counter */}
+                <div className="flex justify-end px-2">
+                  <span className={`text-[10px] font-bold tabular-nums transition-colors ${
+                    rawPhoneDigits.length === 11 ? 'text-green-500' :
+                    rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
+                  }`}>
+                    {rawPhoneDigits.length}/11 dígitos {rawPhoneDigits.length === 11 && '✓'}
+                  </span>
                 </div>
               </div>
 

@@ -16,6 +16,20 @@ import {
   Loader2
 } from 'lucide-react';
 
+import { 
+  Search, 
+  Calendar, 
+  Filter, 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  Trash2,
+  Loader2,
+  TrendingUp,
+  Award,
+  BarChart3
+} from 'lucide-react';
+
 export const HistoryTab: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +46,7 @@ export const HistoryTab: React.FC = () => {
       
       const resp = await api.listAppointments(filters);
       if (resp.ok) {
-        setAppointments(resp.data || []);
+        setAppointments((resp.data as any) || []);
       }
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -44,6 +58,12 @@ export const HistoryTab: React.FC = () => {
   useEffect(() => {
     fetchHistory();
   }, [dateFrom, dateTo]);
+
+  // Helper to parse dates safely (fixes Invalid Date on Safari)
+  const parseSafeDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    return new Date(dateStr.replace(' ', 'T'));
+  };
 
   const filteredAppointments = appointments.filter(app => {
     const searchLower = (search || '').toLowerCase();
@@ -58,11 +78,40 @@ export const HistoryTab: React.FC = () => {
     );
   });
 
+  // METRICS CALCULATION
+  const activeAppts = appointments.filter(a => !a.deleted_at && a.status === 'confirmed');
+  
+  // 1. Top Services
+  const serviceCounts: Record<string, number> = {};
+  activeAppts.forEach(a => {
+    const name = a.serviceName || 'Serviço Padrão';
+    serviceCounts[name] = (serviceCounts[name] || 0) + 1;
+  });
+  const topService = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
+
+  // 2. Top Clients
+  const clientCounts: Record<string, number> = {};
+  activeAppts.forEach(a => {
+    const name = a.clientName || 'Anônimo';
+    clientCounts[name] = (clientCounts[name] || 0) + 1;
+  });
+  const topClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
+
+  // 3. Busy Days
+  const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const dayCounts: Record<number, number> = {};
+  activeAppts.forEach(a => {
+    const day = parseSafeDate(a.startAt).getDay();
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  });
+  const busyDayIdx = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const busyDay = busyDayIdx !== undefined ? dayNames[parseInt(busyDayIdx)] : '-';
+
   const getStatusBadge = (appointment: Appointment) => {
     if (appointment.deleted_at) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-          <Trash2 size={12} /> EXCLUÍDO
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-gray-100 text-gray-500 border border-gray-200 uppercase tracking-widest">
+          <Trash2 size={10} /> Excluído
         </span>
       );
     }
@@ -70,138 +119,177 @@ export const HistoryTab: React.FC = () => {
     switch (appointment.status) {
       case 'confirmed':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-            <CheckCircle2 size={12} /> CONFIRMADO
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-green-100 text-green-700 border border-green-200 uppercase tracking-widest">
+            <CheckCircle2 size={10} /> Confirmado
           </span>
         );
       case 'canceled':
       case 'rejected':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
-            <XCircle size={12} /> CANCELADO
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-700 border border-red-200 uppercase tracking-widest">
+            <XCircle size={10} /> Cancelado
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
-            <Clock size={12} /> PENDENTE
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-widest">
+            <Clock size={10} /> Pendente
           </span>
         );
     }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8 animate-fade-in pb-12">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Histórico Completo</h2>
-          <p className="text-gray-500 text-sm">Visualize e filtre todos os agendamentos realizados, incluindo os excluídos.</p>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Histórico</h2>
+          <p className="text-gray-500 text-sm font-medium">Insights e registros detalhados da sua agenda.</p>
+        </div>
+      </div>
+
+      {/* METRICS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+              <TrendingUp size={24} />
+            </div>
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Serviço Mais Procurado</h3>
+          </div>
+          <p className="text-xl font-black text-gray-900 truncate">{topService[0]}</p>
+          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">{topService[1]} agendamentos realizados</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
+              <Award size={24} />
+            </div>
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Cliente Fidelizado</h3>
+          </div>
+          <p className="text-xl font-black text-gray-900 truncate">{topClient[0]}</p>
+          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">{topClient[1]} visitas registradas</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
+              <BarChart3 size={24} />
+            </div>
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Pico de Movimento</h3>
+          </div>
+          <p className="text-xl font-black text-gray-900">{busyDay}</p>
+          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">Dia da semana com mais procura</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 w-full space-y-1">
-          <label className="text-xs font-bold text-gray-500 uppercase ml-1">Pesquisar</label>
+      <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col md:flex-row gap-6 items-end mx-2">
+        <div className="flex-1 w-full space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Pesquisar Registro</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
             <input
               type="text"
               placeholder="Nome, telefone ou serviço..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl text-sm font-bold outline-none transition-all"
             />
           </div>
         </div>
-        <div className="w-full md:w-44 space-y-1">
-          <label className="text-xs font-bold text-gray-500 uppercase ml-1">De</label>
+        <div className="w-full md:w-48 space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Início</label>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
+            className="w-full px-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl text-sm font-bold outline-none transition-all"
           />
         </div>
-        <div className="w-full md:w-44 space-y-1">
-          <label className="text-xs font-bold text-gray-500 uppercase ml-1">Até</label>
+        <div className="w-full md:w-48 space-y-2">
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Fim</label>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
+            className="w-full px-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl text-sm font-bold outline-none transition-all"
           />
         </div>
         <button
           onClick={fetchHistory}
-          className="bg-gray-800 hover:bg-black text-white p-2.5 rounded-xl transition-colors shadow-sm"
+          className="bg-gray-900 hover:bg-black text-white p-4 rounded-2xl transition-all shadow-lg active:scale-95"
           title="Recarregar"
         >
-          <Clock size={18} />
+          <Clock size={20} />
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mx-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="animate-spin text-primary" size={32} />
-            <p className="text-gray-400 text-sm font-medium">Carregando histórico...</p>
+            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Processando dados...</p>
           </div>
         ) : filteredAppointments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="bg-gray-50 p-4 rounded-full mb-4">
-              <Calendar className="text-gray-300" size={48} />
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 mb-6 border border-gray-100">
+              <Calendar size={32} />
             </div>
-            <h3 className="text-gray-800 font-bold text-lg">Nenhum registro encontrado</h3>
-            <p className="text-gray-400 text-sm max-w-xs mt-1">
-              Ajuste os filtros para encontrar o que procura.
+            <h3 className="text-xl font-black text-gray-900 mb-1">Nenhum registro</h3>
+            <p className="text-gray-400 text-xs font-medium max-w-xs">
+              Ajuste o período ou a busca para visualizar os agendamentos.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Data/Hora</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Serviço</th>
-                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Data & Horário</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Cliente</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Serviço Solicitado</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Status Final</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredAppointments.map((app) => (
-                  <tr key={app.id} className={`hover:bg-gray-50/50 transition-colors ${app.deleted_at ? 'opacity-60 bg-gray-50/30' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary/5 p-2 rounded-lg text-primary">
-                          <Calendar size={18} />
+              <tbody className="divide-y divide-gray-50">
+                {filteredAppointments.map((app) => {
+                  const startDate = parseSafeDate(app.startAt);
+                  return (
+                    <tr key={app.id} className={`hover:bg-gray-50/30 transition-colors ${app.deleted_at ? 'opacity-50' : ''}`}>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-gray-50 p-3 rounded-xl text-gray-400 border border-gray-100">
+                            <Calendar size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900">
+                              {startDate.toLocaleDateString('pt-BR')}
+                            </p>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-tight">
+                              {startDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">
-                            {new Date(app.startAt).toLocaleDateString('pt-BR')}
-                          </p>
-                          <p className="text-xs text-gray-500 font-medium">
-                            {new Date(app.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-gray-900 capitalize">{app.clientName}</p>
+                          <p className="text-[10px] text-gray-400 font-bold font-mono tracking-tighter">{app.clientPhone}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-bold text-gray-900">{app.clientName}</p>
-                        <p className="text-xs text-gray-500 font-medium">{app.clientPhone}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="inline-flex items-center px-2 py-1 bg-gray-100 rounded text-xs font-bold text-gray-600">
-                        {app.serviceName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {getStatusBadge(app)}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="inline-flex items-center px-3 py-1 bg-primary/5 rounded-full text-[10px] font-black text-primary uppercase tracking-widest">
+                          {app.serviceName || 'Serviço Padrão'}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-center">
+                        {getStatusBadge(app)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
