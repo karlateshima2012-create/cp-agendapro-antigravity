@@ -8,8 +8,8 @@
  * formatted alert to a dedicated Telegram chat for operational monitoring.
  *
  * Configuration (environment variables):
- *   TELEGRAM_BOT_TOKEN     — Bot token from @BotFather
- *   TELEGRAM_ERROR_CHAT_ID — Chat ID of the monitoring channel/group
+ *   TELEGRAM_MONITOR_TOKEN — Token of the dedicated monitoring bot (separate from the appointment bot)
+ *   TELEGRAM_ERROR_CHAT_ID — Your personal Chat ID (destination for alerts)
  *
  * Rate limiting: identical alerts are suppressed for 5 minutes to prevent spam.
  */
@@ -147,12 +147,12 @@ class Monitor
 
     private static function sendAlert(string $text, string $rateKey = ''): void
     {
-        $token  = get_config_var('TELEGRAM_BOT_TOKEN', '');
+        // ✅ Uses dedicated monitoring bot — separate from the appointment notification bot
+        $token  = get_config_var('TELEGRAM_MONITOR_TOKEN', '');
         $chatId = get_config_var('TELEGRAM_ERROR_CHAT_ID', '');
 
         if (empty($token) || empty($chatId)) {
-            // Monitoring not configured — fall back to error_log only
-            error_log('[Monitor] TELEGRAM_BOT_TOKEN or TELEGRAM_ERROR_CHAT_ID not set.');
+            error_log('[Monitor] TELEGRAM_MONITOR_TOKEN or TELEGRAM_ERROR_CHAT_ID not set in environment.');
             return;
         }
 

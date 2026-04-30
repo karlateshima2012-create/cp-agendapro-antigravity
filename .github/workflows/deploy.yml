@@ -49,6 +49,7 @@ jobs:
         SECRET_DB_USER: ${{ secrets.DB_USER }}
         SECRET_DB_PASS: ${{ secrets.DB_PASS }}
         SECRET_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        SECRET_TELEGRAM_MONITOR: ${{ secrets.TELEGRAM_MONITOR_TOKEN }}
         SECRET_SMTP_USER: ${{ secrets.SMTP_USER }}
         SECRET_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         SECRET_SMTP_FROM: ${{ secrets.SMTP_FROM }}
@@ -64,6 +65,7 @@ jobs:
         echo "API_VERSION=1.0.0" >> backend/.env
         echo "DEBUG_MODE=false" >> backend/.env
         echo "TELEGRAM_BOT_TOKEN=${SECRET_TELEGRAM}" >> backend/.env
+        echo "TELEGRAM_MONITOR_TOKEN=${SECRET_TELEGRAM_MONITOR}" >> backend/.env
         echo "SMTP_HOST=smtp.hostinger.com" >> backend/.env
         echo "SMTP_PORT=465" >> backend/.env
         echo "SMTP_USER=${SECRET_SMTP_USER}" >> backend/.env
