@@ -209,8 +209,14 @@ $accountId = $user['account_id'];
 if ($path === 'appointments' && $method === 'GET') {
     $from = $_GET['from'] ?? null;
     $to = $_GET['to'] ?? null;
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+    $offset = ($page - 1) * $limit;
+    $source = $_GET['source'] ?? 'active'; // 'active' or 'archive'
     
-    $sql = 'SELECT * FROM cp_agenda_appointments WHERE account_id = ?';
+    $table = ($source === 'archive') ? 'cp_agenda_appointments_archive' : 'cp_agenda_appointments';
+    
+    $sql = "SELECT * FROM $table WHERE account_id = ?";
     $params = [$accountId];
     
     $showDeleted = filter_var($_GET['history'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
@@ -227,9 +233,24 @@ if ($path === 'appointments' && $method === 'GET') {
         $params[] = $to;
     }
     
-    $sql .= ' ORDER BY start_at ASC';
+    // Count total for pagination
+    $countSql = str_replace('SELECT *', 'SELECT COUNT(*) as total', $sql);
+    $total = Db::fetch($countSql, $params)['total'];
+    
+    $sql .= ' ORDER BY start_at DESC LIMIT ? OFFSET ?';
+    $params[] = $limit;
+    $params[] = $offset;
+    
     $appointments = Db::fetchAll($sql, $params);
-    Response::ok($appointments);
+    Response::ok([
+        'items' => $appointments,
+        'pagination' => [
+            'total' => (int)$total,
+            'page' => $page,
+            'limit' => $limit,
+            'hasMore' => ($offset + count($appointments)) < $total
+        ]
+    ]);
 }
 
 if (preg_match('/^appointments\/(\d+)\/status$/', $path, $matches) && $method === 'PATCH') {

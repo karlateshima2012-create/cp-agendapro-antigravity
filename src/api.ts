@@ -84,7 +84,7 @@ export const api = {
     },
 
     // Appointments
-    async listAppointments(filters?: { from?: string; to?: string; history?: boolean }): Promise<ApiResponse<Appointment[]>> {
+    async listAppointments(filters?: { from?: string; to?: string; history?: boolean; page?: number; limit?: number; source?: 'active' | 'archive' }): Promise<ApiResponse<{ items: Appointment[]; pagination: { total: number; page: number; limit: number; hasMore: boolean } }>> {
         return apiClient.get('/appointments', { params: filters });
     },
 

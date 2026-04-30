@@ -13,13 +13,6 @@ import {
   Clock, 
   Trash2,
   Download,
-  Loader2
-} from 'lucide-react';
-
-import { 
-  Search, 
-  Calendar, 
-  Filter, 
   CheckCircle2, 
   XCircle, 
   Clock, 
@@ -27,37 +20,67 @@ import {
   Loader2,
   TrendingUp,
   Award,
-  BarChart3
+  BarChart3,
+  Archive,
+  History as HistoryIcon,
+  ChevronDown
 } from 'lucide-react';
 
 export const HistoryTab: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [source, setSource] = useState<'active' | 'archive'>('active');
 
-  const fetchHistory = async () => {
+  const fetchHistory = async (isNewSearch = true) => {
     try {
-      setLoading(true);
-      const filters: any = { history: true };
+      if (isNewSearch) {
+        setLoading(true);
+        setPage(1);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const currentPage = isNewSearch ? 1 : page + 1;
+      const filters: any = { 
+        history: true, 
+        page: currentPage, 
+        limit: 20,
+        source: source 
+      };
+      
       if (dateFrom) filters.from = `${dateFrom} 00:00:00`;
       if (dateTo) filters.to = `${dateTo} 23:59:59`;
       
       const resp = await api.listAppointments(filters);
-      if (resp.ok) {
-        setAppointments((resp.data as any) || []);
+      if (resp.ok && resp.data) {
+        const newItems = resp.data.items || [];
+        if (isNewSearch) {
+          setAppointments(newItems);
+        } else {
+          setAppointments(prev => [...prev, ...newItems]);
+          setPage(currentPage);
+        }
+        setHasMore(resp.data.pagination.hasMore);
       }
     } catch (error) {
       console.error('Error fetching history:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchHistory();
-  }, [dateFrom, dateTo]);
+    fetchHistory(true);
+  }, [dateFrom, dateTo, source]);
 
   // Helper to parse dates safely (fixes Invalid Date on Safari)
   const parseSafeDate = (dateStr: string) => {
@@ -78,10 +101,9 @@ export const HistoryTab: React.FC = () => {
     );
   });
 
-  // METRICS CALCULATION
+  // METRICS CALCULATION (Only for the visible set or fetched data)
   const activeAppts = appointments.filter(a => !a.deleted_at && a.status === 'confirmed');
   
-  // 1. Top Services
   const serviceCounts: Record<string, number> = {};
   activeAppts.forEach(a => {
     const name = a.serviceName || 'Serviço Padrão';
@@ -89,7 +111,6 @@ export const HistoryTab: React.FC = () => {
   });
   const topService = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
 
-  // 2. Top Clients
   const clientCounts: Record<string, number> = {};
   activeAppts.forEach(a => {
     const name = a.clientName || 'Anônimo';
@@ -97,7 +118,6 @@ export const HistoryTab: React.FC = () => {
   });
   const topClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
 
-  // 3. Busy Days
   const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
   const dayCounts: Record<number, number> = {};
   activeAppts.forEach(a => {
@@ -145,6 +165,26 @@ export const HistoryTab: React.FC = () => {
         <div>
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Histórico</h2>
           <p className="text-gray-500 text-sm font-medium">Insights e registros detalhados da sua agenda.</p>
+        </div>
+        
+        {/* Source Selector (Archive vs Active) */}
+        <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200 shadow-sm self-stretch md:self-auto">
+          <button
+            onClick={() => setSource('active')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black transition-all ${
+              source === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <HistoryIcon size={16} /> RECENTE
+          </button>
+          <button
+            onClick={() => setSource('archive')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black transition-all ${
+              source === 'archive' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <Archive size={16} /> ARQUIVADO
+          </button>
         </div>
       </div>
 
@@ -218,7 +258,7 @@ export const HistoryTab: React.FC = () => {
           />
         </div>
         <button
-          onClick={fetchHistory}
+          onClick={() => fetchHistory(true)}
           className="bg-gray-900 hover:bg-black text-white p-4 rounded-2xl transition-all shadow-lg active:scale-95"
           title="Recarregar"
         >
@@ -230,7 +270,7 @@ export const HistoryTab: React.FC = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="animate-spin text-primary" size={32} />
-            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Processando dados...</p>
+            <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Sincronizando dados...</p>
           </div>
         ) : filteredAppointments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
@@ -239,7 +279,7 @@ export const HistoryTab: React.FC = () => {
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-1">Nenhum registro</h3>
             <p className="text-gray-400 text-xs font-medium max-w-xs">
-              Ajuste o período ou a busca para visualizar os agendamentos.
+              {source === 'archive' ? 'O baú de histórico antigo está vazio.' : 'Ajuste o período ou a busca para visualizar os agendamentos.'}
             </p>
           </div>
         ) : (
@@ -292,6 +332,29 @@ export const HistoryTab: React.FC = () => {
                 })}
               </tbody>
             </table>
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="p-8 flex justify-center bg-gray-50/30">
+                <button
+                  onClick={() => fetchHistory(false)}
+                  disabled={loadingMore}
+                  className="flex items-center gap-2 px-8 py-4 bg-white border border-gray-200 text-gray-900 text-xs font-black uppercase tracking-widest rounded-2xl shadow-sm hover:shadow-md active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      CARREGANDO...
+                    </>
+                  ) : (
+                    <>
+                      VER MAIS REGISTROS
+                      <ChevronDown size={16} />
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
