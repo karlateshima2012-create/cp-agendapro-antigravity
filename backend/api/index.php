@@ -6,6 +6,7 @@ require_once __DIR__ . '/lib/Db.php';
 require_once __DIR__ . '/lib/Auth.php';
 require_once __DIR__ . '/lib/Response.php';
 require_once __DIR__ . '/lib/Mail.php';
+require_once __DIR__ . '/lib/Monitor.php';
 
 // ✅ SECURITY FIX: CORS Allowlist — only accept requests from known, trusted origins
 $allowedOrigins = [
@@ -57,6 +58,9 @@ if (DEBUG_MODE) {
 // Initialize Auth
 Auth::init();
 
+// ✅ MONITORING: Register global error/exception handlers → alerts via Telegram
+Monitor::register();
+
 // Diagnostic Routes
 if ($path === 'ping') {
     Response::ok(['msg' => 'PONG', 'version' => API_VERSION]);
@@ -67,6 +71,11 @@ if ($path === 'db') {
         $result = Db::fetch('SELECT 1 as ok');
         Response::ok($result);
     } catch (Exception $e) {
+        // 🔴 DB connection failure is the most critical possible error — alert immediately
+        Monitor::critical('Falha na conexão com o banco de dados', [
+            'error' => $e->getMessage(),
+            'path'  => $path,
+        ]);
         Response::fail('DB_CONNECT_FAIL: ' . $e->getMessage(), 500);
     }
 }

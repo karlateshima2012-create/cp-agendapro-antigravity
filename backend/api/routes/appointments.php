@@ -168,9 +168,33 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
         Response::ok(['id' => $newId]);
 
     } catch (Exception $e) {
-        $pdo->rollBack();
-        $code = ($e->getMessage() === 'Este horário acabou de ser reservado. Por favor, escolha outro.') ? 409 : 400;
-        Response::fail($e->getMessage(), $code);
+        if ($pdo->inTransaction()) $pdo->rollBack();
+
+        // Business-logic errors (validation, conflict) are expected — don't alert
+        $businessErrors = [
+            'Este horário acabou de ser reservado. Por favor, escolha outro.',
+            'Não é possível agendar em datas passadas.',
+            'Agendamentos devem ser feitos com pelo menos 1 dia de antecedência.',
+            'Esta reserva entra em conflito com uma data ou horário bloqueado.',
+        ];
+
+        $isBusinessError = in_array($e->getMessage(), $businessErrors, true);
+        $httpCode = 400;
+
+        if ($e->getMessage() === 'Este horário acabou de ser reservado. Por favor, escolha outro.') {
+            $httpCode = 409;
+        }
+
+        // 🔴 Unexpected errors (DB, infrastructure) MUST be alerted
+        if (!$isBusinessError) {
+            Monitor::critical('Erro inesperado ao criar agendamento', [
+                'error'      => $e->getMessage(),
+                'account_id' => $accId,
+                'startAt'    => $startStr,
+            ]);
+        }
+
+        Response::fail($e->getMessage(), $httpCode);
     }
 }
 

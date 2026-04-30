@@ -48,7 +48,16 @@ class Mail {
 
             return $mail->send();
         } catch (Exception $e) {
-            error_log("MAIL_ERROR: {$mail->ErrorInfo}");
+            // 🔔 Email failures are often silent — alert so they're never missed
+            $errorInfo = $mail->ErrorInfo;
+            error_log("MAIL_ERROR: $errorInfo");
+            if (class_exists('Monitor')) {
+                Monitor::critical('Falha no envio de e-mail', [
+                    'to'         => $to,
+                    'subject'    => $subject,
+                    'smtp_error' => $errorInfo,
+                ]);
+            }
             return false;
         }
     }

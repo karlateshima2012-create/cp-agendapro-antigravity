@@ -53,6 +53,7 @@ jobs:
         SECRET_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         SECRET_SMTP_FROM: ${{ secrets.SMTP_FROM }}
         SECRET_SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+        SECRET_TELEGRAM_ERROR_CHAT_ID: ${{ secrets.TELEGRAM_ERROR_CHAT_ID }}
       run: |
         echo "DB_HOST=${SECRET_DB_HOST}" > backend/.env
         echo "DB_PORT=${SECRET_DB_PORT}" >> backend/.env
@@ -69,7 +70,9 @@ jobs:
         echo "SMTP_PASSWORD=${SECRET_SMTP_PASSWORD}" >> backend/.env
         echo "SMTP_FROM=${SECRET_SMTP_FROM}" >> backend/.env
         echo "SMTP_FROM_NAME=${SECRET_SMTP_FROM_NAME}" >> backend/.env
+        echo "TELEGRAM_ERROR_CHAT_ID=${SECRET_TELEGRAM_ERROR_CHAT_ID}" >> backend/.env
         echo "Linhas no .env: $(wc -l < backend/.env)"
+
 
     - name: Preparar Pacotes de Deploy
       run: |
