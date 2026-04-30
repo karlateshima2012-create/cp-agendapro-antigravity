@@ -117,6 +117,10 @@ export const api = {
         return apiClient.get('/clients', { params: { search } });
     },
 
+    async saveClient(data: { name: string; phone: string; email?: string }): Promise<ApiResponse> {
+        return apiClient.post('/clients', data);
+    },
+
     async deleteClient(id: number): Promise<ApiResponse> {
         return apiClient.delete(`/clients/${id}`);
     },

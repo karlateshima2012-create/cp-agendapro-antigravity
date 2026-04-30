@@ -2,19 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../src/api';
 import { Client } from '../types';
-import { Search, Trash2, User, Phone, Mail, Calendar, Loader2 } from 'lucide-react';
+import { Search, Trash2, User, Phone, Mail, Calendar, Loader2, Plus, X } from 'lucide-react';
 
 export const ClientsTab: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
 
   const fetchClients = async () => {
     try {
       setLoading(true);
       const resp = await api.listClients(search);
       if (resp.ok) {
-        setClients(resp.data || []);
+        setClients((resp.data as any) || []);
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -29,6 +32,27 @@ export const ClientsTab: React.FC = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.phone.trim()) return;
+    
+    try {
+      setIsSaving(true);
+      const resp = await api.saveClient(formData);
+      if (resp.ok) {
+        setIsModalOpen(false);
+        setFormData({ name: '', phone: '', email: '' });
+        fetchClients();
+      } else {
+        alert(resp.error || 'Erro ao salvar cliente');
+      }
+    } catch (error) {
+      console.error('Error saving client:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
@@ -45,17 +69,25 @@ export const ClientsTab: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Mini CRM (Clientes)</h2>
-          <p className="text-gray-500 text-sm">Gerencie os dados dos seus clientes capturados automaticamente.</p>
+          <p className="text-gray-500 text-sm">Gerencie sua base de clientes cadastrados manual ou automaticamente.</p>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou telefone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none shadow-sm transition-all"
-          />
+        <div className="flex w-full md:w-auto gap-3">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou telefone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none shadow-sm transition-all"
+            />
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
+          >
+            <Plus size={18} /> <span className="hidden sm:inline">Novo Cliente</span>
+          </button>
         </div>
       </div>
 
@@ -72,7 +104,7 @@ export const ClientsTab: React.FC = () => {
             </div>
             <h3 className="text-gray-800 font-bold text-lg">Nenhum cliente encontrado</h3>
             <p className="text-gray-400 text-sm max-w-xs mt-1">
-              Clientes são adicionados automaticamente quando realizam um agendamento.
+              Adicione clientes manualmente ou deixe que o sistema capture-os automaticamente em cada agendamento.
             </p>
           </div>
         ) : (
@@ -103,7 +135,7 @@ export const ClientsTab: React.FC = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Phone size={14} className="text-gray-400" />
-                          <span>{client.phone}</span>
+                          <span className="font-mono">{client.phone}</span>
                         </div>
                         {client.email && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -135,6 +167,81 @@ export const ClientsTab: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* MODAL NOVO CLIENTE */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="p-8 pb-0 flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900">Novo Cliente</h3>
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest mt-1">Cadastro Manual</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={24} className="text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="p-8 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Nome Completo</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                  <input
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Maria Silva"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Telefone (só números)</label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                  <input
+                    required
+                    type="tel"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                    placeholder="Ex: 09012345678"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">E-mail (Opcional)</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="exemplo@email.com"
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-bold"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 uppercase tracking-widest text-xs mt-4 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <>Salvar Cliente <Plus size={18} /></>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

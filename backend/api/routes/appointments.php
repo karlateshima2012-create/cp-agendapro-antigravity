@@ -103,8 +103,12 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
 
         // 5. UPSERT CLIENT (CRM)
         $clientName = $data['clientName'] ?? '';
-        $clientPhone = $data['clientPhone'] ?? '';
+        $clientPhoneRaw = $data['clientPhone'] ?? '';
         $clientEmail = $data['clientEmail'] ?? '';
+        
+        // Normalize phone: remove spaces and hyphens so "090 123 456" becomes "090123456"
+        // This prevents duplicate clients due to formatting changes.
+        $clientPhone = preg_replace('/\D/', '', $clientPhoneRaw);
         
         if (!empty($clientPhone)) {
             Db::query(
