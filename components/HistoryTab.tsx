@@ -1,18 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../src/api';
 import { Appointment } from '../types';
 import { 
   Search, 
   Calendar, 
-  Filter, 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  Trash2,
-  Download,
   CheckCircle2, 
   XCircle, 
   Clock, 

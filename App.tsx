@@ -234,8 +234,9 @@ const App: React.FC = () => {
         }
         setAvailability(availData);
       }
-      if (apptsResp.ok) {
-        const mappedAppts = (apptsResp.data || []).map((a: any) => ({
+      if (apptsResp.ok && apptsResp.data) {
+        const items = apptsResp.data.items || [];
+        const mappedAppts = items.map((a: any) => ({
           id: a.id,
           accountId: a.account_id,
           userId: a.user_id,
@@ -311,8 +312,9 @@ const App: React.FC = () => {
     const interval = setInterval(() => {
       console.log('📡 Polling appointments...');
       api.listAppointments().then(resp => {
-        if (resp.ok) {
-          const mappedAppts = (resp.data || []).map((a: any) => ({
+        if (resp.ok && resp.data) {
+          const items = resp.data.items || [];
+          const mappedAppts = items.map((a: any) => ({
             id: a.id,
             accountId: a.account_id,
             userId: a.user_id,
