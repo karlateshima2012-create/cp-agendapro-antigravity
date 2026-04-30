@@ -57,12 +57,12 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
 
-  // Japanese phone format: 0XX-XXXX-XXXX (11 digits total)
+  // Japanese phone format: 0XX XXXX XXXX (11 digits total)
   const formatJapanesePhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '').slice(0, 11);
     if (digits.length <= 3)  return digits;
-    if (digits.length <= 7)  return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
   };
 
   const handlePhoneChange = (value: string) => {
@@ -643,12 +643,11 @@ export const PublicBookingPage: React.FC<Props> = ({
                       className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-300"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}
-                      placeholder="090-0000-0000"
+                      placeholder="090 0000 0000"
                     />
                   </div>
-                  {/* Digit counter with visual feedback */}
-                  <div className="flex items-center justify-between px-2 mt-1">
-                    <span className="text-[10px] text-gray-400">Formato: 0XX-XXXX-XXXX</span>
+                  {/* Digit counter */}
+                  <div className="flex justify-end px-2 mt-1">
                     <span className={`text-[10px] font-bold tabular-nums transition-colors ${
                       rawPhoneDigits.length === 11 ? 'text-green-500' :
                       rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
