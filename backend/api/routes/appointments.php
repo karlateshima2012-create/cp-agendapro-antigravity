@@ -216,7 +216,10 @@ if ($path === 'appointments' && $method === 'GET') {
     
     $table = ($source === 'archive') ? 'cp_agenda_appointments_archive' : 'cp_agenda_appointments';
     
-    $sql = "SELECT * FROM $table WHERE account_id = ?";
+    // Explicitly select client fields to ensure they are available
+    $sql = "SELECT id, account_id, client_name, client_email, client_phone, service_id, service_name, start_at, end_datetime, duration, status, created_at, deleted_at 
+            FROM $table 
+            WHERE account_id = ?";
     $params = [$accountId];
     
     $showDeleted = filter_var($_GET['history'] ?? 'false', FILTER_VALIDATE_BOOLEAN);

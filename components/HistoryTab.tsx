@@ -52,11 +52,26 @@ export const HistoryTab: React.FC = () => {
       
       const resp = await api.listAppointments(filters);
       if (resp.ok && resp.data) {
-        const newItems = resp.data.items || [];
+        const rawItems = resp.data.items || [];
+        const mappedItems: Appointment[] = rawItems.map((a: any) => ({
+          id: a.id,
+          clientName: a.client_name,
+          clientEmail: a.client_email,
+          clientPhone: a.client_phone,
+          serviceId: a.service_id,
+          serviceName: a.service_name,
+          startAt: a.start_at,
+          endAt: a.end_datetime,
+          duration: a.duration,
+          status: a.status,
+          createdAt: a.created_at,
+          deleted_at: a.deleted_at
+        }));
+
         if (isNewSearch) {
-          setAppointments(newItems);
+          setAppointments(mappedItems);
         } else {
-          setAppointments(prev => [...prev, ...newItems]);
+          setAppointments(prev => [...prev, ...mappedItems]);
           setPage(currentPage);
         }
         setHasMore(resp.data.pagination.hasMore);
