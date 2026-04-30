@@ -209,9 +209,12 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       const isPast = loopTime < todayMidnight;
       const isToday = d === todayJST.getDate() && month === todayJST.getMonth() && year === todayJST.getFullYear();
 
+      // SÓ CONSIDERA BLOQUEADO SE FOR O DIA INTEIRO (sem startTime/endTime)
       const blocked = availability.blockedDates.find(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
-        return bDate === dateStr;
+        const isSameDay = bDate === dateStr;
+        const isFullDay = !b.startTime && !b.endTime;
+        return isSameDay && isFullDay;
       });
 
       const dayAppts = appointments.filter(a => {
@@ -237,8 +240,8 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
         dayClass = 'bg-gray-50/60 border-gray-100';
         dayTextClass = 'text-gray-400';
       } else if (isPast) {
-        dayClass = 'bg-gray-50/30 border-gray-100 opacity-80';
-        dayTextClass = 'text-gray-500';
+        dayClass = 'bg-gray-50/30 border-gray-100 opacity-60';
+        dayTextClass = 'text-gray-400';
       } else if (isToday) {
         dayClass = 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20';
         dayTextClass = 'text-primary';
@@ -247,7 +250,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       days.push(
         <div key={d} className={`h-20 md:h-32 border p-2 md:p-3 flex flex-col gap-1 md:gap-2 rounded-xl transition-all relative ${dayClass}`}>
           <div className="flex justify-between items-start">
-            <span className={`text-sm font-black ${dayTextClass}`}>
+            <span className={`text-sm font-black ${dayTextClass} ${isPast ? 'line-through decoration-gray-300' : ''}`}>
               {d}
             </span>
 
