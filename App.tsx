@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from './src/api';
+import { log } from './src/logger'; // ✅ SECURITY [M-8]: Conditional logger
 import { DEFAULT_AVAILABILITY } from './constants';
 import { Appointment, AccountInfo, Service, AvailabilityConfig, User, UserRole, AppointmentStatus, AccountStatus } from './types';
 import { PublicBookingPage } from './components/PublicBookingPage';
@@ -53,7 +54,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 const App: React.FC = () => {
   useEffect(() => {
-    console.log('🚀 Build Version: 2026.03.02.11 - SVG FAVICON ADDED');
+    log.info('Build Version:', import.meta.env.VITE_APP_VERSION ?? 'dev');
   }, []);
 
   // ✅ NOVA VERIFICAÇÃO: Se estiver na rota /reset-password, renderiza componente específico
@@ -95,7 +96,7 @@ const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const publicUserId = params.get('p');
     if (publicUserId) {
-      console.log('🔗 Modo público detectado:', publicUserId);
+      log.info('🔗 Modo público detectado:', publicUserId);
     }
   }, []);
 
@@ -158,18 +159,18 @@ const App: React.FC = () => {
       setPublicBusyAppointments(appts || []);
 
     } catch (e) {
-      console.error("Erro ao buscar dados públicos:", e);
+      log.error("Erro ao buscar dados públicos:", e);
     }
   };
 
   const fetchAllData = async (userId: string, role: UserRole) => {
     try {
       if (role === 'admin' || role === 'super_admin') {
-        console.log('🔍 [App] Fetching admin profiles for role:', role);
+        log.info('🔍 [App] Fetching admin profiles for role:', role);
         const resp: any = await api.adminListProfiles();
-        console.log('📦 [App] Admin profiles response:', resp);
+        log.info('📦 [App] Admin profiles response:', resp);
         if (resp.ok) {
-          console.log('✅ [App] Setting allUsers with mapped data');
+          log.info('✅ [App] Setting allUsers with mapped data');
           const mappedUsers = (resp.data || []).map((u: any) => ({
             ...u,
             planExpiresAt: u.planExpiresAt ? u.planExpiresAt.replace(' ', 'T') : '',
@@ -177,13 +178,13 @@ const App: React.FC = () => {
           }));
           setAllUsers(mappedUsers);
         } else {
-          console.error('❌ [App] Failed to fetch profiles:', resp);
+          log.error('❌ [App] Failed to fetch profiles:', resp);
         }
       } else {
         await fetchClientData(userId);
       }
     } catch (e: any) {
-      console.error("Erro ao carregar dados do painel:", e);
+      log.error("Erro ao carregar dados do painel:", e);
     }
   };
 

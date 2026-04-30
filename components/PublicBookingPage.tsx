@@ -77,8 +77,8 @@ export const PublicBookingPage: React.FC<Props> = ({
     return mapWorkingHours(availability.workingHours);
   }, [availability.workingHours]);
 
-  console.log('AVAILABILITY OBJECT:', JSON.stringify(availability, null, 2));
-  console.log('NORMALIZED HOURS:', normalizedHours);
+  // ✅ SECURITY [M-8]: Debug logs removed — availability data must not be exposed in production console
+
 
   const getNowJST = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   const formatLiteralDate = (date: Date) => {

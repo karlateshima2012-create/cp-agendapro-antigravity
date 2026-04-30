@@ -18,10 +18,16 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     }
 
     if ($profile['status'] !== 'active') {
-        // Return limited info if blocked/expired, or just fail?
-        // Let frontend handle status check, but maybe hide data?
-        // identifying status is enough for frontend to show block screen
+        // ✅ SECURITY [A-6]: Return only status info for non-active accounts
+        // Never expose services, availability or appointments of suspended accounts
+        Response::ok([
+            'profile'      => ['status' => $profile['status'], 'name' => $profile['name']],
+            'services'     => [],
+            'availability' => ['workingHours' => [], 'blockedDates' => [], 'intervalMinutes' => 30],
+            'appointments' => []
+        ]);
     }
+
 
     // Fetch Services
     $services = Db::fetchAll('SELECT id, name, description, duration_min AS duration, cleaning_buffer_min AS cleaning_buffer, price FROM cp_agenda_services WHERE account_id = ? ORDER BY sort_order ASC', [$profile['id']]);

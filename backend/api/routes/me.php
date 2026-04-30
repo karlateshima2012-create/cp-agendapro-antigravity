@@ -3,7 +3,16 @@
 
 if ($path === 'me' && $method === 'GET') {
     $user = Auth::requireAuth();
-    $account = Db::fetch('SELECT * FROM cp_agenda_accounts WHERE id = ?', [$user['account_id']]);
+    // ✅ SECURITY [A-4]: Explicit columns only — never SELECT * on sensitive tables
+    $account = Db::fetch(
+        'SELECT name, status, plan_type, plan_expires_at, plan_started_at,
+                primary_color, secondary_color, short_description, services_title,
+                services_subtitle, cover_image, profile_image, contact_phone,
+                telegram_bot_token, telegram_chat_id, onboarding_seen,
+                lifetime_appointments, created_at
+         FROM cp_agenda_accounts WHERE id = ?',
+        [$user['account_id']]
+    );
     Response::ok(['user' => $user, 'account' => $account]);
 }
 

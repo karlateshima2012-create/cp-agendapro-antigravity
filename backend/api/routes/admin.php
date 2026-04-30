@@ -58,7 +58,25 @@ if (preg_match('/^admin\/profiles\/(\d+)\/renew$/', $path, $matches) && $method 
 
 if ($path === 'admin/users' && $method === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
-    error_log("ADMIN USER CREATE DATA: " . print_r($data, true));
+
+    // ✅ SECURITY [A-7]: Validate required fields before inserting
+    $required = ['email', 'password', 'companyName', 'ownerName'];
+    foreach ($required as $field) {
+        if (empty($data[$field])) {
+            Response::fail("Campo obrigatório ausente: $field", 422);
+        }
+    }
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        Response::fail('E-mail inválido.', 422);
+    }
+    if (strlen($data['password']) < 8) {
+        Response::fail('A senha deve ter ao menos 8 caracteres.', 422);
+    }
+    $exists = Db::fetch('SELECT id FROM cp_agenda_users WHERE email = ?', [$data['email']]);
+    if ($exists) {
+        Response::fail('E-mail já cadastrado.', 409);
+    }
+
     // Atomic creation
     try {
         $pdo = Db::getInstance()->getPdo();

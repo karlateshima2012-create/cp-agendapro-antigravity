@@ -1,6 +1,24 @@
 <?php
 // deploy_hostinger/public_html/api/routes/auth.php
 
+// ✅ SECURITY [A-5]: File-based rate limiter (works without Redis/APCu)
+function checkRateLimit(string $key, int $maxAttempts, int $ttlSeconds): bool {
+    $cacheDir = sys_get_temp_dir() . '/cp_agenda_ratelimit';
+    if (!is_dir($cacheDir)) mkdir($cacheDir, 0700, true);
+    $file = $cacheDir . '/' . md5($key) . '.json';
+    $now = time();
+    $data = [];
+    if (file_exists($file)) {
+        $data = json_decode(file_get_contents($file), true) ?? [];
+        // Remove expired attempts
+        $data = array_filter($data, fn($t) => ($now - $t) < $ttlSeconds);
+    }
+    if (count($data) >= $maxAttempts) return false; // Limit exceeded
+    $data[] = $now;
+    file_put_contents($file, json_encode(array_values($data)), LOCK_EX);
+    return true;
+}
+
 // Required by index.php
 // $method is available
 
@@ -11,6 +29,12 @@ if ($path === 'auth/login' && $method === 'POST') {
 
     if (empty($email) || empty($password)) {
         Response::fail('Email and password required');
+    }
+
+    // ✅ SECURITY [A-5]: Rate limit — 10 attempts per IP per 15 minutes
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (!checkRateLimit('login_ip_' . $ip, 10, 900)) {
+        Response::fail('Muitas tentativas de login. Aguarde 15 minutos.', 429);
     }
 
     // Lookup user
@@ -47,6 +71,12 @@ if ($path === 'auth/forgot-password' && $method === 'POST') {
     $email = $data['email'] ?? '';
     if (empty($email)) Response::fail('Email required');
     
+    // ✅ SECURITY [A-5]: Rate limit — 5 resets per e-mail per 10 minutes (prevents email flooding)
+    if (!checkRateLimit('reset_email_' . strtolower($email), 5, 600)) {
+        // Intentionally vague — don't reveal if rate limited vs email not found
+        Response::ok(['msg' => 'If this email is registered, you will receive reset instructions.']);
+    }
+
     $user = Db::fetch('SELECT id FROM cp_agenda_users WHERE email = ?', [$email]);
     if ($user) {
         $token = bin2hex(random_bytes(32));
