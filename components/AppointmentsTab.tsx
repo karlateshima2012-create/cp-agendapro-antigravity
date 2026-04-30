@@ -178,41 +178,36 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   // Função para atualizar status e abrir WhatsApp
   // Função removida para evitar disparo automático de WhatsApp
 
+  const [currentMonth, setCurrentMonth] = useState(getTodayJST());
+
   const renderCalendar = () => {
     const todayJST = getTodayJST();
     const todayMidnight = new Date(todayJST.getFullYear(), todayJST.getMonth(), todayJST.getDate()).getTime();
-    const year = todayJST.getFullYear();
-    const month = todayJST.getMonth();
+    
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startDay = new Date(year, month, 1).getDay();
 
-    // MAPEAMENTO: JavaScript day (0-6) para seus dias em português
     const jsDayToPtDay: Record<number, string> = {
-      0: 'domingo',
-      1: 'segunda',
-      2: 'terca',
-      3: 'quarta',
-      4: 'quinta',
-      5: 'sexta',
-      6: 'sabado'
+      0: 'domingo', 1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado'
     };
 
     const days = [];
-    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-20 md:h-32 bg-gray-50/20 border border-gray-100/50 rounded-xl"></div>);
+    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-20 md:h-32 bg-gray-50/10 border border-gray-100/30 rounded-xl"></div>);
 
     for (let d = 1; d <= daysInMonth; d++) {
       const currentLoopDate = new Date(year, month, d);
       const loopTime = currentLoopDate.getTime();
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-      // DETERMINA SE É DIA DA SEMANA HABILITADO
-      const jsDayOfWeek = currentLoopDate.getDay(); // 0=Domingo, 1=Segunda...
+      const jsDayOfWeek = currentLoopDate.getDay();
       const dayString = jsDayToPtDay[jsDayOfWeek];
       const scheduleForDay = (availability?.workingHours || []).find(w => w.day === dayString);
       const isDayEnabled = scheduleForDay?.isWorking === true;
 
       const isPast = loopTime < todayMidnight;
-      const isToday = d === todayJST.getDate() && month === todayJST.getMonth();
+      const isToday = d === todayJST.getDate() && month === todayJST.getMonth() && year === todayJST.getFullYear();
 
       const blocked = availability.blockedDates.find(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
@@ -222,15 +217,10 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       const dayAppts = appointments.filter(a => {
         if (a.status === 'canceled' || a.status === 'rejected') return false;
         const apptStart = getJSTDate(a.startAt);
-        const apptEnd = a.endAt ? getJSTDate(a.endAt) : new Date(apptStart.getTime() + (a.duration * 60000));
-        const dayStart = new Date(currentLoopDate.getTime());
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart.getTime() + (24 * 60 * 60000));
-        return apptEnd.getTime() > dayStart.getTime() && apptStart.getTime() < dayEnd.getTime();
+        return apptStart.getDate() === d && apptStart.getMonth() === month && apptStart.getFullYear() === year;
       });
       const load = dayAppts.length;
 
-      // LÓGICA DE ESTILOS SIMPLIFICADA:
       let dayClass = 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md';
       let dayTextClass = 'text-gray-900';
       let showBadge = false;
@@ -238,22 +228,20 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       let badgeClass = '';
 
       if (blocked) {
-        // BLOQUEADO MANUALMENTE: vermelho COM badge
-        dayClass = 'bg-red-50 border-red-100 opacity-80';
-        dayTextClass = 'text-red-400';
+        dayClass = 'bg-red-50 border-red-100';
+        dayTextClass = 'text-red-600';
         showBadge = true;
         badgeText = 'Bloqueado';
-        badgeClass = 'bg-red-100 text-red-600 border-red-200';
-      } else if (!isDayEnabled || isPast) {
-        // DIA INDISPONÍVEL (não trabalhado) OU PASSADO: apenas cinza, SEM badge
-        dayClass = 'bg-gray-50/60 border-gray-100 opacity-70';
+        badgeClass = 'bg-red-100 text-red-700 border-red-200';
+      } else if (!isDayEnabled) {
+        dayClass = 'bg-gray-50/60 border-gray-100';
         dayTextClass = 'text-gray-400';
-        showBadge = false; // ← NENHUM badge aqui!
+      } else if (isPast) {
+        dayClass = 'bg-gray-50/30 border-gray-100 opacity-80';
+        dayTextClass = 'text-gray-500';
       } else if (isToday) {
-        // DIA DE HOJE: destaque azul
         dayClass = 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20';
         dayTextClass = 'text-primary';
-        showBadge = false;
       }
 
       days.push(
@@ -263,48 +251,80 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               {d}
             </span>
 
-            {/* BADGE APENAS PARA DIAS BLOQUEADOS MANUALMENTE */}
             {showBadge && (
               <div className="flex flex-col items-end">
-                <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${badgeClass}`}>
+                <div className={`px-2 py-0.5 rounded-lg text-[7px] md:text-[8px] font-black uppercase tracking-widest border ${badgeClass}`}>
                   {badgeText}
                 </div>
-                {blocked?.reason && (
-                  <span className="text-[8px] font-black text-red-400 uppercase mt-1 text-right max-w-[60px] leading-tight truncate">
-                    {blocked.reason}
-                  </span>
-                )}
               </div>
             )}
 
-            {/* BADGE DE AGENDAMENTOS (só mostra se dia estiver disponível, habilitado e não for passado) */}
-            {!blocked && isDayEnabled && !isPast && load > 0 && (
-              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${load >= 5 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
-                {load >= 5 ? 'Dia Cheio' : `${load} Agend.`}
+            {!blocked && load > 0 && (
+              <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${load >= 5 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+                {load} {load === 1 ? 'Agend.' : 'Agend.'}
               </span>
             )}
           </div>
 
-          {/* PONTINHOS DE AGENDAMENTOS (só mostra se dia estiver disponível, habilitado e não for passado) */}
-          {!blocked && isDayEnabled && !isPast && (
-            <div className="flex gap-1 flex-wrap overflow-hidden h-6 md:h-10 mt-1 content-start">
-              {dayAppts.map((_, idx) => (
-                <div key={idx} className={`w-2 h-2 rounded-full ${isPast ? 'bg-gray-300' : 'bg-primary shadow-sm'}`}></div>
-              ))}
-            </div>
-          )}
+          <div className="flex gap-1 flex-wrap overflow-hidden h-6 md:h-10 mt-1 content-start">
+            {dayAppts.map((_, idx) => (
+              <div key={idx} className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${isPast ? 'bg-gray-300' : 'bg-primary shadow-sm'}`}></div>
+            ))}
+          </div>
         </div>
       );
     }
 
     return (
       <div className="animate-fade-in px-2">
-        <div className="grid grid-cols-7 gap-4 mb-3 px-2">
+        {/* Calendar Header with Navigation */}
+        <div className="flex items-center justify-between mb-6 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <button 
+            onClick={() => {
+              const prev = new Date(currentMonth);
+              prev.setMonth(prev.getMonth() - 1);
+              setCurrentMonth(prev);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
+          >
+            <ArrowRightCircle className="rotate-180" size={20} />
+          </button>
+          
+          <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-widest">
+            {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+          </h3>
+
+          <button 
+            onClick={() => {
+              const next = new Date(currentMonth);
+              next.setMonth(next.getMonth() + 1);
+              setCurrentMonth(next);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
+          >
+            <ArrowRightCircle size={20} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 md:gap-4 mb-3 px-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
             <div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-4">{days}</div>
+        <div className="grid grid-cols-7 gap-2 md:gap-4">{days}</div>
+        
+        {/* Legenda rápida */}
+        <div className="mt-6 flex flex-wrap gap-4 px-4 py-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+             <div className="w-2 h-2 rounded-full bg-primary"></div> Agendamentos
+           </div>
+           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+             <div className="w-2 h-2 bg-red-100 border border-red-200 rounded-sm"></div> Dia Bloqueado
+           </div>
+           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+             <div className="w-2 h-2 bg-gray-100 rounded-sm"></div> Passado / Inativo
+           </div>
+        </div>
       </div>
     );
   };
