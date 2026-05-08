@@ -22,21 +22,55 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
     if (!$usr) Response::fail('User not found');
     
     $accId = $usr['account_id'];
-    $allowed = ['name', 'owner_name', 'status', 'plan_type', 'plan_expires_at', 'contact_phone'];
+
+    // ✅ FIX: Explicit mapping from frontend camelCase keys to DB column names
+    // Previously used regex snake_case conversion which mapped 'companyName' to 'company_name'
+    // but the DB column is 'name', so updates were silently ignored.
+    $fieldMap = [
+        'companyName'   => 'name',
+        'ownerName'     => 'owner_name',
+        'contactPhone'  => 'contact_phone',
+        'accountStatus' => 'status',
+        'planType'      => 'plan_type',
+        'planExpiresAt' => 'plan_expires_at',
+        // Direct snake_case keys (fallback for any callers using snake_case)
+        'name'              => 'name',
+        'owner_name'        => 'owner_name',
+        'contact_phone'     => 'contact_phone',
+        'status'            => 'status',
+        'plan_type'         => 'plan_type',
+        'plan_expires_at'   => 'plan_expires_at',
+    ];
+
     $sets = [];
     $params = [];
+    $newEmail = null;
+
     foreach ($data as $key => $val) {
-        $snake = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key));
-        if ($snake === 'account_status') $snake = 'status';
-        if (in_array($snake, $allowed)) {
-            $sets[] = "`$snake` = ?";
+        if (isset($fieldMap[$key])) {
+            $col = $fieldMap[$key];
+            $sets[] = "`$col` = ?";
             $params[] = $val;
+        } elseif ($key === 'email') {
+            // Email lives in cp_agenda_users, handle separately
+            $newEmail = $val;
         }
     }
+
     if ($sets) {
         $params[] = $accId;
         Db::query('UPDATE cp_agenda_accounts SET ' . implode(', ', $sets) . ' WHERE id = ?', $params);
     }
+
+    // Update email in the users table if provided
+    if ($newEmail !== null) {
+        $existing = Db::fetch('SELECT id FROM cp_agenda_users WHERE email = ? AND id != ?', [$newEmail, $userId]);
+        if ($existing) {
+            Response::fail('Este e-mail já está em uso por outro usuário.', 409);
+        }
+        Db::query('UPDATE cp_agenda_users SET email = ? WHERE id = ?', [$newEmail, $userId]);
+    }
+
     Response::ok(['msg' => 'Profile updated']);
 }
 

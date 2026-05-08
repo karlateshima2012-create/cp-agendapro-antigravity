@@ -359,7 +359,19 @@ const App: React.FC = () => {
     try {
       const resp: any = await api.adminUpdateProfile(userId, data);
       if (!resp.ok) throw new Error(resp.error);
-      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data } : u));
+      // Re-fetch from server to guarantee sync with DB
+      const refreshResp: any = await api.adminListProfiles();
+      if (refreshResp.ok) {
+        const mappedUsers = (refreshResp.data || []).map((u: any) => ({
+          ...u,
+          planExpiresAt: u.planExpiresAt ? u.planExpiresAt.replace(' ', 'T') : '',
+          createdAt: u.createdAt ? u.createdAt.replace(' ', 'T') : ''
+        }));
+        setAllUsers(mappedUsers);
+      } else {
+        // Fallback: local merge if refresh fails
+        setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data } : u));
+      }
       return true;
     } catch (e: any) {
       showToast("Erro ao atualizar dados.", "error");
