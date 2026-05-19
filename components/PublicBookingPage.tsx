@@ -359,7 +359,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
-      <div className="w-full max-w-4xl bg-white md:my-10 md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col min-h-screen md:min-h-0 border border-gray-100">
+      <div className="w-full max-w-4xl bg-white md:my-10 md:rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-screen md:min-h-0 border border-gray-100">
 
         <header className="relative h-auto min-h-[280px] md:h-80 bg-gray-100 overflow-hidden">
           {/* Imagem de capa - preenche TODO o header */}
@@ -384,7 +384,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                 -translate-y-1/2
                 z-20
                 w-[200px] h-[200px]
-                rounded-3xl
+                rounded-xl
                 overflow-hidden
                 border border-white/30
                 bg-white/10
@@ -422,7 +422,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               <div
                 className="
                   w-[150px] h-[150px]
-                  rounded-3xl
+                  rounded-xl
                   overflow-hidden
                   border border-white/30
                   bg-white/10
@@ -472,7 +472,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     <button
                       key={s.id}
                       onClick={() => toggleService(s)}
-                      className={`p-8 bg-white border rounded-[3rem] text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full ${
+                      className={`p-8 bg-white border rounded-xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full ${
                         isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-gray-300'
                       }`}
                     >
@@ -495,8 +495,14 @@ export const PublicBookingPage: React.FC<Props> = ({
                       <div className="relative z-10 flex flex-col h-full justify-between w-full">
                         <div>
                           <div className="flex items-center gap-4 mb-5">
-                            <div className={`p-3 rounded-2xl transition-all ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
-                              {isSelected ? <Check size={22} /> : <Briefcase size={22} />}
+                            <div
+                              className="p-3 rounded-xl flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: primaryColor }}
+                            >
+                              {isSelected
+                                ? <Check size={22} color="white" />
+                                : <Briefcase size={22} color="white" />
+                              }
                             </div>
                             <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: isSelected ? primaryColor : '#111827' }}>{s.name}</h3>
                           </div>
@@ -508,7 +514,10 @@ export const PublicBookingPage: React.FC<Props> = ({
                           </div>
                           <div className="flex flex-col items-end">
                             {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
-                            <span className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: primaryColor }}>
+                            <span 
+                              className="text-[9px] font-black uppercase tracking-widest mt-1 px-4 py-1.5 rounded-lg text-white text-center inline-block"
+                              style={{ backgroundColor: primaryColor }}
+                            >
                               {isSelected ? 'Selecionado' : 'Selecionar'}
                             </span>
                           </div>
@@ -517,7 +526,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     </button>
                   );
                 }) : (
-                  <div className="col-span-full py-24 text-center bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+                  <div className="col-span-full py-24 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                     <Briefcase size={40} className="mx-auto text-gray-300 mb-4" />
                     <p className="text-gray-400 font-black uppercase tracking-widest text-sm">Nenhum serviço disponível</p>
                   </div>
@@ -570,7 +579,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-2xl relative">
+                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-2xl relative">
                   <div className="flex justify-between items-center mb-10">
                     <h3 className="font-black text-gray-900 uppercase text-xs tracking-[0.3em]">{currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
                     <div className="flex gap-2">
@@ -617,7 +626,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="h-full min-h-[250px] flex flex-col items-center justify-center p-12 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+                    <div className="h-full min-h-[250px] flex flex-col items-center justify-center p-12 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                       <div className="w-16 h-16 bg-white rounded-3xl shadow-sm flex items-center justify-center text-gray-300 mb-6"><CalendarIcon size={32} /></div>
                       <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest text-center leading-relaxed">Selecione um dia no calendário para ver a disponibilidade</p>
                     </div>
@@ -699,7 +708,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                 <p className="text-gray-400 text-sm font-medium mt-2">Confira se tudo está correto antes de confirmar.</p>
               </div>
 
-              <div className="bg-gray-50 rounded-[3rem] p-10 space-y-8 text-left border border-gray-100 mb-8 shadow-inner relative overflow-hidden">
+              <div className="bg-gray-50 rounded-3xl p-10 space-y-8 text-left border border-gray-100 mb-8 shadow-inner relative overflow-hidden">
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <p className="font-black text-2xl tracking-tight capitalize leading-tight" style={{ color: primaryColor }}>{combinedServiceNames}</p>
@@ -788,7 +797,7 @@ export const PublicBookingPage: React.FC<Props> = ({
               <p className="text-gray-400 mb-10 max-w-sm mx-auto font-medium text-base leading-relaxed">
                 Olá, <b>{clientData.name}</b>! Seu agendamento foi realizado com sucesso.
               </p>
-              <div className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100 mb-10 w-full max-w-md text-left shadow-sm">
+              <div className="bg-gray-50 p-10 rounded-2xl border border-gray-100 mb-10 w-full max-w-md text-left shadow-sm">
                 <p className="text-[11px] font-black text-gray-300 uppercase tracking-[0.2em] mb-4">DETALHES DO AGENDAMENTO</p>
                 <p className="font-black text-gray-900 text-2xl mb-2 capitalize leading-tight" style={{ color: primaryColor }}>{combinedServiceNames}</p>
                 <div className="flex items-center gap-2 text-gray-600 font-bold text-lg">
