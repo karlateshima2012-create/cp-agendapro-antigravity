@@ -71,6 +71,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   const rawPhoneDigits = (clientData.phone || '').replace(/\D/g, '');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [dateSubStep, setDateSubStep] = useState<'calendar' | 'time'>('calendar');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -121,7 +122,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
     const steps = [
       { id: 1, label: 'Serviço', icon: Briefcase },
-      { id: 2, label: 'Horário', icon: Clock },
+      { id: 2, label: 'Data', icon: CalendarIcon },
       { id: 3, label: 'Dados', icon: User },
       { id: 4, label: 'Revisão', icon: CheckCircle },
     ];
@@ -302,7 +303,7 @@ export const PublicBookingPage: React.FC<Props> = ({
         <button
           key={d}
           disabled={isUnavailable}
-          onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); }}
+          onClick={() => { setSelectedDate(dateStr); setSelectedTime(''); setDateSubStep('time'); }}
           className={`h-11 w-11 mx-auto flex items-center justify-center rounded-2xl text-sm font-black transition-all ${isUnavailable
             ? 'text-gray-200 cursor-not-allowed line-through'
             : isSelected
@@ -400,9 +401,17 @@ export const PublicBookingPage: React.FC<Props> = ({
             </div>
           )}
 
-          {step > 1 && step < 5 && (
+          {(step > 1 && step < 5) && (
             <button
-              onClick={() => setStep((step - 1) as any)}
+              onClick={() => {
+                if (step === 2 && dateSubStep === 'time') {
+                  setSelectedDate('');
+                  setSelectedTime('');
+                  setDateSubStep('calendar');
+                } else {
+                  setStep((step - 1) as any);
+                }
+              }}
               className="absolute top-8 left-8 bg-white/10 hover:bg-white/20 backdrop-blur-xl p-3 rounded-2xl text-white border border-white/20 flex items-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 z-30"
             >
               <ChevronLeft size={16} /> Voltar
@@ -472,9 +481,11 @@ export const PublicBookingPage: React.FC<Props> = ({
                     <button
                       key={s.id}
                       onClick={() => toggleService(s)}
-                      className={`p-8 bg-white border rounded-xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full ${
-                        isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-gray-300'
-                      }`}
+                      className={`p-8 bg-white border-2 rounded-xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 flex flex-col h-full`}
+                      style={isSelected
+                        ? { borderColor: primaryColor, boxShadow: `0 0 0 4px ${primaryColor}22` }
+                        : { borderColor: '#f3f4f6' }
+                      }
                     >
                       {s.imageUrl && (
                         <div 
@@ -537,20 +548,24 @@ export const PublicBookingPage: React.FC<Props> = ({
                 <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 z-[100] animate-slide-up">
                   <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                     <div className="flex -space-x-3">
-                      {selectedServices.slice(0, 3).map((s, i) => (
-                        <div key={s.id} className="w-12 h-12 rounded-2xl bg-primary text-white border-4 border-white flex items-center justify-center shadow-lg font-black text-lg">
-                          {s.name.charAt(0).toUpperCase()}
+                      {selectedServices.slice(0, 3).map((s) => (
+                        <div
+                          key={s.id}
+                          className="w-12 h-12 rounded-xl border-4 border-white flex items-center justify-center shadow-lg"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          <Briefcase size={20} color="white" />
                         </div>
                       ))}
                       {selectedServices.length > 3 && (
-                        <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 border-4 border-white flex items-center justify-center font-black">
+                        <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-400 border-4 border-white flex items-center justify-center font-black">
                           +{selectedServices.length - 3}
                         </div>
                       )}
                     </div>
                     <div>
                       <p className="font-black text-gray-900 text-xl tracking-tight">{selectedServices.length} {selectedServices.length === 1 ? 'serviço selecionado' : 'serviços selecionados'}</p>
-                      <p className="text-gray-400 text-sm font-medium">Total: <b>{formatDurationFriendly(totalDuration)}</b> • <b>¥ {totalPrice.toLocaleString()}</b></p>
+                      <p className="text-gray-400 text-sm font-medium">Duração: <b>{formatDurationFriendly(totalDuration)}</b> • <b>¥ {totalPrice.toLocaleString()}</b></p>
                     </div>
                   </div>
                   <button 
@@ -558,86 +573,100 @@ export const PublicBookingPage: React.FC<Props> = ({
                     className="w-full md:w-auto px-12 py-5 bg-primary text-white font-black rounded-3xl shadow-2xl shadow-primary/30 uppercase tracking-[0.2em] text-[11px] transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-3"
                     style={{ backgroundColor: primaryColor }}
                   >
-                    Ver horários disponíveis <ArrowRight size={20} />
+                    Agendar um horário <ArrowRight size={20} />
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {step === 2 && (
-            <div className="animate-fade-in space-y-10">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-8">
-                <div>
-                  <h2 className="text-3xl font-black text-gray-900 tracking-tight">Escolha a data</h2>
-                  <p className="text-gray-400 text-sm font-medium mt-1">Serviços: <span className="font-bold uppercase" style={{ color: primaryColor }}>{combinedServiceNames}</span></p>
-                </div>
-                <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100">
-                  <Clock size={16} style={{ color: primaryColor }} />
-                  <span className="text-xs font-black text-gray-600 uppercase tracking-widest">{formatDurationFriendly(totalDuration)} totais (+ limpezas)</span>
-                </div>
+          {step === 2 && dateSubStep === 'calendar' && (
+            <div className="animate-fade-in space-y-8">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: primaryColor }}>
+                  Escolha uma data
+                </h2>
+                <p className="text-gray-400 text-sm font-medium">
+                  {combinedServiceNames} · {formatDurationFriendly(totalDuration)}
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-2xl relative">
-                  <div className="flex justify-between items-center mb-10">
-                    <h3 className="font-black text-gray-900 uppercase text-xs tracking-[0.3em]">{currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
-                    <div className="flex gap-2">
-                      <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() - 1); setCurrentMonth(d); }} className="p-2.5 hover:bg-gray-100 rounded-2xl transition-colors"><ChevronLeft size={20} /></button>
-                      <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() + 1); setCurrentMonth(d); }} className="p-2.5 hover:bg-gray-100 rounded-2xl transition-colors"><ChevronRight size={20} /></button>
-                    </div>
+              <div className="max-w-sm mx-auto bg-white rounded-2xl border border-gray-100 shadow-xl p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-black text-gray-900 text-sm capitalize">
+                    {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <div className="flex gap-1">
+                    <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() - 1); setCurrentMonth(d); }} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400"><ChevronLeft size={18} /></button>
+                    <button onClick={() => { const d = new Date(currentMonth); d.setMonth(d.getMonth() + 1); setCurrentMonth(d); }} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400"><ChevronRight size={18} /></button>
                   </div>
-                  <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-gray-300 mb-6 uppercase tracking-widest">
-                    {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={`${d}-${i}`}>{d}</div>)}
-                  </div>
-                  <div className="grid grid-cols-7 gap-y-3">{renderCalendar()}</div>
                 </div>
+                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-black text-gray-300 mb-4 uppercase tracking-widest">
+                  {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <div key={`${d}-${i}`}>{d}</div>)}
+                </div>
+                <div className="grid grid-cols-7 gap-y-2">{renderCalendar()}</div>
+              </div>
+            </div>
+          )}
 
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Horários Disponíveis</h3>
-                    {selectedDate && <span className="text-[10px] font-black bg-primary/5 px-2 py-1 rounded-lg uppercase" style={{ color: primaryColor }}>{slots.length} opções</span>}
-                  </div>
+          {step === 2 && dateSubStep === 'time' && (
+            <div className="animate-fade-in space-y-8">
+              <div className="text-center space-y-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: primaryColor }}>
+                  Escolha um horário
+                </h2>
+                <p className="text-gray-400 text-sm font-medium">{combinedServiceNames}</p>
+              </div>
 
-                  {selectedDate ? (
-                    <div className="grid grid-cols-3 gap-3">
-                      {(slots || []).map(s => (
-                        <button
-                          key={s.time}
-                          disabled={!s.isAvailable}
-                          onClick={() => setSelectedTime(s.time)}
-                          className={`py-4 rounded-2xl text-xs font-black border transition-all ${
-                            selectedTime === s.time 
-                            ? 'text-white shadow-xl scale-105' 
-                            : !s.isAvailable 
-                              ? 'bg-gray-50 text-gray-300 border-gray-100 line-through cursor-not-allowed'
-                              : 'bg-white text-gray-700 border-gray-100 hover:border-primary'
-                          }`}
-                          style={selectedTime === s.time ? { backgroundColor: primaryColor, borderColor: primaryColor, boxShadow: `0 8px 20px -5px ${primaryColor}88` } : {}}
-                        >
-                          {s.time}
-                        </button>
-                      ))}
-                      {slots.length === 0 && (
-                        <div className="col-span-3 text-red-500 text-[10px] font-black uppercase text-center bg-red-50 p-8 rounded-[2rem] border border-red-100 flex flex-col items-center gap-3">
-                          <Ban size={24} />
-                          Tudo lotado para este dia.
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-full min-h-[250px] flex flex-col items-center justify-center p-12 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                      <div className="w-16 h-16 bg-white rounded-3xl shadow-sm flex items-center justify-center text-gray-300 mb-6"><CalendarIcon size={32} /></div>
-                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest text-center leading-relaxed">Selecione um dia no calendário para ver a disponibilidade</p>
-                    </div>
-                  )}
-
-                  {selectedTime && (
-                    <button onClick={() => setStep(3)} className="w-full mt-8 py-5 text-white font-black rounded-3xl shadow-2xl shadow-primary/30 uppercase tracking-[0.2em] text-[11px] transition-all hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-3" style={{ backgroundColor: primaryColor }}>
-                      Continuar Agendamento <ArrowRight size={18} />
-                    </button>
+              <div className="max-w-sm mx-auto space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Horários disponíveis</span>
+                  {slots.filter(s => s.isAvailable).length > 0 && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ backgroundColor: primaryColor + '18', color: primaryColor }}>
+                      {slots.filter(s => s.isAvailable).length} disponíveis
+                    </span>
                   )}
                 </div>
+
+                {slots.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {slots.map(s => (
+                      <button
+                        key={s.time}
+                        disabled={!s.isAvailable}
+                        onClick={() => setSelectedTime(s.time)}
+                        className={`py-4 rounded-xl text-sm font-black border-2 transition-all ${
+                          selectedTime === s.time
+                            ? 'text-white scale-105 shadow-xl'
+                            : !s.isAvailable
+                              ? 'bg-gray-50 text-gray-200 border-gray-100 line-through cursor-not-allowed'
+                              : 'bg-white text-gray-700 border-gray-100 hover:scale-[1.02]'
+                        }`}
+                        style={selectedTime === s.time ? { backgroundColor: primaryColor, borderColor: primaryColor, boxShadow: `0 8px 20px -5px ${primaryColor}66` } : {}}
+                      >
+                        {s.time}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-12 bg-red-50 rounded-2xl border border-red-100 gap-3">
+                    <Ban size={24} className="text-red-400" />
+                    <p className="text-red-500 text-[10px] font-black uppercase tracking-widest text-center">Tudo lotado para este dia</p>
+                  </div>
+                )}
+
+                {selectedTime && (
+                  <button
+                    onClick={() => setStep(3)}
+                    className="w-full py-5 text-white font-black rounded-2xl uppercase tracking-[0.2em] text-[11px] transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
+                    style={{ backgroundColor: primaryColor, boxShadow: `0 8px 25px -8px ${primaryColor}88` }}
+                  >
+                    Continuar <ArrowRight size={18} />
+                  </button>
+                )}
               </div>
             </div>
           )}
