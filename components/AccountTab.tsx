@@ -105,17 +105,55 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   const handleSaveSettings = async () => {
     if (onUpdateSettings) {
       setIsSaving(true);
-      await onUpdateSettings({
-        telegramBotToken: OFFICIAL_BOT_TOKEN, // Sempre salvar o token oficial agora
-        telegramChatId: telegramChatId.trim(),
-        coverImage: coverImage.trim(),
-        profileImage: profileImage.trim(),
-        shortDescription: shortDescription.trim(),
-        servicesTitle: servicesTitle.trim(),
-        servicesSubtitle: servicesSubtitle.trim(),
-        primaryColor,
-        secondaryColor,
-      });
+
+      const payload: Partial<AccountInfo> = {};
+
+      const cleanTelegramChatId = telegramChatId.trim();
+      const cleanCoverImage = coverImage.trim();
+      const cleanProfileImage = profileImage.trim();
+      const cleanShortDescription = shortDescription.trim();
+      const cleanServicesTitle = servicesTitle.trim();
+      const cleanServicesSubtitle = servicesSubtitle.trim();
+
+      const origTelegramChatId = (account.telegramChatId || '').trim();
+      const origCoverImage = (account.coverImage || '').trim();
+      const origProfileImage = (account.profileImage || '').trim();
+      const origShortDescription = (account.shortDescription || '').trim();
+      const origServicesTitle = (account.servicesTitle || '').trim();
+      const origServicesSubtitle = (account.servicesSubtitle || '').trim();
+      const origPrimaryColor = account.primaryColor || '#25aae1';
+      const origSecondaryColor = account.secondaryColor || '#1f2937';
+
+      if (cleanTelegramChatId !== origTelegramChatId) {
+        payload.telegramChatId = cleanTelegramChatId;
+      }
+      if (OFFICIAL_BOT_TOKEN !== account.telegramBotToken) {
+        payload.telegramBotToken = OFFICIAL_BOT_TOKEN;
+      }
+      if (cleanCoverImage !== origCoverImage) {
+        payload.coverImage = cleanCoverImage;
+      }
+      if (cleanProfileImage !== origProfileImage) {
+        payload.profileImage = cleanProfileImage;
+      }
+      if (cleanShortDescription !== origShortDescription) {
+        payload.shortDescription = cleanShortDescription;
+      }
+      if (cleanServicesTitle !== origServicesTitle) {
+        payload.servicesTitle = cleanServicesTitle;
+      }
+      if (cleanServicesSubtitle !== origServicesSubtitle) {
+        payload.servicesSubtitle = cleanServicesSubtitle;
+      }
+      if (primaryColor !== origPrimaryColor) {
+        payload.primaryColor = primaryColor;
+      }
+      if (secondaryColor !== origSecondaryColor) {
+        payload.secondaryColor = secondaryColor;
+      }
+
+      // Se houver campos alterados, faz o update. Caso contrário, apenas encerra salvamento instantaneamente (sucesso)
+      await onUpdateSettings(payload);
       setIsSaving(false);
     }
   };

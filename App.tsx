@@ -425,6 +425,10 @@ const App: React.FC = () => {
 
   const handleUpdateAccount = async (u: Partial<AccountInfo>) => {
     try {
+      if (Object.keys(u).length === 0) {
+        showToast("Configurações salvas!");
+        return;
+      }
       // Need to implement updateProfile in api.ts
       const resp: any = await api.updateProfile(u as any);
       if (resp.ok) {
