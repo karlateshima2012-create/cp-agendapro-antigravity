@@ -59,7 +59,7 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
 
     // Fetch Busy Slots (Future only, confirmed/pending)
     // We use end_datetime which now includes the cleaning buffer
-    $appointments = Db::fetchAll("SELECT start_at AS startAt, end_datetime AS endAt, duration, status FROM cp_agenda_appointments WHERE account_id = ? AND start_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND status IN ('confirmed', 'pending')", [$profile['id']]);
+    $appointments = Db::fetchAll("SELECT start_at AS startAt, end_datetime AS endAt, duration, status FROM cp_agenda_appointments WHERE account_id = ? AND deleted_at IS NULL AND start_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) AND status IN ('confirmed', 'pending')", [$profile['id']]);
 
     Response::ok([
         'profile' => $profile,

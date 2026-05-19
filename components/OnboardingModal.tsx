@@ -119,7 +119,7 @@ export const OnboardingModal: React.FC<Props> = ({ seen, onMarkSeen }) => {
     },
   ] as const;
 
-  const step = steps[currentStep];
+  const step = steps[currentStep] as any;
 
   const iconBg =
     step.type === 'welcome'

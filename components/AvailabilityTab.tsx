@@ -64,9 +64,9 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
     const newHours = [...localConfig.workingHours];
     if (field === 'isWorking') {
       newHours[index] = { ...newHours[index], isWorking: value, enabled: value } as any;
-    } else if (field === 'startTime' || field === 'start') {
+    } else if ((field as any) === 'startTime' || (field as any) === 'start') {
       newHours[index] = { ...newHours[index], startTime: value, start: value } as any;
-    } else if (field === 'endTime' || field === 'end') {
+    } else if ((field as any) === 'endTime' || (field as any) === 'end') {
       newHours[index] = { ...newHours[index], endTime: value, end: value } as any;
     } else {
       newHours[index] = { ...newHours[index], [field]: value };

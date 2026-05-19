@@ -92,6 +92,7 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
             "SELECT count(*) as total FROM cp_agenda_appointments 
              WHERE account_id = ? 
              AND status NOT IN ('canceled', 'rejected', 'deleted') 
+             AND deleted_at IS NULL
              AND start_at < ? 
              AND end_datetime > ?", // User Requirement: new_start < existing_end AND new_end > existing_start
             [$accId, $newEnd, $newStart]
@@ -217,7 +218,7 @@ if ($path === 'appointments' && $method === 'GET') {
     $table = ($source === 'archive') ? 'cp_agenda_appointments_archive' : 'cp_agenda_appointments';
     
     // Explicitly select client fields to ensure they are available
-    $sql = "SELECT id, account_id, client_name, client_email, client_phone, service_id, service_name, start_at, end_datetime, duration, status, created_at, deleted_at 
+    $sql = "SELECT id, account_id, user_id, client_name, client_email, client_phone, service_id, service_name, start_at, end_datetime, duration, status, created_at, deleted_at 
             FROM $table 
             WHERE account_id = ?";
     $params = [$accountId];

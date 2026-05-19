@@ -19,7 +19,7 @@ import { Lock } from 'lucide-react';
 interface ErrorBoundaryProps { children: React.ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: any; }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<any, any> {
   public state: ErrorBoundaryState = { hasError: false, error: null };
 
   constructor(props: ErrorBoundaryProps) {
@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    return (this.props as any).children;
+    return (this as any).props.children;
   }
 }
 
@@ -116,7 +116,7 @@ const App: React.FC = () => {
     try {
       const resp = await api.getPublicProfile(userId); // Need to add this to api.ts or use a generic one
       if (!resp.ok) return;
-      const { profile: prof, services: svcs, availability: avail, appointments: appts } = resp.data;
+      const { profile: prof, services: svcs, availability: avail, appointments: appts } = resp.data as any;
 
       const accountInfo: AccountInfo = {
         companyName: prof.name || 'Empresa',
@@ -221,7 +221,7 @@ const App: React.FC = () => {
       const [svcsResp, availResp, apptsResp]: any = await Promise.all([
         api.listServices(),
         api.getAvailability(),
-        api.listAppointments()
+        api.listAppointments({ limit: 1000 })
       ]);
 
       if (svcsResp.ok) setServices(svcsResp.data);
@@ -311,7 +311,7 @@ const App: React.FC = () => {
 
     const interval = setInterval(() => {
       console.log('📡 Polling appointments...');
-      api.listAppointments().then(resp => {
+      api.listAppointments({ limit: 1000 }).then(resp => {
         if (resp.ok && resp.data) {
           const items = resp.data.items || [];
           const mappedAppts = items.map((a: any) => ({
@@ -426,7 +426,7 @@ const App: React.FC = () => {
   const handleUpdateAccount = async (u: Partial<AccountInfo>) => {
     try {
       // Need to implement updateProfile in api.ts
-      const resp: any = await api.updateProfile(u);
+      const resp: any = await api.updateProfile(u as any);
       if (resp.ok) {
         setProfile(prev => prev ? { ...prev, ...u } : null);
         showToast("Configurações salvas!");
