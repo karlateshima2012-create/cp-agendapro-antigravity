@@ -625,29 +625,29 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               return (
                 <div key={appt.id} className="group bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full animate-fade-in relative overflow-hidden">
 
-                  {/* Ícone de lixeira no topo (única opção de excluir permanente) */}
-                  <button
-                    onClick={() => openConfirm(
-                      'Excluir Agendamento',
-                      'Deseja excluir este agendamento permanentemente? Esta ação não pode ser desfeita.',
-                      () => onDeleteAppointment(appt.id)
-                    )}
-                    className="absolute top-4 right-4 p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                    title="Excluir agendamento"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
                   <div className="flex justify-between items-start mb-6">
-                    <div className="max-w-[70%]">
+                    <div className="max-w-[60%]">
                       <h3 className="font-black text-xl text-gray-900 tracking-tight capitalize leading-none mb-2 truncate">{appt.clientName}</h3>
                       <div className="inline-flex items-center gap-2 bg-primary/5 px-2.5 py-1 rounded-full">
                         <span className="text-[9px] text-primary font-black uppercase tracking-[0.1em]">{appt.serviceName || 'Serviço Padrão'}</span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border ${status.class}`}>
-                      {status.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border whitespace-nowrap ${status.class}`}>
+                        {status.label}
+                      </span>
+                      <button
+                        onClick={() => openConfirm(
+                          'Excluir Agendamento',
+                          'Deseja excluir este agendamento permanentemente? Esta ação não pode ser desfeita.',
+                          () => onDeleteAppointment(appt.id)
+                        )}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Excluir agendamento"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4 mb-8 flex-1">
