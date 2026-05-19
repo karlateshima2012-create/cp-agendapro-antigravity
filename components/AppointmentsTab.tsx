@@ -421,23 +421,23 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 <p className="text-xs font-semibold">Sem agendamentos neste dia</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-100">
                 {selectedDayAppts.map((appt: Appointment) => {
                   const apptTime = getJSTDate(appt.startAt);
                   const timeStr = `${apptTime.getHours().toString().padStart(2, '0')}:${apptTime.getMinutes().toString().padStart(2, '0')}`;
                   const status = getStatusConfig(appt.status);
                   const isPending = appt.status === 'pending';
                   return (
-                    <div key={appt.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl px-2.5 py-2 min-w-[50px] border border-gray-100 flex-shrink-0">
-                        <span className="text-base font-black text-gray-800 leading-none">{timeStr}</span>
+                    <div key={appt.id} className="flex items-center gap-2 px-4 py-2">
+                      <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg px-2 py-1 min-w-[46px] border border-gray-100 flex-shrink-0">
+                        <span className="text-xs font-black text-gray-700 leading-none">{timeStr}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
                           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${status.dot}`} />
                           <span className="text-sm font-bold text-gray-900 truncate capitalize">{appt.clientName}</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-primary bg-primary/5 px-1.5 py-0.5 rounded-full">
+                        <span className="text-[9px] font-semibold text-primary bg-primary/5 px-1.5 py-0.5 rounded-full">
                           {appt.serviceName || 'Serviço Padrão'}
                         </span>
                       </div>
