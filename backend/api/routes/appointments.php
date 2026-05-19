@@ -237,8 +237,20 @@ if ($path === 'appointments' && $method === 'GET') {
     }
     
     // Count total for pagination
-    $countSql = str_replace('SELECT *', 'SELECT COUNT(*) as total', $sql);
-    $total = Db::fetch($countSql, $params)['total'];
+    $countSql = "SELECT COUNT(*) as total FROM $table WHERE account_id = ?";
+    $countParams = [$accountId];
+    if (!$showDeleted) {
+        $countSql .= ' AND deleted_at IS NULL';
+    }
+    if ($from) {
+        $countSql .= ' AND start_at >= ?';
+        $countParams[] = $from;
+    }
+    if ($to) {
+        $countSql .= ' AND start_at <= ?';
+        $countParams[] = $to;
+    }
+    $total = Db::fetch($countSql, $countParams)['total'];
     
     $sql .= ' ORDER BY start_at DESC LIMIT ? OFFSET ?';
     $params[] = $limit;
