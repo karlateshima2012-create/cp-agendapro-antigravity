@@ -119,7 +119,7 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
                 onChange={e => setFormState({ ...formState, duration: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
               >
-                {[15, 30, 45, 60, 120, 180, 240, 360, 480, 720, 1440].map(m => (
+                {[15, 30, 45, 60, 120, 180, 240, 300, 360, 480, 720, 1440].map(m => (
                   <option key={m} value={m}>
                     {m < 60 ? `${m} min` : (m === 1440 ? '24h (Diária)' : `${m / 60}h`)}
                   </option>
