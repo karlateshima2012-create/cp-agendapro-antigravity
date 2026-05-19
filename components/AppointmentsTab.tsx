@@ -164,7 +164,13 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       }
       return true;
     })
-    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+    .sort((a, b) => {
+      const isAPending = a.status === 'pending';
+      const isBPending = b.status === 'pending';
+      if (isAPending && !isBPending) return -1;
+      if (!isAPending && isBPending) return 1;
+      return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+    });
 
   const getStatusConfig = (status: AppointmentStatus) => {
     switch (status) {
