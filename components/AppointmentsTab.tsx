@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Appointment, AppointmentStatus, AvailabilityConfig } from '../types';
 import {
   Calendar,
@@ -82,6 +82,7 @@ function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'reje
 }
 
 export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, onBulkDelete, publicLink }) => {
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<'grid' | 'list' | 'calendar'>('grid');
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'tomorrow' | 'past' | 'manual'>('all');
@@ -491,6 +492,44 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
             >
               Todos
             </button>
+
+            <div 
+              onClick={() => {
+                if (dateInputRef.current) {
+                  try {
+                    dateInputRef.current.showPicker();
+                  } catch (err) {
+                    dateInputRef.current.click();
+                  }
+                }
+              }}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border transition-all cursor-pointer hover:bg-gray-50 ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}
+            >
+              <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={manualDate}
+                onChange={(e) => {
+                  setManualDate(e.target.value);
+                  setDateFilter(e.target.value ? 'manual' : 'all');
+                }}
+                className="bg-transparent text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none cursor-pointer"
+              />
+              {dateFilter === 'manual' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setManualDate('');
+                    setDateFilter('all');
+                  }}
+                  className="clear-date-btn p-1 hover:bg-gray-200 rounded-md text-gray-400"
+                >
+                  <XCircle size={14} />
+                </button>
+              )}
+            </div>
+
             <button
               onClick={() => setDateFilter('today')}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'today'
@@ -521,27 +560,6 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               <Trash2 size={14} />
               Dias Passados
             </button>
-
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border transition-all ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}>
-              <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
-              <input
-                type="date"
-                value={manualDate}
-                onChange={(e) => {
-                  setManualDate(e.target.value);
-                  setDateFilter(e.target.value ? 'manual' : 'all');
-                }}
-                className="bg-transparent text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none cursor-pointer"
-              />
-              {dateFilter === 'manual' && (
-                <button
-                  onClick={() => { setManualDate(''); setDateFilter('all'); }}
-                  className="p-1 hover:bg-gray-100 rounded-md text-gray-400"
-                >
-                  <XCircle size={14} />
-                </button>
-              )}
-            </div>
 
             {selectedIds.length > 0 && (
               <button
