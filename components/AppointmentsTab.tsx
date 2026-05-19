@@ -16,7 +16,9 @@ import {
   CalendarDays,
   Trash2,
   Mail,
-  List as ListIcon
+  List as ListIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -122,7 +124,12 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     } else {
       d = new Date(dateStr);
     }
-    return new Date(d.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+    if (isNaN(d.getTime())) return new Date();
+    
+    // Obter data e hora formatadas para Tokyo em formato compatível com o Safari (sem vírgulas)
+    const yStr = d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // "YYYY-MM-DD"
+    const tStr = d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo' }); // "HH:MM:SS"
+    return new Date(`${yStr}T${tStr}`);
   };
 
   const isSameDayJST = (isoStr: string, targetDate: Date) => {
@@ -253,19 +260,18 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
           className="flex flex-col items-center gap-0.5 py-1 cursor-pointer select-none"
         >
           <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
-            ${isToday ? 'bg-primary text-white shadow-sm shadow-primary/30' : ''}
-            ${isSelected && !isToday ? 'bg-primary/15 text-primary' : ''}
+            ${isToday ? 'bg-red-500 text-white shadow-sm shadow-red-500/20' : ''}
+            ${isSelected && !isToday ? 'bg-primary/15 text-primary font-black' : ''}
             ${!isToday && !isSelected ? mobileNumBase : ''}
           `}>
             {d}
           </div>
-          <div className="flex gap-0.5 h-1.5 items-center">
-            {dayAppts.slice(0, 3).map((appt: Appointment, idx: number) => (
+          <div className="flex justify-center h-1.5 items-center w-full">
+            {dayAppts.length > 0 && (
               <div
-                key={idx}
-                className={`w-1.5 h-1.5 rounded-full ${appt.status === 'confirmed' ? 'bg-primary' : 'bg-amber-400'} ${isPast ? 'opacity-40' : ''}`}
+                className={`w-1.5 h-1.5 rounded-full ${dayAppts[0].status === 'confirmed' ? 'bg-primary' : 'bg-amber-400'} ${isToday ? 'bg-red-400' : ''} ${isPast ? 'opacity-40' : ''}`}
               />
-            ))}
+            )}
           </div>
         </div>
       );
@@ -340,8 +346,8 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
     return (
       <div className="animate-fade-in">
-        {/* Calendar Header with Navigation */}
-        <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        {/* Calendar Header with Navigation (Desktop Only) */}
+        <div className="hidden md:flex items-center justify-between mb-4 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <button
             onClick={() => { const p = new Date(currentMonth); p.setMonth(p.getMonth() - 1); setCurrentMonth(p); }}
             className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
@@ -361,9 +367,34 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
         {/* ---- MOBILE LAYOUT ---- */}
         <div className="md:hidden space-y-3">
+          {/* iOS-style Calendar Header */}
+          <div className="flex flex-col gap-1 px-4 mb-2 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => { const p = new Date(currentMonth); p.setMonth(p.getMonth() - 1); setCurrentMonth(p); }}
+                className="flex items-center gap-0.5 text-primary text-sm font-black active:opacity-60 transition-opacity"
+              >
+                <ChevronLeft size={16} />
+                <span>{currentMonth.getFullYear()}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { const n = new Date(currentMonth); n.setMonth(n.getMonth() + 1); setCurrentMonth(n); }}
+                  className="p-1 hover:bg-gray-50 rounded-lg text-primary active:opacity-60 transition-opacity"
+                  title="Próximo Mês"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 capitalize tracking-tight mt-1">
+              {currentMonth.toLocaleDateString('pt-BR', { month: 'long' })}
+            </h2>
+          </div>
+
           {/* Compact month grid */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-2 pt-2 pb-3">
-            <div className="grid grid-cols-7 mb-1">
+            <div className="grid grid-cols-7 mb-1.5 border-b border-gray-50 pb-1.5">
               {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((l, i) => (
                 <div key={i} className="text-center text-[10px] font-black text-gray-400">{l}</div>
               ))}
