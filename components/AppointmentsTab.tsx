@@ -503,7 +503,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                   }
                 }
               }}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border transition-all cursor-pointer hover:bg-gray-50 ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all cursor-pointer hover:bg-gray-50 ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}
             >
               <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
               <input
