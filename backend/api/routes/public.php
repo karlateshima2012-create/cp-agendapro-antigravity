@@ -30,10 +30,12 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
 
 
     // Fetch Services
-    $services = Db::fetchAll('SELECT id, name, description, duration_min AS duration, cleaning_buffer_min AS cleaning_buffer, price FROM cp_agenda_services WHERE account_id = ? ORDER BY sort_order ASC', [$profile['id']]);
+    $services = Db::fetchAll('SELECT id, name, description, duration_min AS duration, cleaning_buffer_min AS cleaning_buffer, price, image_url, image_opacity FROM cp_agenda_services WHERE account_id = ? ORDER BY sort_order ASC', [$profile['id']]);
     foreach ($services as &$s) {
         $s['price'] = (float)$s['price'];
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer'];
+        $s['imageUrl'] = $s['image_url'] ?? '';
+        $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
     }
 
     // Fetch Availability

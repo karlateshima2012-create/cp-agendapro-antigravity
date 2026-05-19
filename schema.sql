@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_services` (
     `price` DECIMAL(10, 2) DEFAULT 0.00,
     `is_active` TINYINT(1) DEFAULT 1,
     `sort_order` INT DEFAULT 0,
+    `image_url` LONGTEXT DEFAULT NULL,
+    `image_opacity` INT DEFAULT 100,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_service_account` FOREIGN KEY (`account_id`) REFERENCES `cp_agenda_accounts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

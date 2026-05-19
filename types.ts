@@ -11,6 +11,8 @@ export interface Service {
   duration: number;
   cleaning_buffer?: number;
   price: number;
+  imageUrl?: string;
+  imageOpacity?: number;
 }
 
 export interface Appointment {

@@ -476,22 +476,42 @@ export const PublicBookingPage: React.FC<Props> = ({
                         isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-gray-300'
                       }`}
                     >
-                      <div className="flex items-center gap-4 mb-5">
-                        <div className={`p-3 rounded-2xl transition-all ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
-                          {isSelected ? <Check size={22} /> : <Briefcase size={22} />}
+                      {s.imageUrl && (
+                        <div 
+                          className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-300 group-hover:scale-[1.03]"
+                          style={{ 
+                            backgroundImage: `url(${s.imageUrl})`, 
+                            backgroundSize: 'cover', 
+                            backgroundPosition: 'center', 
+                            opacity: (s.imageOpacity ?? 100) / 100 
+                          }} 
+                        />
+                      )}
+
+                      {s.imageUrl && (
+                        <div className="absolute inset-0 bg-white/60 pointer-events-none z-0" />
+                      )}
+
+                      <div className="relative z-10 flex flex-col h-full justify-between w-full">
+                        <div>
+                          <div className="flex items-center gap-4 mb-5">
+                            <div className={`p-3 rounded-2xl transition-all ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
+                              {isSelected ? <Check size={22} /> : <Briefcase size={22} />}
+                            </div>
+                            <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: isSelected ? primaryColor : '#111827' }}>{s.name}</h3>
+                          </div>
+                          <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3">{s.description}</p>
                         </div>
-                        <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: isSelected ? primaryColor : '#111827' }}>{s.name}</h3>
-                      </div>
-                      <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3 flex-1">{s.description}</p>
-                      <div className="flex justify-between items-center border-t border-gray-50 pt-6">
-                        <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
-                          <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
-                        </div>
-                        <div className="flex flex-col items-end">
-                          {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
-                          <span className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: primaryColor }}>
-                            {isSelected ? 'Selecionado' : 'Selecionar'}
-                          </span>
+                        <div className="flex justify-between items-center border-t border-gray-100 pt-6 mt-4">
+                          <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
+                            <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                          </div>
+                          <div className="flex flex-col items-end">
+                            {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                            <span className="text-[9px] font-black uppercase tracking-widest mt-1" style={{ color: primaryColor }}>
+                              {isSelected ? 'Selecionado' : 'Selecionar'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </button>

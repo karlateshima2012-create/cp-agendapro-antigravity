@@ -10,6 +10,8 @@ if ($path === 'services' && $method === 'GET') {
         $s['price'] = (float)$s['price'];
         $s['duration'] = (int)$s['duration_min'];
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer_min'];
+        $s['imageUrl'] = $s['image_url'] ?? '';
+        $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
     }
     Response::ok($services);
 }
@@ -27,7 +29,7 @@ if ($path === 'services' && $method === 'PUT') {
 
         foreach ($data as $index => $svc) {
             Db::query(
-                'INSERT INTO cp_agenda_services (account_id, name, description, duration_min, cleaning_buffer_min, price, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cp_agenda_services (account_id, name, description, duration_min, cleaning_buffer_min, price, sort_order, image_url, image_opacity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $accountId,
                     $svc['name'] ?? 'Serviço',
@@ -35,7 +37,9 @@ if ($path === 'services' && $method === 'PUT') {
                     $svc['duration'] ?? 30, // UI maps 'duration' to duration_min
                     $svc['cleaning_buffer'] ?? 0,
                     $svc['price'] ?? 0,
-                    $index
+                    $index,
+                    $svc['imageUrl'] ?? null,
+                    $svc['imageOpacity'] ?? 100
                 ]
             );
         }
