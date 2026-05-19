@@ -186,11 +186,14 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   // Função removida para evitar disparo automático de WhatsApp
 
   const [currentMonth, setCurrentMonth] = useState(getTodayJST());
+  const [selectedDay, setSelectedDay] = useState<Date>(() =>
+    new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }))
+  );
 
   const renderCalendar = () => {
     const todayJST = getTodayJST();
     const todayMidnight = new Date(todayJST.getFullYear(), todayJST.getMonth(), todayJST.getDate()).getTime();
-    
+
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -200,8 +203,19 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       0: 'domingo', 1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado'
     };
 
-    const days = [];
-    for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="h-20 md:h-32 bg-gray-50/10 border border-gray-100/30 rounded-xl"></div>);
+    const getApptColor = (status: AppointmentStatus) => {
+      if (status === 'confirmed') return { bg: 'bg-primary/10', dot: 'bg-primary', text: 'text-primary' };
+      if (status === 'pending') return { bg: 'bg-amber-50', dot: 'bg-amber-400', text: 'text-amber-700' };
+      return { bg: 'bg-gray-50', dot: 'bg-gray-400', text: 'text-gray-500' };
+    };
+
+    const mobileDays: React.ReactNode[] = [];
+    const desktopDays: React.ReactNode[] = [];
+
+    for (let i = 0; i < startDay; i++) {
+      mobileDays.push(<div key={`me-${i}`} />);
+      desktopDays.push(<div key={`de-${i}`} className="min-h-[8rem] bg-gray-50/10 border border-gray-100/30 rounded-xl" />);
+    }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const currentLoopDate = new Date(year, month, d);
@@ -215,125 +229,257 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
       const isPast = loopTime < todayMidnight;
       const isToday = d === todayJST.getDate() && month === todayJST.getMonth() && year === todayJST.getFullYear();
+      const isSelected = d === selectedDay.getDate() && month === selectedDay.getMonth() && year === selectedDay.getFullYear();
 
-      // SÓ CONSIDERA BLOQUEADO SE FOR O DIA INTEIRO (sem startTime/endTime)
       const blocked = availability.blockedDates.find(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
-        const isSameDay = bDate === dateStr;
-        const isFullDay = !b.startTime && !b.endTime;
-        return isSameDay && isFullDay;
+        return bDate === dateStr && !b.startTime && !b.endTime;
       });
 
-      const dayAppts = appointments.filter(a => {
-        if (a.status === 'canceled' || a.status === 'rejected') return false;
-        const apptStart = getJSTDate(a.startAt);
-        return apptStart.getDate() === d && apptStart.getMonth() === month && apptStart.getFullYear() === year;
-      });
-      const load = dayAppts.length;
+      const dayAppts = appointments
+        .filter((a: Appointment) => {
+          if (a.status === 'canceled' || a.status === 'rejected') return false;
+          const apptStart = getJSTDate(a.startAt);
+          return apptStart.getDate() === d && apptStart.getMonth() === month && apptStart.getFullYear() === year;
+        })
+        .sort((a: Appointment, b: Appointment) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
-      let dayClass = 'bg-white border-gray-100 hover:border-primary/30 hover:shadow-md';
-      let dayTextClass = 'text-gray-900';
-      let showBadge = false;
-      let badgeText = '';
-      let badgeClass = '';
+      // ---- MOBILE cell ----
+      const mobileNumBase = isPast || !isDayEnabled ? 'text-gray-300' : 'text-gray-800';
+      mobileDays.push(
+        <div
+          key={`m-${d}`}
+          onClick={() => setSelectedDay(currentLoopDate)}
+          className="flex flex-col items-center gap-0.5 py-1 cursor-pointer select-none"
+        >
+          <div className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-all
+            ${isToday ? 'bg-primary text-white shadow-sm shadow-primary/30' : ''}
+            ${isSelected && !isToday ? 'bg-primary/15 text-primary' : ''}
+            ${!isToday && !isSelected ? mobileNumBase : ''}
+          `}>
+            {d}
+          </div>
+          <div className="flex gap-0.5 h-1.5 items-center">
+            {dayAppts.slice(0, 3).map((appt: Appointment, idx: number) => (
+              <div
+                key={idx}
+                className={`w-1.5 h-1.5 rounded-full ${appt.status === 'confirmed' ? 'bg-primary' : 'bg-amber-400'} ${isPast ? 'opacity-40' : ''}`}
+              />
+            ))}
+          </div>
+        </div>
+      );
+
+      // ---- DESKTOP cell ----
+      let dayClass = 'bg-white border-gray-100 hover:border-primary/20 hover:shadow-sm';
+      let dayNumClass = 'text-gray-800';
 
       if (blocked) {
-        dayClass = 'bg-red-50 border-red-100';
-        dayTextClass = 'text-red-600';
-        showBadge = true;
-        badgeText = 'Bloqueado';
-        badgeClass = 'bg-red-100 text-red-700 border-red-200';
+        dayClass = 'bg-red-50/70 border-red-100';
+        dayNumClass = 'text-red-500';
       } else if (!isDayEnabled) {
-        dayClass = 'bg-gray-50/60 border-gray-100';
-        dayTextClass = 'text-gray-400';
+        dayClass = 'bg-gray-50/50 border-gray-100/80';
+        dayNumClass = 'text-gray-300';
       } else if (isPast) {
-        dayClass = 'bg-gray-50/30 border-gray-100 opacity-60';
-        dayTextClass = 'text-gray-400';
-      } else if (isToday) {
-        dayClass = 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20';
-        dayTextClass = 'text-primary';
+        dayClass = 'bg-white border-gray-100 opacity-55';
+        dayNumClass = 'text-gray-400';
       }
 
-      days.push(
-        <div key={d} className={`h-20 md:h-32 border p-2 md:p-3 flex flex-col gap-1 md:gap-2 rounded-xl transition-all relative ${dayClass}`}>
-          <div className="flex justify-between items-start">
-            <span className={`text-sm font-black ${dayTextClass} ${isPast ? 'line-through decoration-gray-300' : ''}`}>
-              {d}
-            </span>
+      const visibleAppts = dayAppts.slice(0, 3);
+      const overflowCount = dayAppts.length - 3;
 
-            {showBadge && (
-              <div className="flex flex-col items-end">
-                <div className={`px-2 py-0.5 rounded-lg text-[7px] md:text-[8px] font-black uppercase tracking-widest border ${badgeClass}`}>
-                  {badgeText}
-                </div>
-              </div>
-            )}
-
-            {!blocked && load > 0 && (
-              <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${load >= 5 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
-                {load} {load === 1 ? 'Agend.' : 'Agend.'}
+      desktopDays.push(
+        <div key={`d-${d}`} className={`min-h-[8rem] border p-2 flex flex-col rounded-xl transition-all ${dayClass}`}>
+          <div className="flex items-center justify-center mb-1.5">
+            {isToday ? (
+              <span className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black shadow-sm shadow-primary/30">
+                {d}
               </span>
+            ) : (
+              <span className={`text-sm font-bold ${dayNumClass}`}>{d}</span>
             )}
           </div>
-
-          <div className="flex gap-1 flex-wrap overflow-hidden h-6 md:h-10 mt-1 content-start">
-            {dayAppts.map((_, idx) => (
-              <div key={idx} className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${isPast ? 'bg-gray-300' : 'bg-primary shadow-sm'}`}></div>
-            ))}
+          {blocked && (
+            <div className="px-1 py-0.5 rounded-md bg-red-100 text-red-600 text-[8px] font-black uppercase tracking-wide text-center mb-0.5">
+              Bloqueado
+            </div>
+          )}
+          <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">
+            {visibleAppts.map((appt: Appointment) => {
+              const apptTime = getJSTDate(appt.startAt);
+              const timeStr = `${apptTime.getHours().toString().padStart(2, '0')}:${apptTime.getMinutes().toString().padStart(2, '0')}`;
+              const colors = getApptColor(appt.status);
+              const firstName = (appt.clientName || '').split(' ')[0];
+              return (
+                <div key={appt.id} className={`flex items-center gap-1 rounded-md px-1 py-0.5 ${colors.bg} overflow-hidden`}>
+                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${colors.dot}`} />
+                  <span className={`text-[10px] font-semibold ${colors.text} truncate flex-1 leading-none`}>{firstName}</span>
+                  <span className={`text-[9px] font-medium ${colors.text} opacity-80 flex-shrink-0 leading-none`}>{timeStr}</span>
+                </div>
+              );
+            })}
+            {overflowCount > 0 && (
+              <span className="text-[9px] font-semibold text-gray-400 pl-1 leading-none">+{overflowCount} mais</span>
+            )}
           </div>
         </div>
       );
     }
 
+    // Appointments for the selected day (mobile panel)
+    const selectedDayAppts = appointments
+      .filter((a: Appointment) => {
+        if (!a?.startAt) return false;
+        if (a.status === 'canceled' || a.status === 'rejected') return false;
+        const s = getJSTDate(a.startAt);
+        return s.getDate() === selectedDay.getDate() &&
+          s.getMonth() === selectedDay.getMonth() &&
+          s.getFullYear() === selectedDay.getFullYear();
+      })
+      .sort((a: Appointment, b: Appointment) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+
     return (
-      <div className="animate-fade-in px-2">
+      <div className="animate-fade-in">
         {/* Calendar Header with Navigation */}
-        <div className="flex items-center justify-between mb-6 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <button 
-            onClick={() => {
-              const prev = new Date(currentMonth);
-              prev.setMonth(prev.getMonth() - 1);
-              setCurrentMonth(prev);
-            }}
+        <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <button
+            onClick={() => { const p = new Date(currentMonth); p.setMonth(p.getMonth() - 1); setCurrentMonth(p); }}
             className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
           >
             <ArrowRightCircle className="rotate-180" size={20} />
           </button>
-          
           <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-widest">
             {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
           </h3>
-
-          <button 
-            onClick={() => {
-              const next = new Date(currentMonth);
-              next.setMonth(next.getMonth() + 1);
-              setCurrentMonth(next);
-            }}
+          <button
+            onClick={() => { const n = new Date(currentMonth); n.setMonth(n.getMonth() + 1); setCurrentMonth(n); }}
             className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
           >
             <ArrowRightCircle size={20} />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 md:gap-4 mb-3 px-2">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-            <div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{d}</div>
-          ))}
+        {/* ---- MOBILE LAYOUT ---- */}
+        <div className="md:hidden space-y-3">
+          {/* Compact month grid */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-2 pt-2 pb-3">
+            <div className="grid grid-cols-7 mb-1">
+              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((l, i) => (
+                <div key={i} className="text-center text-[10px] font-black text-gray-400">{l}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">{mobileDays}</div>
+          </div>
+
+          {/* Selected day appointments panel */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+              <p className="text-xs font-black text-gray-700 capitalize">
+                {selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+              {selectedDayAppts.length > 0 && (
+                <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  {selectedDayAppts.length} agend.
+                </span>
+              )}
+            </div>
+
+            {selectedDayAppts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-300">
+                <CalendarDays size={28} />
+                <p className="text-xs font-semibold">Sem agendamentos neste dia</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {selectedDayAppts.map((appt: Appointment) => {
+                  const apptTime = getJSTDate(appt.startAt);
+                  const timeStr = `${apptTime.getHours().toString().padStart(2, '0')}:${apptTime.getMinutes().toString().padStart(2, '0')}`;
+                  const status = getStatusConfig(appt.status);
+                  const isPending = appt.status === 'pending';
+                  return (
+                    <div key={appt.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl px-2.5 py-2 min-w-[50px] border border-gray-100 flex-shrink-0">
+                        <span className="text-base font-black text-gray-800 leading-none">{timeStr}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${status.dot}`} />
+                          <span className="text-sm font-bold text-gray-900 truncate capitalize">{appt.clientName}</span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-primary bg-primary/5 px-1.5 py-0.5 rounded-full">
+                          {appt.serviceName || 'Serviço Padrão'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {isPending && (
+                          <>
+                            <button
+                              onClick={() => onUpdateStatus(appt.id, 'confirmed')}
+                              className="p-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors shadow-sm"
+                              title="Confirmar"
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                            <button
+                              onClick={() => openConfirm('Rejeitar agendamento', `Rejeitar ${appt.clientName}?`, () => onUpdateStatus(appt.id, 'rejected'))}
+                              className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
+                              title="Rejeitar"
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          </>
+                        )}
+                        <a
+                          href={generateWhatsAppLink(appt, appt.status)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <MessageCircle size={14} />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Legend mobile */}
+          <div className="flex flex-wrap gap-3 px-4 py-3 bg-gray-50/50 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" /> Confirmado
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Pendente
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-7 gap-2 md:gap-4">{days}</div>
-        
-        {/* Legenda rápida */}
-        <div className="mt-6 flex flex-wrap gap-4 px-4 py-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-             <div className="w-2 h-2 rounded-full bg-primary"></div> Agendamentos
-           </div>
-           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-             <div className="w-2 h-2 bg-red-100 border border-red-200 rounded-sm"></div> Dia Bloqueado
-           </div>
-           <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-             <div className="w-2 h-2 bg-gray-100 rounded-sm"></div> Passado / Inativo
-           </div>
+
+        {/* ---- DESKTOP LAYOUT ---- */}
+        <div className="hidden md:block px-2">
+          <div className="grid grid-cols-7 gap-4 mb-3">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(label => (
+              <div key={label} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{label}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-4">{desktopDays}</div>
+
+          <div className="mt-6 flex flex-wrap gap-4 px-4 py-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 rounded-full bg-primary" /> Confirmado
+            </div>
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 rounded-full bg-amber-400" /> Pendente
+            </div>
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 bg-red-100 border border-red-200 rounded-sm" /> Dia Bloqueado
+            </div>
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 bg-gray-100 rounded-sm" /> Passado / Inativo
+            </div>
+          </div>
         </div>
       </div>
     );
