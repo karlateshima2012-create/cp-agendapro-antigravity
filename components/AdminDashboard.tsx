@@ -3,7 +3,8 @@ import { User, PlanType, AccountStatus } from '../types';
 import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
   X, RefreshCw, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, ExternalLink, Upload,
-  AlertCircle, TrendingDown, Shield, MessageSquare, ChevronDown
+  AlertCircle, TrendingDown, Shield, MessageSquare, ChevronDown,
+  TrendingUp, BarChart2, DollarSign, Zap, ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -33,6 +34,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const [manualExpiryDate, setManualExpiryDate] = useState<string>('');
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
+  const [activeMainTab, setActiveMainTab] = useState<'clients' | 'billing'>('clients');
 
   const [newUser, setNewUser] = useState({
     email: '',
@@ -111,6 +113,98 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const expiredPlans  = sortedClients.filter(c => { if (!c.planExpiresAt) return false; const exp = new Date(c.planExpiresAt); exp.setHours(0,0,0,0); const t = new Date(); t.setHours(0,0,0,0); return exp.getTime() <= t.getTime(); }).length;
   const criticalCount = sortedClients.filter(c => getHealth(c) === 'critical').length;
   const riskCount     = sortedClients.filter(c => getHealth(c) === 'risk').length;
+
+  // ── Métricas financeiras (Faturamento) ────────────────────────────────────
+  const PRICE_MONTHLY    = 1280;
+  const PRICE_ANNUAL     = 12800;
+  const PRICE_ANNUAL_MRR = PRICE_ANNUAL / 12; // ¥1.066,67
+  const activeList = sortedClients.filter(c => c.accountStatus === 'active');
+  const clientMRR  = (c: User) => c.planType === '12m' ? PRICE_ANNUAL_MRR : PRICE_MONTHLY;
+
+  const mrr  = activeList.reduce((s, c) => s + clientMRR(c), 0);
+  const arr  = mrr * 12;
+  const arpu = activeList.length > 0 ? mrr / activeList.length : 0;
+
+  // Churn — planos vencidos nos últimos 30 dias
+  const thirtyDaysAgo  = new Date(nowMs - 30 * dayInMs);
+  const recentlyExpired = sortedClients.filter(c => {
+    if (!c.planExpiresAt) return false;
+    const exp = new Date(c.planExpiresAt);
+    return exp >= thirtyDaysAgo && exp <= now && c.accountStatus !== 'active';
+  });
+  const churnedMRR = recentlyExpired.reduce((s, c) => s + clientMRR(c), 0);
+  const churnBase  = activeList.length + recentlyExpired.length;
+  const churnRate  = churnBase > 0 ? recentlyExpired.length / churnBase : 0;
+
+  // LTV — cap 24 meses se churn = 0 (sistema novo)
+  const ltv = churnRate > 0 ? arpu / churnRate : arpu * 24;
+
+  // Net New MRR (este mês)
+  const monthStart     = new Date(now.getFullYear(), now.getMonth(), 1);
+  const newThisMonth   = sortedClients.filter(c => c.createdAt && new Date(c.createdAt) >= monthStart);
+  const newMRRThisMonth = newThisMonth.reduce((s, c) => s + clientMRR(c), 0);
+  const netNewMRR      = newMRRThisMonth - churnedMRR;
+
+  // Receita em risco por janela de vencimento
+  const mrrAtRisk = (minD: number, maxD: number) =>
+    activeList.filter(c => {
+      if (!c.planExpiresAt) return false;
+      const diff = (new Date(c.planExpiresAt).getTime() - nowMs) / dayInMs;
+      return diff >= minD && diff < maxD;
+    });
+  const risk30List = mrrAtRisk(0, 30);
+  const risk60List = mrrAtRisk(30, 60);
+  const risk90List = mrrAtRisk(60, 90);
+  const risk30MRR  = risk30List.reduce((s, c) => s + clientMRR(c), 0);
+  const risk60MRR  = risk60List.reduce((s, c) => s + clientMRR(c), 0);
+  const risk90MRR  = risk90List.reduce((s, c) => s + clientMRR(c), 0);
+
+  // Distribuição de planos
+  const planDistribution = (['1m','3m','6m','12m'] as PlanType[]).map(pt => {
+    const list = activeList.filter(c => c.planType === pt);
+    return {
+      label: pt === '1m' ? 'Mensal' : pt === '3m' ? 'Trimestral' : pt === '6m' ? 'Semestral' : 'Anual',
+      pt, count: list.length,
+      mrr: list.reduce((s, c) => s + clientMRR(c), 0),
+    };
+  }).filter(d => d.count > 0);
+  const annualPct = activeList.length > 0
+    ? Math.round((activeList.filter(c => c.planType === '12m').length / activeList.length) * 100)
+    : 0;
+
+  // Projeção 6 meses — usa média real de novos clientes dos últimos 3 meses
+  const avgNewPerMonth = (() => {
+    const counts = [1, 2, 3].map(n => {
+      const s = new Date(now.getFullYear(), now.getMonth() - n, 1);
+      const e = new Date(now.getFullYear(), now.getMonth() - n + 1, 0);
+      return sortedClients.filter(c => c.createdAt && new Date(c.createdAt) >= s && new Date(c.createdAt) <= e).length;
+    });
+    return counts.reduce((a, b) => a + b, 0) / 3;
+  })();
+  const projection = Array.from({ length: 6 }, (_, i) => {
+    const projClients = Math.max(0,
+      activeList.length * Math.pow(1 - churnRate, i + 1) + avgNewPerMonth * (i + 1)
+    );
+    return { month: i + 1, mrr: Math.round(projClients * (arpu || PRICE_MONTHLY)) };
+  });
+  const maxProjMRR = Math.max(...projection.map(p => p.mrr), mrr, 1);
+
+  // MoM growth
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0);
+  const newLastMonth   = sortedClients.filter(c =>
+    c.createdAt && new Date(c.createdAt) >= lastMonthStart && new Date(c.createdAt) <= lastMonthEnd
+  ).length;
+  const momGrowth = newLastMonth > 0
+    ? ((newThisMonth.length - newLastMonth) / newLastMonth) * 100
+    : (newThisMonth.length > 0 ? 100 : 0);
+
+  // Helper moeda
+  const yen = (v: number) => `¥${Math.round(v).toLocaleString('ja-JP')}`;
+  const monthName = (offset: number) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return d.toLocaleDateString('pt-BR', { month: 'short' });
+  };
 
   // ── Completude de perfil (0-5) ─────────────────────────────────────────────
   const profileScore = (c: User) =>
@@ -205,6 +299,29 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
         </div>
       </header>
 
+      {/* ── Navegação de abas ── */}
+      <div className="bg-white border-b border-gray-200 sticky top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-6 flex gap-1">
+          {([
+            { id: 'clients', label: 'Clientes',    Icon: Users },
+            { id: 'billing', label: 'Faturamento', Icon: TrendingUp },
+          ] as { id: 'clients' | 'billing'; label: string; Icon: any }[]).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveMainTab(id)}
+              className={`flex items-center gap-2 px-5 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${
+                activeMainTab === id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Icon size={15} /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeMainTab === 'clients' && (
       <main className="max-w-7xl mx-auto p-6">
 
         {/* ── Cards de plano ── */}
@@ -378,6 +495,161 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
           </div>
         </div>
       </main>
+      )} {/* fim aba Clientes */}
+
+      {/* ══════════════════════════════════════════════════════════════
+          ABA: FATURAMENTO
+      ══════════════════════════════════════════════════════════════ */}
+      {activeMainTab === 'billing' && (
+      <main className="max-w-7xl mx-auto p-6 space-y-8">
+
+        {/* Bloco 1 — KPIs principais */}
+        <div>
+          <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2"><TrendingUp size={20} className="text-primary" /> Receita Recorrente</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'MRR', sub: 'Receita Recorrente Mensal', value: yen(mrr), color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/10' },
+              { label: 'ARR', sub: 'Receita Recorrente Anual', value: yen(arr), color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
+              { label: 'Churn Rate', sub: 'Clientes perdidos / mês', value: `${(churnRate * 100).toFixed(1)}%`, color: churnRate > 0.05 ? 'text-red-600' : churnRate > 0.02 ? 'text-yellow-600' : 'text-green-600', bg: churnRate > 0.05 ? 'bg-red-50' : 'bg-gray-50', border: churnRate > 0.05 ? 'border-red-100' : 'border-gray-100' },
+              { label: 'LTV', sub: 'Valor vitalício médio', value: yen(ltv), color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+            ].map(k => (
+              <div key={k.label} className={`${k.bg} border ${k.border} p-6 rounded-[2rem]`}>
+                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{k.label}</p>
+                <p className={`text-3xl font-black ${k.color} mt-1`}>{k.value}</p>
+                <p className="text-[9px] text-gray-400 font-bold mt-2">{k.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bloco 2 — KPIs secundários */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">ARPU</p>
+            <p className="text-2xl font-black text-gray-900 mt-1">{yen(arpu)}<span className="text-sm text-gray-400 font-bold">/mês</span></p>
+            <p className="text-[9px] text-gray-400 font-bold mt-2">Receita média por cliente ativo</p>
+          </div>
+          <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Net New MRR</p>
+            <div className="flex items-center gap-2 mt-1">
+              {netNewMRR > 0 ? <ArrowUpRight size={20} className="text-green-500" /> : netNewMRR < 0 ? <ArrowDownRight size={20} className="text-red-500" /> : <Minus size={20} className="text-gray-400" />}
+              <p className={`text-2xl font-black ${netNewMRR > 0 ? 'text-green-600' : netNewMRR < 0 ? 'text-red-600' : 'text-gray-500'}`}>{yen(Math.abs(netNewMRR))}</p>
+            </div>
+            <p className="text-[9px] text-gray-400 font-bold mt-2">Novo MRR − Churn MRR este mês</p>
+          </div>
+          <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Plano Anual</p>
+            <p className="text-2xl font-black text-gray-900 mt-1">{annualPct}%<span className="text-sm text-gray-400 font-bold ml-1">dos ativos</span></p>
+            <p className="text-[9px] text-gray-400 font-bold mt-2">% de clientes no plano anual</p>
+          </div>
+          <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Novos este mês</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-2xl font-black text-gray-900">+{newThisMonth.length}</p>
+              {momGrowth !== 0 && (
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${momGrowth > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                  {momGrowth > 0 ? '+' : ''}{momGrowth.toFixed(0)}% MoM
+                </span>
+              )}
+            </div>
+            <p className="text-[9px] text-gray-400 font-bold mt-2">Clientes captados em {monthName(0)}</p>
+          </div>
+        </div>
+
+        {/* Bloco 3 — Receita em risco */}
+        <div>
+          <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2"><AlertCircle size={20} className="text-orange-500" /> Receita em Risco (planos vencendo)</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Próximos 30 dias', list: risk30List, mrrVal: risk30MRR, bg: 'bg-red-50', border: 'border-red-100', color: 'text-red-600', dot: '🔴' },
+              { label: '31 a 60 dias',     list: risk60List, mrrVal: risk60MRR, bg: 'bg-yellow-50', border: 'border-yellow-100', color: 'text-yellow-700', dot: '🟡' },
+              { label: '61 a 90 dias',     list: risk90List, mrrVal: risk90MRR, bg: 'bg-gray-50', border: 'border-gray-100', color: 'text-gray-600', dot: '⚪' },
+            ].map(r => (
+              <div key={r.label} className={`${r.bg} border ${r.border} p-6 rounded-[2rem]`}>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{r.dot} {r.label}</p>
+                <p className={`text-2xl font-black ${r.color} mt-1`}>{yen(r.mrrVal)}</p>
+                <p className="text-[9px] text-gray-400 font-bold mt-2">{r.list.length} cliente{r.list.length !== 1 ? 's' : ''} · MRR em risco</p>
+                {r.list.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {r.list.slice(0, 4).map(c => (
+                      <span key={c.id} className="text-[8px] font-black bg-white/70 px-2 py-0.5 rounded-full text-gray-600 border border-gray-200 truncate max-w-[100px]">{c.companyName}</span>
+                    ))}
+                    {r.list.length > 4 && <span className="text-[8px] font-black text-gray-400">+{r.list.length - 4}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bloco 4 — Projeção MRR 6 meses */}
+        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+            <div>
+              <h2 className="text-xl font-black text-gray-800 flex items-center gap-2"><BarChart2 size={20} className="text-primary" /> Projeção MRR — 6 meses</h2>
+              <p className="text-[10px] text-gray-400 font-bold mt-1">Baseada em média de <b>{avgNewPerMonth.toFixed(1)}</b> novos clientes/mês (últimos 3 meses) e churn de <b>{(churnRate * 100).toFixed(1)}%</b></p>
+            </div>
+            <div className="text-right">
+              <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">MRR atual</p>
+              <p className="text-xl font-black text-primary">{yen(mrr)}</p>
+            </div>
+          </div>
+          <div className="flex items-end gap-3 h-48">
+            {/* Barra atual */}
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <p className="text-[9px] font-black text-primary">{yen(mrr)}</p>
+              <div className="w-full rounded-t-xl bg-primary" style={{ height: `${Math.max(4, (mrr / maxProjMRR) * 100)}%` }} />
+              <p className="text-[9px] font-bold text-gray-500 uppercase">Agora</p>
+            </div>
+            {/* Barras projetadas */}
+            {projection.map((p) => (
+              <div key={p.month} className="flex flex-col items-center gap-2 flex-1">
+                <p className="text-[9px] font-black text-gray-500">{yen(p.mrr)}</p>
+                <div className="w-full rounded-t-xl bg-primary/30" style={{ height: `${Math.max(4, (p.mrr / maxProjMRR) * 100)}%` }} />
+                <p className="text-[9px] font-bold text-gray-400 uppercase">{monthName(p.month)}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-gray-300 font-bold mt-4 text-center uppercase tracking-widest">* Projeção estimada. Não considera variações de preço ou campanhas.</p>
+        </div>
+
+        {/* Bloco 5 — Distribuição de planos */}
+        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm">
+          <h2 className="text-xl font-black text-gray-800 mb-6 flex items-center gap-2"><Zap size={20} className="text-yellow-500" /> Distribuição de Planos</h2>
+          {planDistribution.length === 0 ? (
+            <p className="text-gray-400 text-sm italic text-center py-8">Nenhum cliente ativo no momento.</p>
+          ) : (
+            <div className="space-y-4">
+              {planDistribution.map(d => {
+                const pct = activeList.length > 0 ? Math.round((d.count / activeList.length) * 100) : 0;
+                return (
+                  <div key={d.pt}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black text-gray-700 w-24">{d.label}</span>
+                        <span className="text-[9px] font-bold text-gray-400">{d.count} cliente{d.count !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-black text-gray-600">{yen(d.mrr)}/mês MRR</span>
+                        <span className="text-[9px] font-black text-gray-400 w-8 text-right">{pct}%</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="h-2.5 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total MRR</p>
+                <p className="text-xl font-black text-primary">{yen(mrr)}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </main>
+      )} {/* fim aba Faturamento */}
 
       {/* ══════════════════════════════════════════════════════════════
           MODAL: FICHA E EDIÇÃO
