@@ -299,7 +299,8 @@ export const PublicBookingPage: React.FC<Props> = ({
       const isDayOff = !scheduleForDay || !scheduleForDay.isWorking;
       const isFullDayBlocked = (availability.blockedDates || []).some(b => (b.date?.split('T')[0] === dateStr) && !b.startTime);
       const daySlots = selectedServices.length > 0 ? getSlotsForDate(dateStr) : [];
-      const isDayFull = selectedServices.length > 0 ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false;
+      const hasNoSlots = selectedServices.length > 0 && scheduleForDay && (scheduleForDay as any).timeType === 'fixed' && (!( scheduleForDay as any).fixedTimes || (scheduleForDay as any).fixedTimes.length === 0);
+      const isDayFull = hasNoSlots || (selectedServices.length > 0 ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false);
       const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull;
 
       // Cores para os finais de semana

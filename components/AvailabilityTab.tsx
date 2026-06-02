@@ -31,15 +31,19 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
   // Slot generation logic similar to PublicBookingPage
   const availableSlots = useMemo(() => {
     if (!newBlockDate) return [];
-    
+
     const jsDayOfWeek = new Date(newBlockDate + 'T12:00:00').getDay();
     const jsDayToPtDay: Record<number, string> = {
       1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo'
     };
     const dayName = jsDayToPtDay[jsDayOfWeek];
     const dayConfig = localConfig.workingHours.find(h => h.day === dayName);
-    
+
     if (!dayConfig || (!dayConfig.enabled && !dayConfig.isWorking)) return [];
+
+    if ((dayConfig as any).timeType === 'fixed') {
+      return ((dayConfig as any).fixedTimes || []) as string[];
+    }
 
     const start = dayConfig.startTime || dayConfig.start || '09:00';
     const end = dayConfig.endTime || dayConfig.end || '18:00';
@@ -232,8 +236,8 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                            onChange={e => setNewFixedTime({...newFixedTime, [idx]: e.target.value})}
                            className="w-full sm:w-auto px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 transition-all"
                          />
-                         <button 
-                           disabled={!wh.isWorking || !newFixedTime[idx]}
+                         <button
+                           disabled={!wh.isWorking}
                            onClick={() => {
                               const current = wh.fixedTimes || [];
                               const timeToAdd = newFixedTime[idx] || '09:00';
