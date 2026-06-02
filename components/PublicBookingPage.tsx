@@ -222,17 +222,27 @@ export const PublicBookingPage: React.FC<Props> = ({
     const totalSlotDuration = totalDuration + totalBuffer;
     const interval = availability.intervalMinutes || 30;
     const times: { time: string, isAvailable: boolean }[] = [];
-    let curr = toMin(startTime);
-    const end = (totalDuration >= 1440) ? curr : toMin(endTime);
+    
+    const baseIntervalTimes: number[] = [];
+    if (config.timeType === 'fixed' && config.fixedTimes && config.fixedTimes.length > 0) {
+      config.fixedTimes.forEach((tStr: string) => baseIntervalTimes.push(toMin(tStr)));
+    } else {
+      let curr = toMin(startTime);
+      const end = (totalDuration >= 1440) ? curr : toMin(endTime);
+      while (curr <= end) {
+        baseIntervalTimes.push(curr);
+        if (totalDuration >= 1440) break;
+        curr += interval;
+      }
+    }
 
-    while (curr <= end) {
-      // Regra do Último Horário: O serviço + limpeza deve terminar dentro do expediente
-      if (totalDuration < 1440 && (curr + totalSlotDuration) > toMin(endTime)) {
-        break;
+    for (const curr of baseIntervalTimes) {
+      // Regra do Último Horário para modo intervalo
+      if (config.timeType !== 'fixed' && totalDuration < 1440 && (curr + totalSlotDuration) > toMin(endTime)) {
+        break; 
       }
 
       if (isToday && curr <= currentMinutes + 15) {
-        curr += interval;
         continue;
       }
       const timeStr = `${String(Math.floor(curr / 60)).padStart(2, '0')}:${String(curr % 60).padStart(2, '0')}`;
@@ -258,8 +268,6 @@ export const PublicBookingPage: React.FC<Props> = ({
       });
 
       times.push({ time: timeStr, isAvailable: !isBusy && !isBlockedInSlot });
-      if (totalDuration >= 1440) break;
-      curr += interval;
     }
     return times;
   };

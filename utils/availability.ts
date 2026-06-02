@@ -47,7 +47,9 @@ export const mapWorkingHours = (raw: any) => {
             endTime: wh.end || wh.endTime || '18:00',
             enabled: wh.enabled === true || wh.isWorking === true,
             start: wh.start || wh.startTime || '09:00',
-            end: wh.end || wh.endTime || '18:00'
+            end: wh.end || wh.endTime || '18:00',
+            timeType: wh.timeType || 'interval',
+            fixedTimes: wh.fixedTimes || []
         };
     });
 };

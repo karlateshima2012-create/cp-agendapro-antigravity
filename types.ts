@@ -37,6 +37,8 @@ export interface WorkingHour {
   isWorking: boolean;
   startTime: string;
   endTime: string;
+  timeType?: 'interval' | 'fixed';
+  fixedTimes?: string[];
 }
 
 export interface BlockedDate {
