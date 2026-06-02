@@ -9,7 +9,53 @@ if (DEBUG_MODE) {
 if ($user['role'] !== 'admin' && $user['role'] !== 'super_admin') Response::fail('Forbidden', 403);
 
 if ($path === 'admin/profiles' && $method === 'GET') {
-    $profiles = Db::fetchAll("SELECT u.id, u.email, u.role, a.name as companyName, a.owner_name as ownerName, a.status as accountStatus, a.plan_type as planType, a.plan_expires_at as planExpiresAt, a.contact_phone as contactPhone, a.lifetime_appointments as appointmentCount, a.created_at as createdAt FROM cp_agenda_users u JOIN cp_agenda_accounts a ON u.account_id = a.id WHERE u.role = 'client' ORDER BY a.created_at DESC");
+    $profiles = Db::fetchAll(
+        "SELECT
+            u.id, u.email, u.role,
+            a.name            AS companyName,
+            a.owner_name      AS ownerName,
+            a.status          AS accountStatus,
+            a.plan_type       AS planType,
+            a.plan_expires_at AS planExpiresAt,
+            a.contact_phone   AS contactPhone,
+            a.lifetime_appointments AS appointmentCount,
+            a.last_access_at  AS lastAccessAt,
+            a.created_at      AS createdAt,
+
+            (SELECT MAX(start_at)
+               FROM cp_agenda_appointments
+              WHERE account_id = a.id
+                AND status = 'confirmed'
+                AND deleted_at IS NULL) AS lastAppointmentAt,
+
+            (SELECT COUNT(*)
+               FROM cp_agenda_appointments
+              WHERE account_id = a.id
+                AND status NOT IN ('canceled','rejected')
+                AND deleted_at IS NULL
+                AND start_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS appointmentsLast30Days,
+
+            (SELECT COUNT(*)
+               FROM cp_agenda_services
+              WHERE account_id = a.id) AS servicesCount,
+
+            IF(a.telegram_chat_id  IS NOT NULL AND a.telegram_chat_id  != '', 1, 0) AS hasTelegram,
+            IF(a.profile_image     IS NOT NULL AND a.profile_image     != '', 1, 0) AS hasProfileImage,
+            IF(a.cover_image       IS NOT NULL AND a.cover_image       != '', 1, 0) AS hasCoverImage,
+            IF(a.short_description IS NOT NULL AND a.short_description != '', 1, 0) AS hasDescription,
+            a.invoices AS invoices
+
+         FROM cp_agenda_users u
+         JOIN cp_agenda_accounts a ON u.account_id = a.id
+         WHERE u.role = 'client'
+         ORDER BY a.created_at DESC"
+    );
+    
+    // Convert invoices JSON string to array for the frontend
+    foreach ($profiles as &$profile) {
+        $profile['invoices'] = $profile['invoices'] ? json_decode($profile['invoices'], true) : [];
+    }
+    
     Response::ok($profiles);
 }
 
@@ -40,6 +86,7 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
         'status'            => 'status',
         'plan_type'         => 'plan_type',
         'plan_expires_at'   => 'plan_expires_at',
+        'invoices'          => 'invoices',
     ];
 
     $sets = [];
@@ -50,7 +97,7 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
         if (isset($fieldMap[$key])) {
             $col = $fieldMap[$key];
             $sets[] = "`$col` = ?";
-            $params[] = $val;
+            $params[] = is_array($val) ? json_encode($val) : $val;
         } elseif ($key === 'email') {
             // Email lives in cp_agenda_users, handle separately
             $newEmail = $val;

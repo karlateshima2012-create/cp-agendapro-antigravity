@@ -3,16 +3,31 @@
 
 if ($path === 'me' && $method === 'GET') {
     $user = Auth::requireAuth();
+
+    // Registra último acesso (throttle: só atualiza se passou mais de 1 hora)
+    Db::query(
+        'UPDATE cp_agenda_accounts SET last_access_at = NOW()
+         WHERE id = ? AND (last_access_at IS NULL OR last_access_at < DATE_SUB(NOW(), INTERVAL 1 HOUR))',
+        [$user['account_id']]
+    );
+
     // ✅ SECURITY [A-4]: Explicit columns only — never SELECT * on sensitive tables
     $account = Db::fetch(
         'SELECT name, status, plan_type, plan_expires_at,
                 primary_color, secondary_color, short_description, services_title,
                 services_subtitle, cover_image, profile_image, contact_phone,
                 telegram_bot_token, telegram_chat_id, onboarding_seen,
-                lifetime_appointments, created_at
+                lifetime_appointments, created_at, invoices
          FROM cp_agenda_accounts WHERE id = ?',
         [$user['account_id']]
     );
+    
+    if ($account && isset($account['invoices'])) {
+        $account['invoices'] = json_decode($account['invoices'], true) ?: [];
+    } else if ($account) {
+        $account['invoices'] = [];
+    }
+
     Response::ok(['user' => $user, 'account' => $account]);
 }
 

@@ -173,8 +173,16 @@ const App: React.FC = () => {
           log.info('✅ [App] Setting allUsers with mapped data');
           const mappedUsers = (resp.data || []).map((u: any) => ({
             ...u,
-            planExpiresAt: u.planExpiresAt ? u.planExpiresAt.replace(' ', 'T') : '',
-            createdAt: u.createdAt ? u.createdAt.replace(' ', 'T') : ''
+            planExpiresAt:          u.planExpiresAt          ? u.planExpiresAt.replace(' ', 'T')         : '',
+            createdAt:              u.createdAt              ? u.createdAt.replace(' ', 'T')              : '',
+            lastAccessAt:           u.lastAccessAt           ? u.lastAccessAt.replace(' ', 'T')           : null,
+            lastAppointmentAt:      u.lastAppointmentAt      ? u.lastAppointmentAt.replace(' ', 'T')      : null,
+            appointmentsLast30Days: u.appointmentsLast30Days ?? 0,
+            servicesCount:          u.servicesCount          ?? 0,
+            hasTelegram:            !!u.hasTelegram,
+            hasProfileImage:        !!u.hasProfileImage,
+            hasCoverImage:          !!u.hasCoverImage,
+            hasDescription:         !!u.hasDescription,
           }));
           setAllUsers(mappedUsers);
         } else {

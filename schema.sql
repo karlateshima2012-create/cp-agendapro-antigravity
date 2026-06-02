@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_accounts` (
     `profile_image` VARCHAR(255) DEFAULT '',
     `telegram_bot_token` VARCHAR(255) DEFAULT '',
     `telegram_chat_id` VARCHAR(255) DEFAULT '',
+    `invoices` JSON DEFAULT NULL,
     `onboarding_seen` TINYINT(1) DEFAULT 0,
     `lifetime_appointments` INT DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

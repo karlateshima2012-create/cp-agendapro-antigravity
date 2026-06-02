@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User, PlanType, AccountStatus } from '../types';
 import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
-  X, RefreshCw, MessageSquare, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, Check, ExternalLink, Upload
+  X, RefreshCw, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, ExternalLink, Upload,
+  AlertCircle, TrendingDown, Shield, MessageSquare
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -17,8 +18,10 @@ interface Props {
   showToast?: (message: string, type?: any) => void;
 }
 
+type HealthStatus = 'critical' | 'risk' | 'healthy';
+type HealthFilter = 'all' | 'critical' | 'risk' | 'healthy';
+
 export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdminUser, onUpdateUserStatus, onRenewPlan, onDeleteUser, onLogout, showToast }) => {
-  console.log('📊 [Dashboard] Received users prop:', users);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdUser, setCreatedUser] = useState<any | null>(null);
@@ -26,8 +29,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const [renewalPeriod, setRenewalPeriod] = useState<number>(0);
   const [isRenewingInModal, setIsRenewingInModal] = useState(false);
   const [editData, setEditData] = useState<Partial<User>>({});
-  const [manualExpiryDate, setManualExpiryDate] = useState<string>(''); 
-  const [userToDelete, setUserToDelete] = useState<User | null>(null); 
+  const [editInvoices, setEditInvoices] = useState<any[]>([]);
+  const [manualExpiryDate, setManualExpiryDate] = useState<string>('');
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
 
   const [newUser, setNewUser] = useState({
     email: '',
@@ -39,50 +44,84 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   });
 
   const now = new Date();
+  const nowMs = now.getTime();
   const dayInMs = 24 * 60 * 60 * 1000;
 
+  // ── Saúde por cliente ──────────────────────────────────────────────────────
+  const daysAgo = (iso?: string | null): number => {
+    if (!iso) return 9999;
+    return Math.floor((nowMs - new Date(iso).getTime()) / dayInMs);
+  };
+
+  const getHealth = (c: User): HealthStatus => {
+    const accountAge   = daysAgo(c.createdAt);
+    const sinceAccess  = daysAgo(c.lastAccessAt);
+    const sinceAppt    = daysAgo(c.lastAppointmentAt);
+    const planLeft     = c.planExpiresAt
+      ? Math.floor((new Date(c.planExpiresAt).getTime() - nowMs) / dayInMs)
+      : 0;
+    const services = c.servicesCount ?? 0;
+
+    if (services === 0 || sinceAccess > 30 || (accountAge > 7 && sinceAppt > 60))
+      return 'critical';
+    if (sinceAccess > 15 || sinceAppt > 30 || planLeft < 15 || !c.hasTelegram)
+      return 'risk';
+    return 'healthy';
+  };
+
+  const healthDot: Record<HealthStatus, string> = {
+    critical: '🔴',
+    risk:     '🟡',
+    healthy:  '🟢',
+  };
+
+  const healthLabel: Record<HealthStatus, string> = {
+    critical: 'Crítico',
+    risk:     'Em Risco',
+    healthy:  'Saudável',
+  };
+
+  // ── Ordenação e filtros ────────────────────────────────────────────────────
   const sortedClients = [...(users || []).filter(u => u && u.email !== 'suporte@creativeprintjp.com')].sort((a, b) => {
     const getStatusWeight = (u: User) => {
-      const isExp = u.planExpiresAt && new Date(u.planExpiresAt).getTime() < now.getTime();
+      const isExp = u.planExpiresAt && new Date(u.planExpiresAt).getTime() < nowMs;
       if (u.accountStatus === 'blocked') return 2;
       if (isExp) return 1;
       return 0;
     };
-
-    const weightA = getStatusWeight(a);
-    const weightB = getStatusWeight(b);
-    if (weightA !== weightB) return weightA - weightB;
-    const dateA = new Date(a.createdAt || 0).getTime();
-    const dateB = new Date(b.createdAt || 0).getTime();
-    return dateB - dateA;
+    const weightDiff = getStatusWeight(a) - getStatusWeight(b);
+    if (weightDiff !== 0) return weightDiff;
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   });
 
-  const clients = sortedClients || [];
+  const filteredClients = healthFilter === 'all'
+    ? sortedClients
+    : sortedClients.filter(c => getHealth(c) === healthFilter);
 
-  const expire3d = clients.filter(c => {
-    if (!c.planExpiresAt) return false;
-    const exp = new Date(c.planExpiresAt);
-    const diff = exp.getTime() - now.getTime();
-    return diff > 0 && diff <= 3 * dayInMs;
-  }).length;
+  // ── Métricas de topo ───────────────────────────────────────────────────────
+  const expire3d     = sortedClients.filter(c => { if (!c.planExpiresAt) return false; const diff = new Date(c.planExpiresAt).getTime() - nowMs; return diff > 0 && diff <= 3 * dayInMs; }).length;
+  const expire7d     = sortedClients.filter(c => { if (!c.planExpiresAt) return false; const diff = new Date(c.planExpiresAt).getTime() - nowMs; return diff > 3 * dayInMs && diff <= 7 * dayInMs; }).length;
+  const activeClients = sortedClients.filter(c => c.accountStatus === 'active').length;
+  const expiredPlans  = sortedClients.filter(c => { if (!c.planExpiresAt) return false; const exp = new Date(c.planExpiresAt); exp.setHours(0,0,0,0); const t = new Date(); t.setHours(0,0,0,0); return exp.getTime() <= t.getTime(); }).length;
+  const criticalCount = sortedClients.filter(c => getHealth(c) === 'critical').length;
+  const riskCount     = sortedClients.filter(c => getHealth(c) === 'risk').length;
 
-  const expire7d = clients.filter(c => {
-    if (!c.planExpiresAt) return false;
-    const exp = new Date(c.planExpiresAt);
-    const diff = exp.getTime() - now.getTime();
-    return diff > 3 * dayInMs && diff <= 7 * dayInMs;
-  }).length;
+  // ── Completude de perfil (0-5) ─────────────────────────────────────────────
+  const profileScore = (c: User) =>
+    (c.hasProfileImage ? 1 : 0) +
+    (c.hasCoverImage   ? 1 : 0) +
+    (c.hasDescription  ? 1 : 0) +
+    (c.hasTelegram     ? 1 : 0) +
+    ((c.servicesCount ?? 0) > 0 ? 1 : 0);
 
-  const activeClients = clients.filter(c => c.accountStatus === 'active').length;
-  const expiredPlans = clients.filter(c => {
-    if (!c.planExpiresAt) return false;
-    const exp = new Date(c.planExpiresAt);
-    const today = new Date();
-    exp.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    return exp.getTime() <= today.getTime();
-  }).length;
-  const blockedClients = clients.filter(c => c.accountStatus === 'blocked').length;
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const formatDaysAgo = (iso?: string | null) => {
+    if (!iso) return 'Nunca';
+    const d = daysAgo(iso);
+    if (d === 0) return 'Hoje';
+    if (d === 1) return '1 dia atrás';
+    return `${d} dias atrás`;
+  };
 
   const getPreviewExpiryDate = () => {
     const baseDateStr = manualExpiryDate || detailsUser?.planExpiresAt;
@@ -104,19 +143,11 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const handleOpenDetails = (user: User) => {
     setDetailsUser(user);
     setRenewalPeriod(0);
-    setEditData({
-      companyName: user.companyName,
-      ownerName: user.ownerName,
-      contactPhone: user.contactPhone,
-      email: user.email,
-      planType: user.planType
-    });
+    setEditData({ companyName: user.companyName, ownerName: user.ownerName, contactPhone: user.contactPhone, email: user.email, planType: user.planType });
+    setEditInvoices(user.invoices || []);
     if (user.planExpiresAt) {
       const date = new Date(user.planExpiresAt);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      setManualExpiryDate(`${year}-${month}-${day}`);
+      setManualExpiryDate(`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`);
     } else {
       setManualExpiryDate('');
     }
@@ -126,29 +157,12 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-
     const expiresAt = new Date();
-    const months = newUser.planType === '12m' ? 12 : 
-                   newUser.planType === '6m' ? 6 : 
-                   newUser.planType === '3m' ? 3 : 1;
+    const months = newUser.planType === '12m' ? 12 : newUser.planType === '6m' ? 6 : newUser.planType === '3m' ? 3 : 1;
     expiresAt.setMonth(expiresAt.getMonth() + months);
-
-    const userData = {
-      email: (newUser.email || '').trim().toLowerCase(),
-      password: newUser.password.trim(),
-      companyName: newUser.companyName.trim(),
-      ownerName: newUser.ownerName.trim(),
-      contactPhone: newUser.contactPhone.trim(),
-      planType: newUser.planType,
-      planExpiresAt: expiresAt.toISOString(),
-    };
-
+    const userData = { email: (newUser.email || '').trim().toLowerCase(), password: newUser.password.trim(), companyName: newUser.companyName.trim(), ownerName: newUser.ownerName.trim(), contactPhone: newUser.contactPhone.trim(), planType: newUser.planType, planExpiresAt: expiresAt.toISOString() };
     const success = await onAddUser(userData);
-    if (success) {
-      setShowAddForm(false);
-      setCreatedUser(userData);
-      setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m' });
-    }
+    if (success) { setShowAddForm(false); setCreatedUser(userData); setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m' }); }
     setIsSubmitting(false);
   };
 
@@ -158,64 +172,27 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     let phone = createdUser.contactPhone.replace(/\D/g, '');
     if (phone.startsWith('0')) phone = phone.substring(1);
     const cleanPhone = phone.startsWith('81') ? phone : '81' + phone;
-    const message =
-      `*Sua agenda profissional está pronta*
-
-O acesso ao CP Agenda Pro já foi criado para você.
-
-🌐 *Site Oficial:*
-https://saibamaiscpagendapro.creativeprintjp.com/
-(Basta clicar em 'Login' para acessar seu painel)
-
-🔗 *Link Direto do Sistema:*
-${baseUrl}
-
-📧 *E-mail:*
-${createdUser.email}
-
-🔑 *Senha Provisória:*
-${createdUser.password}
-
-No primeiro acesso, o sistema irá redirecionar automaticamente para a alteração de senha, que é obrigatória para sua segurança.`;
-
+    const message = `*Sua agenda profissional está pronta*\n\nO acesso ao CP Agenda Pro já foi criado para você.\n\n🌐 *Site Oficial:*\nhttps://saibamaiscpagendapro.creativeprintjp.com/\n(Basta clicar em 'Login' para acessar seu painel)\n\n🔗 *Link Direto do Sistema:*\n${baseUrl}\n\n📧 *E-mail:*\n${createdUser.email}\n\n🔑 *Senha Provisória:*\n${createdUser.password}\n\nNo primeiro acesso, o sistema irá redirecionar automaticamente para a alteração de senha, que é obrigatória para sua segurança.`;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleSaveModalUpdates = async () => {
     if (!detailsUser) return;
     setIsRenewingInModal(true);
-    const updateData: Partial<User> = {
-      companyName: editData.companyName,
-      ownerName: editData.ownerName,
-      contactPhone: editData.contactPhone,
-      email: editData.email,
-      planType: editData.planType,
-    };
-    if (manualExpiryDate) {
-      const manualDate = new Date(manualExpiryDate);
-      manualDate.setHours(23, 59, 59, 999);
-      updateData.planExpiresAt = manualDate.toISOString();
-    }
+    const updateData: Partial<User> = { companyName: editData.companyName, ownerName: editData.ownerName, contactPhone: editData.contactPhone, email: editData.email, planType: editData.planType, invoices: editInvoices };
+    if (manualExpiryDate) { const d = new Date(manualExpiryDate); d.setHours(23,59,59,999); updateData.planExpiresAt = d.toISOString(); }
     const updateSuccess = await onUpdateAdminUser(detailsUser.id, updateData);
     let renewalSuccess = true;
-    if (renewalPeriod > 0) {
-      const baseDate = manualExpiryDate ? manualExpiryDate : detailsUser.planExpiresAt;
-      renewalSuccess = await onRenewPlan(detailsUser.id, baseDate, renewalPeriod);
-    }
+    if (renewalPeriod > 0) renewalSuccess = await onRenewPlan(detailsUser.id, manualExpiryDate || detailsUser.planExpiresAt, renewalPeriod);
     setIsRenewingInModal(false);
-    if (updateSuccess && renewalSuccess) {
-      if (showToast) showToast("Dados atualizados com sucesso!");
-      setDetailsUser(null);
-    }
+    if (updateSuccess && renewalSuccess) { if (showToast) showToast("Dados atualizados com sucesso!"); setDetailsUser(null); }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-white border-b border-gray-200 p-6 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-             <Logo size="md" />
-          </div>
+          <div className="flex items-center gap-3"><Logo size="md" /></div>
           <button onClick={onLogout} className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition-all">
             <LogOut size={16} /> Sair
           </button>
@@ -223,7 +200,9 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
       </header>
 
       <main className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+
+        {/* ── Cards de plano ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
             <Clock className="text-red-500 mb-3" size={20} />
             <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Vence em 7 dias</h3>
@@ -234,12 +213,10 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
             <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Vence em 3 dias</h3>
             <p className="text-3xl font-black text-gray-900 mt-1">{expire3d}</p>
           </div>
-          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3 mb-2">
-              <AlertTriangle size={18} className="text-red-500" />
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Plano Vencido</p>
-            </div>
-            <p className="text-3xl font-black text-gray-900">{expiredPlans}</p>
+          <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+            <AlertTriangle size={20} className="text-red-500 mb-3" />
+            <h3 className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Plano Vencido</h3>
+            <p className="text-3xl font-black text-gray-900 mt-1">{expiredPlans}</p>
           </div>
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
             <Activity className="text-primary mb-3" size={20} />
@@ -248,19 +225,55 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
           </div>
         </div>
 
-        <div className="flex justify-between items-center mb-6">
+        {/* ── Cards de saúde ── */}
+        <div className="grid grid-cols-2 gap-4 mb-10">
+          <div className="bg-red-50 p-6 rounded-[2rem] border border-red-100 shadow-sm flex items-center gap-5">
+            <div className="bg-red-100 p-3 rounded-2xl text-red-500 shrink-0"><AlertCircle size={22} /></div>
+            <div>
+              <h3 className="text-red-400 text-[10px] font-black uppercase tracking-widest">🔴 Críticas</h3>
+              <p className="text-3xl font-black text-red-600 mt-0.5">{criticalCount}</p>
+              <p className="text-[9px] text-red-400 font-bold mt-0.5">sem serviços, sem acesso 30d ou sem agendamento 60d</p>
+            </div>
+          </div>
+          <div className="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100 shadow-sm flex items-center gap-5">
+            <div className="bg-yellow-100 p-3 rounded-2xl text-yellow-600 shrink-0"><TrendingDown size={22} /></div>
+            <div>
+              <h3 className="text-yellow-600 text-[10px] font-black uppercase tracking-widest">🟡 Em Risco</h3>
+              <p className="text-3xl font-black text-yellow-700 mt-0.5">{riskCount}</p>
+              <p className="text-[9px] text-yellow-600 font-bold mt-0.5">sem acesso 15d, plano vencendo ou sem Telegram</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Cabeçalho da lista ── */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
-            <Users size={24} className="text-primary" /> Clientes Profissionais ({clients.length})
+            <Users size={24} className="text-primary" /> Clientes Profissionais ({filteredClients.length}{healthFilter !== 'all' ? ` de ${sortedClients.length}` : ''})
           </h2>
-          <button
-            type="button"
-            onClick={() => setShowAddForm(true)}
-            className="bg-primary text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all relative z-10"
-          >
+          <button type="button" onClick={() => setShowAddForm(true)} className="bg-primary text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
             Novo Profissional
           </button>
         </div>
 
+        {/* ── Tabs de filtro por saúde ── */}
+        <div className="flex gap-2 mb-5 flex-wrap">
+          {([
+            { key: 'all',      label: 'Todas',      active: 'bg-primary text-white',     inactive: 'bg-white text-gray-500 border border-gray-200' },
+            { key: 'critical', label: '🔴 Crítico',  active: 'bg-red-600 text-white',     inactive: 'bg-white text-red-500 border border-red-100' },
+            { key: 'risk',     label: '🟡 Em Risco', active: 'bg-yellow-500 text-white',  inactive: 'bg-white text-yellow-600 border border-yellow-100' },
+            { key: 'healthy',  label: '🟢 Saudável', active: 'bg-green-600 text-white',   inactive: 'bg-white text-green-600 border border-green-100' },
+          ] as { key: HealthFilter; label: string; active: string; inactive: string }[]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setHealthFilter(tab.key)}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${healthFilter === tab.key ? tab.active : tab.inactive}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tabela de clientes ── */}
         <div className="bg-white rounded-[2.5rem] shadow-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -268,36 +281,47 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Empresa / Responsável</th>
                   <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status / Vencimento</th>
-                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Agendamentos</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Atividade</th>
                   <th className="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {clients.map(client => {
+                {filteredClients.map(client => {
                   const isActive = client.accountStatus === 'active';
+                  const health   = getHealth(client);
                   return (
                     <tr key={client.id} className="hover:bg-gray-50/50 transition-colors group">
+
+                      {/* Coluna 1: Empresa + semáforo + último acesso */}
                       <td className="px-8 py-6">
-                        <div className="flex flex-col">
-                          <p className="font-black text-gray-900 uppercase text-sm">{client.companyName}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <UserIcon size={10} className="text-primary" />
-                            <p className="text-[10px] text-gray-500 font-bold">{client.ownerName || 'Não informado'}</p>
+                        <div className="flex items-start gap-3">
+                          <span className="text-lg mt-0.5 shrink-0" title={healthLabel[health]}>{healthDot[health]}</span>
+                          <div className="flex flex-col min-w-0">
+                            <p className="font-black text-gray-900 uppercase text-sm truncate">{client.companyName}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <UserIcon size={10} className="text-primary shrink-0" />
+                              <p className="text-[10px] text-gray-500 font-bold truncate">{client.ownerName || 'Não informado'}</p>
+                            </div>
+                            <p className="text-[9px] text-gray-300 font-bold mt-0.5 truncate">{client.email}</p>
+                            <p className="text-[9px] text-gray-400 font-bold mt-1">
+                              🕐 {formatDaysAgo(client.lastAccessAt)}
+                            </p>
                           </div>
-                          <p className="text-[9px] text-gray-300 font-bold mt-0.5">{client.email}</p>
                         </div>
                       </td>
+
+                      {/* Coluna 2: Status / Vencimento */}
                       <td className="px-8 py-6">
                         <div className="flex flex-col gap-1.5">
                           {(() => {
                             const exp = new Date(client.planExpiresAt || 0);
-                            const diff = exp.getTime() - now.getTime();
-                            const isExpired = exp.getTime() <= now.getTime();
+                            const diff = exp.getTime() - nowMs;
+                            const isExpired = exp.getTime() <= nowMs;
                             const isUrgent3d = diff > 0 && diff <= 3 * dayInMs;
                             const isUrgent7d = diff > 3 * dayInMs && diff <= 7 * dayInMs;
                             let bgColor = "bg-gray-50", textColor = "text-gray-500", borderColor = "border-gray-100", label = "VENCIMENTO";
-                            if (isExpired) { bgColor = "bg-red-600"; textColor = "text-white"; borderColor = "border-red-700"; label = "VENCIDO"; }
-                            else if (isUrgent3d) { bgColor = "bg-orange-500"; textColor = "text-white"; borderColor = "border-orange-600"; label = "URGENTE: 3 DIAS"; }
+                            if (isExpired)   { bgColor = "bg-red-600";    textColor = "text-white";      borderColor = "border-red-700";    label = "VENCIDO"; }
+                            else if (isUrgent3d) { bgColor = "bg-orange-500"; textColor = "text-white";  borderColor = "border-orange-600"; label = "URGENTE: 3 DIAS"; }
                             else if (isUrgent7d) { bgColor = "bg-yellow-400"; textColor = "text-gray-900"; borderColor = "border-yellow-500"; label = "ATENÇÃO: 7 DIAS"; }
                             return (
                               <span className={`${bgColor} ${textColor} px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest border ${borderColor} w-fit flex items-center gap-2 shadow-sm`}>
@@ -307,37 +331,35 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                           })()}
                         </div>
                       </td>
+
+                      {/* Coluna 3: Atividade (agendamentos + serviços) */}
                       <td className="px-8 py-6 text-center">
-                        <div className="inline-flex flex-col items-center p-3 bg-gray-50 rounded-2xl border border-gray-100 min-w-[140px]">
+                        <div className="inline-flex flex-col items-center p-3 bg-gray-50 rounded-2xl border border-gray-100 min-w-[130px] gap-1">
                           <span className="text-xl font-black text-primary">{client.appointmentCount || 0}</span>
+                          <span className="text-[8px] text-gray-400 font-black uppercase tracking-widest">total</span>
+                          <div className="w-full border-t border-gray-100 pt-1.5 mt-0.5 flex justify-center gap-1 items-baseline">
+                            <span className="text-sm font-black text-gray-700">{client.appointmentsLast30Days ?? 0}</span>
+                            <span className="text-[8px] text-gray-400 font-bold">últ. 30d</span>
+                          </div>
+                          <div className={`text-[9px] font-black mt-0.5 ${(client.servicesCount ?? 0) === 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                            {client.servicesCount ?? 0} serviço{(client.servicesCount ?? 0) !== 1 ? 's' : ''}
+                          </div>
                         </div>
                       </td>
+
+                      {/* Coluna 4: Ações */}
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => {
-                            const link = `${window.location.origin}/?p=${client.id}`;
-                            navigator.clipboard.writeText(link);
-                            if (showToast) showToast("Link público copiado!");
-                          }} className="p-2.5 text-blue-500 bg-white border border-gray-200 hover:bg-blue-50 rounded-xl transition-all shadow-sm" title="Copiar Link Público">
+                          <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?p=${client.id}`); if (showToast) showToast("Link público copiado!"); }} className="p-2.5 text-blue-500 bg-white border border-gray-200 hover:bg-blue-50 rounded-xl transition-all shadow-sm" title="Copiar Link Público">
                             <Copy size={16} />
                           </button>
                           <button onClick={() => handleOpenDetails(client)} className="p-2.5 text-gray-500 bg-white border border-gray-200 hover:text-primary rounded-xl transition-all shadow-sm" title="Editar Profissional">
                             <Edit2 size={16} />
                           </button>
-                          <button
-                            onClick={() => onUpdateUserStatus(client.id, isActive ? 'blocked' : 'active')}
-                            className={`p-2.5 rounded-xl border transition-all shadow-sm ${isActive ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'}`}
-                          >
+                          <button onClick={() => onUpdateUserStatus(client.id, isActive ? 'blocked' : 'active')} className={`p-2.5 rounded-xl border transition-all shadow-sm ${isActive ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100' : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'}`}>
                             {isActive ? <Unlock size={16} /> : <Lock size={16} />}
                           </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUserToDelete(client);
-                            }} 
-                            className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm"
-                            title="Excluir Profissional"
-                          >
+                          <button onClick={(e) => { e.stopPropagation(); setUserToDelete(client); }} className="p-2.5 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm" title="Excluir Profissional">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -351,44 +373,105 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
         </div>
       </main>
 
-      {/* MODAL: FICHA E EDIÇÃO */}
-      {detailsUser && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[999] backdrop-blur-sm animate-fade-in overflow-hidden">
-          <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 shadow-2xl border-t-8 border-primary relative flex flex-col max-h-[95vh] no-scrollbar overflow-y-auto">
-            <button onClick={() => setDetailsUser(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors p-2"><X size={28} /></button>
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Briefcase size={32} />
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL: FICHA E EDIÇÃO
+      ══════════════════════════════════════════════════════════════ */}
+      {detailsUser && (() => {
+        const health  = getHealth(detailsUser);
+        const score   = profileScore(detailsUser);
+        const scoreColor = score <= 2 ? 'bg-red-500' : score <= 3 ? 'bg-yellow-400' : 'bg-green-500';
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[999] backdrop-blur-sm animate-fade-in overflow-hidden">
+            <div className="bg-white rounded-[3rem] w-full max-w-2xl p-10 shadow-2xl border-t-8 border-primary relative flex flex-col max-h-[95vh] no-scrollbar overflow-y-auto">
+              <button onClick={() => setDetailsUser(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors p-2"><X size={28} /></button>
+
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Briefcase size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Ficha e Edição</h3>
+                <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">Status: {detailsUser.accountStatus}</p>
               </div>
-              <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Ficha e Edição</h3>
-              <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">Status: {detailsUser.accountStatus}</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="space-y-4">
-                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Admin - Cadastro</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Empresa</label>
-                    <input type="text" value={editData.companyName || ''} onChange={e => setEditData({ ...editData, companyName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+
+              {/* ── Painel de Saúde da Conta ── */}
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 mb-7">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-gray-400" />
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Saúde da Conta</p>
                   </div>
-                  <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Responsável (Info Interna)</label>
-                    <input type="text" value={editData.ownerName || ''} onChange={e => setEditData({ ...editData, ownerName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" placeholder="Nome do gestor" />
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white ${health === 'critical' ? 'bg-red-500' : health === 'risk' ? 'bg-yellow-500' : 'bg-green-500'}`}>
+                    {healthDot[health]} {healthLabel[health]}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: 'Último Acesso',   value: formatDaysAgo(detailsUser.lastAccessAt),      alert: daysAgo(detailsUser.lastAccessAt) > 15 },
+                    { label: 'Último Agend.',   value: formatDaysAgo(detailsUser.lastAppointmentAt), alert: daysAgo(detailsUser.lastAppointmentAt) > 30 },
+                    { label: 'Agend. 30d',      value: `${detailsUser.appointmentsLast30Days ?? 0} agendamentos`, alert: (detailsUser.appointmentsLast30Days ?? 0) === 0 },
+                    { label: 'Serviços',        value: `${detailsUser.servicesCount ?? 0} cadastrados`, alert: (detailsUser.servicesCount ?? 0) === 0 },
+                    { label: 'Telegram',        value: detailsUser.hasTelegram ? 'Configurado ✓' : 'Não configurado', alert: !detailsUser.hasTelegram },
+                    { label: 'Total Agend.',    value: `${detailsUser.appointmentCount ?? 0} confirmados`, alert: false },
+                  ].map(item => (
+                    <div key={item.label} className={`p-3 rounded-xl border ${item.alert ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
+                      <p className={`text-[8px] font-black uppercase tracking-widest mb-1 ${item.alert ? 'text-red-400' : 'text-gray-400'}`}>{item.label}</p>
+                      <p className={`text-xs font-black ${item.alert ? 'text-red-600' : 'text-gray-700'}`}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Barra de completude do perfil */}
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Completude do Perfil</p>
+                    <p className="text-[9px] font-black text-gray-500">{score}/5 pontos</p>
                   </div>
-                  <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">WhatsApp</label>
-                    <input type="text" value={editData.contactPhone || ''} onChange={e => setEditData({ ...editData, contactPhone: e.target.value.replace(/\D/g, '') })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className={`h-2 rounded-full transition-all ${scoreColor}`} style={{ width: `${(score / 5) * 100}%` }} />
                   </div>
-                  <div>
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">E-mail</label>
-                    <input type="email" value={editData.email || ''} onChange={e => setEditData({ ...editData, email: (e.target.value || '').toLowerCase() })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                  <div className="flex gap-3 mt-2 flex-wrap">
+                    {[
+                      { label: 'Foto Perfil', ok: detailsUser.hasProfileImage },
+                      { label: 'Capa',        ok: detailsUser.hasCoverImage },
+                      { label: 'Descrição',   ok: detailsUser.hasDescription },
+                      { label: 'Telegram',    ok: detailsUser.hasTelegram },
+                      { label: 'Serviços',    ok: (detailsUser.servicesCount ?? 0) > 0 },
+                    ].map(item => (
+                      <span key={item.label} className={`text-[8px] font-black px-2 py-0.5 rounded-full ${item.ok ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        {item.ok ? '✓' : '✗'} {item.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Assinatura</h4>
-                <div className="space-y-3">
-                  <div>
+
+              {/* ── Campos de edição ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Admin - Cadastro</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Empresa</label>
+                      <input type="text" value={editData.companyName || ''} onChange={e => setEditData({ ...editData, companyName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Responsável (Info Interna)</label>
+                      <input type="text" value={editData.ownerName || ''} onChange={e => setEditData({ ...editData, ownerName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" placeholder="Nome do gestor" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">WhatsApp</label>
+                      <input type="text" value={editData.contactPhone || ''} onChange={e => setEditData({ ...editData, contactPhone: e.target.value.replace(/\D/g, '') })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">E-mail</label>
+                      <input type="email" value={editData.email || ''} onChange={e => setEditData({ ...editData, email: (e.target.value || '').toLowerCase() })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Assinatura</h4>
+                  <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block flex items-center gap-2">
                       <Calendar size={14} className="text-primary" /> Dados da Assinatura
                     </label>
@@ -407,84 +490,185 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-primary/5 rounded-[2.5rem] p-8 border border-primary/10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary"><RefreshCw size={20} /></div>
-                <div>
-                  <h4 className="text-lg font-black text-gray-900 tracking-tight">Renovação de Plano</h4>
-                  <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Estender plano do profissional</p>
+              {/* ── Renovação ── */}
+              <div className="bg-primary/5 rounded-[2.5rem] p-8 border border-primary/10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary"><RefreshCw size={20} /></div>
+                  <div>
+                    <h4 className="text-lg font-black text-gray-900 tracking-tight">Renovação de Plano</h4>
+                    <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Estender plano do profissional</p>
+                  </div>
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                  {[{p:0,label:'Pausa',sub:'0 meses'},{p:1,label:'Mensal',sub:'+1 Mês'},{p:3,label:'Trimestral',sub:'+3 Meses'},{p:6,label:'Semestral',sub:'+6 Meses'},{p:12,label:'Anual',sub:'+12 Meses'}].map(item => (
+                    <button type="button" key={item.p} onClick={() => setRenewalPeriod(item.p)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === item.p ? (item.p === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-primary border-primary text-white shadow-lg') : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
+                      <span className="text-[8px] font-black uppercase mb-1">{item.label}</span>
+                      <span className="text-[10px] font-black">{item.sub}</span>
+                    </button>
+                  ))}
+                </div>
+                {renewalPeriod > 0 && (
+                  <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"><RefreshCw size={18} /></div>
+                      <div>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nova data prevista</p>
+                        <p className="text-base font-black text-primary">{getPreviewExpiryDate()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right"><p className="text-[9px] font-bold text-gray-500">+{renewalPeriod} meses</p></div>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-                <button type="button" onClick={() => setRenewalPeriod(0)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 0 ? 'bg-gray-900 border-gray-900 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
-                  <span className="text-[8px] font-black uppercase mb-1">Pausa</span>
-                  <span className="text-[10px] font-black">0 meses</span>
-                </button>
-                <button type="button" onClick={() => setRenewalPeriod(1)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 1 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
-                  <span className="text-[8px] font-black uppercase mb-1">Mensal</span>
-                  <span className="text-[10px] font-black">+1 Mês</span>
-                </button>
-                <button type="button" onClick={() => setRenewalPeriod(3)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 3 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
-                  <span className="text-[8px] font-black uppercase mb-1">Trimestral</span>
-                  <span className="text-[10px] font-black">+3 Meses</span>
-                </button>
-                <button type="button" onClick={() => setRenewalPeriod(6)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 6 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
-                  <span className="text-[8px] font-black uppercase mb-1">Semestral</span>
-                  <span className="text-[10px] font-black">+6 Meses</span>
-                </button>
-                <button type="button" onClick={() => setRenewalPeriod(12)} className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${renewalPeriod === 12 ? 'bg-primary border-primary text-white shadow-lg' : 'bg-white border-gray-100 text-gray-400 hover:border-primary/30'}`}>
-                  <span className="text-[8px] font-black uppercase mb-1">Anual</span>
-                  <span className="text-[10px] font-black">+12 Meses</span>
-                </button>
-              </div>
-              {renewalPeriod > 0 && (
-                <div className="bg-white p-4 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+
+              {/* ── Faturas ── */}
+              <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 mt-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"><RefreshCw size={18} /></div>
+                    <div className="w-10 h-10 bg-green-50 rounded-xl shadow-sm flex items-center justify-center text-green-600"><CheckCircle size={20} /></div>
                     <div>
-                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nova data prevista</p>
-                      <p className="text-base font-black text-primary">{getPreviewExpiryDate()}</p>
+                      <h4 className="text-lg font-black text-gray-900 tracking-tight">Faturas do Cliente</h4>
+                      <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Histórico de cobranças</p>
                     </div>
                   </div>
-                  <div className="text-right"><p className="text-[9px] font-bold text-gray-500">+{renewalPeriod} meses</p></div>
+                  <button 
+                    onClick={() => {
+                      const newInv = {
+                        id: 'inv_' + Date.now(),
+                        amount: 0,
+                        dueDate: manualExpiryDate || detailsUser.planExpiresAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+                        status: 'pending',
+                        planReference: 'Nova Cobrança'
+                      };
+                      setEditInvoices([newInv, ...editInvoices]);
+                    }}
+                    className="bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                  >
+                    + Adicionar Fatura
+                  </button>
                 </div>
-              )}
-            </div>
 
-            <div className="bg-gray-50 rounded-[2.5rem] p-8 border border-gray-100 mt-6 mb-2">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary"><ExternalLink size={20} /></div>
-                <div>
-                  <h4 className="text-lg font-black text-gray-900 tracking-tight">Link de Agendamento (QR Code)</h4>
-                  <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Acesso rápido para agendamentos</p>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
+                  {editInvoices.length === 0 ? (
+                    <p className="text-center text-gray-400 text-xs font-medium py-4">Nenhuma fatura registrada.</p>
+                  ) : (
+                    editInvoices.map((inv, idx) => (
+                      <div key={inv.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col gap-3">
+                        <div className="flex justify-between items-center">
+                          <input 
+                            type="text" 
+                            value={inv.planReference} 
+                            onChange={(e) => {
+                              const arr = [...editInvoices];
+                              arr[idx].planReference = e.target.value;
+                              setEditInvoices(arr);
+                            }}
+                            className="bg-transparent border-b border-gray-300 outline-none text-xs font-black text-gray-800 w-1/2 focus:border-primary px-1"
+                            placeholder="Ex: Renovação Trimestral"
+                          />
+                          <button 
+                            onClick={() => {
+                              const arr = editInvoices.filter(i => i.id !== inv.id);
+                              setEditInvoices(arr);
+                            }}
+                            className="text-red-400 hover:text-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
+                            <input 
+                              type="number" 
+                              value={inv.amount} 
+                              onChange={(e) => {
+                                const arr = [...editInvoices];
+                                arr[idx].amount = Number(e.target.value);
+                                setEditInvoices(arr);
+                              }}
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Vencimento</label>
+                            <input 
+                              type="date" 
+                              value={inv.dueDate} 
+                              onChange={(e) => {
+                                const arr = [...editInvoices];
+                                arr[idx].dueDate = e.target.value;
+                                setEditInvoices(arr);
+                              }}
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Status</label>
+                            <select 
+                              value={inv.status} 
+                              onChange={(e) => {
+                                const arr = [...editInvoices];
+                                arr[idx].status = e.target.value;
+                                if(e.target.value === 'paid') arr[idx].paidAt = new Date().toISOString();
+                                setEditInvoices(arr);
+                              }}
+                              className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
+                                inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              }`}
+                            >
+                              <option value="pending">Pendente</option>
+                              <option value="paid">Pago</option>
+                              <option value="overdue">Atrasado</option>
+                              <option value="canceled">Cancelado</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 shrink-0">
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`} alt="QR Code Agendamento" className="w-32 h-32 md:w-40 md:h-40" />
-                </div>
-                <div className="flex-1 space-y-4 w-full">
-                  <div className="bg-white px-4 py-3 rounded-2xl border border-gray-200 text-xs font-mono text-gray-400 truncate shadow-inner">{window.location.origin}/?p={detailsUser.id}</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?p=${detailsUser.id}`); if (showToast) showToast("Link copiado!"); }} className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"><Copy size={16} /> Copiar Link</button>
-                    <button onClick={() => { window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`, '_blank'); }} className="flex items-center justify-center gap-2 bg-white text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95"><Upload size={16} className="rotate-180" /> Baixar QR</button>
+
+
+              {/* ── QR Code ── */}
+              <div className="bg-gray-50 rounded-[2.5rem] p-8 border border-gray-100 mt-6 mb-2">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-primary"><ExternalLink size={20} /></div>
+                  <div>
+                    <h4 className="text-lg font-black text-gray-900 tracking-tight">Link de Agendamento (QR Code)</h4>
+                    <p className="text-gray-400 text-[9px] font-black uppercase tracking-widest">Acesso rápido para agendamentos</p>
                   </div>
-                  <p className="text-[10px] text-gray-500 font-bold leading-relaxed px-1">Este QR Code leva diretamente para a página de reservas do profissional.</p>
+                </div>
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 shrink-0">
+                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`} alt="QR Code" className="w-32 h-32 md:w-40 md:h-40" />
+                  </div>
+                  <div className="flex-1 space-y-4 w-full">
+                    <div className="bg-white px-4 py-3 rounded-2xl border border-gray-200 text-xs font-mono text-gray-400 truncate shadow-inner">{window.location.origin}/?p={detailsUser.id}</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/?p=${detailsUser.id}`); if (showToast) showToast("Link copiado!"); }} className="flex items-center justify-center gap-2 bg-white text-gray-700 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200 hover:bg-gray-50 transition-all shadow-sm active:scale-95"><Copy size={16} /> Copiar Link</button>
+                      <button onClick={() => { window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/?p=' + detailsUser.id)}`, '_blank'); }} className="flex items-center justify-center gap-2 bg-white text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/20 hover:bg-primary/5 transition-all shadow-sm active:scale-95"><Upload size={16} className="rotate-180" /> Baixar QR</button>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <button onClick={handleSaveModalUpdates} disabled={isRenewingInModal} className="w-full bg-[#0EA5E9] hover:bg-[#0284c7] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-8 mb-4 border-b-4 border-black/10">
+                {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />} SALVAR ALTERAÇÕES
+              </button>
+              <button onClick={() => setDetailsUser(null)} className="w-full text-gray-400 font-bold uppercase text-[9px] hover:underline mb-4">Descartar e Fechar</button>
             </div>
-
-            <button onClick={handleSaveModalUpdates} disabled={isRenewingInModal} className="w-full bg-[#0EA5E9] hover:bg-[#0284c7] text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50 mt-8 mb-4 border-b-4 border-black/10">
-              {isRenewingInModal ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />} SALVAR ALTERAÇÕES
-            </button>
-            <button onClick={() => setDetailsUser(null)} className="w-full text-gray-400 font-bold uppercase text-[9px] hover:underline mb-4">Descartar e Fechar</button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
-      {/* MODAL: NOVO PROFISSIONAL */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL: NOVO PROFISSIONAL
+      ══════════════════════════════════════════════════════════════ */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[999] backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-[3rem] w-full max-w-xl p-10 shadow-2xl border-t-8 border-primary relative overflow-y-auto max-h-[95vh] no-scrollbar">
@@ -520,19 +704,24 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
               <div className="space-y-3 pt-2">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Período da Assinatura</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '1m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '1m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>Mensal</button>
-                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '3m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '3m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>3 Meses</button>
-                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '6m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '6m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>6 Meses</button>
-                  <button type="button" onClick={() => setNewUser({ ...newUser, planType: '12m' })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === '12m' ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>Anual</button>
+                  {(['1m','3m','6m','12m'] as PlanType[]).map(pt => (
+                    <button key={pt} type="button" onClick={() => setNewUser({ ...newUser, planType: pt })} className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.planType === pt ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-primary/30'}`}>
+                      {pt === '1m' ? 'Mensal' : pt === '3m' ? '3 Meses' : pt === '6m' ? '6 Meses' : 'Anual'}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4">{isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : 'Finalizar e Ativar Conta'}</button>
+              <button type="submit" disabled={isSubmitting} className="w-full bg-primary text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 mt-4">
+                {isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : 'Finalizar e Ativar Conta'}
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL SUCESSO PÓS-CADASTRO */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL: SUCESSO PÓS-CADASTRO
+      ══════════════════════════════════════════════════════════════ */}
       {createdUser && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9999] backdrop-blur-md animate-fade-in">
           <div className="bg-white rounded-[3rem] w-full max-w-md p-10 text-center shadow-2xl relative">
@@ -554,7 +743,9 @@ No primeiro acesso, o sistema irá redirecionar automaticamente para a alteraç�
         </div>
       )}
 
-      {/* MODAL: CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* ══════════════════════════════════════════════════════════════
+          MODAL: CONFIRMAÇÃO DE EXCLUSÃO
+      ══════════════════════════════════════════════════════════════ */}
       {userToDelete && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1000] backdrop-blur-md animate-fade-in">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border-t-8 border-red-500 text-center">

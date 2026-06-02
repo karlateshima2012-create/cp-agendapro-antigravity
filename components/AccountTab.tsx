@@ -3,7 +3,7 @@ import { AccountInfo } from '../types';
 import {
   Shield, User, Bell, Save,
   Image as ImageIcon, Layout, Upload,
-  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode
+  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
@@ -18,6 +18,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   const profileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const [telegramToken, setTelegramToken] = useState(account.telegramBotToken || '');
@@ -215,8 +216,29 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                 </p>
               </div>
             </div>
+            </div>
+            
+            {/* Botão para abrir o Modal de Faturas */}
+            <div className="pt-4 mt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowInvoicesModal(true)}
+                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <Info size={16} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-gray-900">Histórico de Faturas</p>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{(account.invoices || []).length} faturas registradas</p>
+                  </div>
+                </div>
+                <div className="text-gray-300 group-hover:text-primary transition-colors">
+                  <ExternalLink size={16} />
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* LINK PÚBLICO */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
@@ -536,6 +558,77 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
         isOpen={showTermsModal} 
         onClose={() => setShowTermsModal(false)}
       />
+
+      {/* MODAL DE FATURAS (LEITURA) */}
+      {showInvoicesModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[999] backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl relative">
+            <button 
+              onClick={() => setShowInvoicesModal(false)} 
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition-colors p-2"
+            >
+              <X size={24} />
+            </button>
+            <div className="flex items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 shrink-0">
+                <Layout size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-gray-900 tracking-tight">Suas Faturas</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Histórico financeiro da assinatura</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar pr-2">
+              {(!account.invoices || account.invoices.length === 0) ? (
+                <div className="text-center py-10 bg-gray-50 rounded-3xl border border-gray-100">
+                  <p className="text-sm font-bold text-gray-400">Nenhuma fatura encontrada.</p>
+                </div>
+              ) : (
+                account.invoices.map(inv => {
+                  const statusColors = {
+                    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                    paid: 'bg-green-50 text-green-700 border-green-200',
+                    overdue: 'bg-red-50 text-red-700 border-red-200',
+                    canceled: 'bg-gray-100 text-gray-500 border-gray-200'
+                  };
+                  const statusLabels = {
+                    pending: 'Pendente',
+                    paid: 'Pago',
+                    overdue: 'Atrasado',
+                    canceled: 'Cancelado'
+                  };
+                  return (
+                    <div key={inv.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <p className="text-sm font-black text-gray-900">{inv.planReference || 'Fatura de Assinatura'}</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 flex items-center gap-2">
+                          Vencimento: <span className="text-gray-900">{new Date(inv.dueDate).toLocaleDateString('pt-BR')}</span>
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                        <p className="text-lg font-black text-primary">R$ {Number(inv.amount).toFixed(2).replace('.',',')}</p>
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status]}`}>
+                          {statusLabels[inv.status]}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
+              <button 
+                onClick={() => setShowInvoicesModal(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-colors"
+              >
+                Fechar Histórico
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

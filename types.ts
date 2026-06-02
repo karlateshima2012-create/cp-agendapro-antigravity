@@ -57,6 +57,14 @@ export interface Client {
   created_at: string;
   updated_at: string;
 }
+export interface Invoice {
+  id: string;
+  amount: number;
+  dueDate: string;
+  status: 'pending' | 'paid' | 'overdue' | 'canceled';
+  paidAt?: string;
+  planReference: string;
+}
 
 export interface AvailabilityConfig {
   workingHours: WorkingHour[];
@@ -89,7 +97,14 @@ export interface User {
   lastAccessAt?: string;
   lastAppointmentAt?: string;
   appointmentCount?: number;
+  appointmentsLast30Days?: number;
+  servicesCount?: number;
+  hasTelegram?: boolean;
+  hasProfileImage?: boolean;
+  hasCoverImage?: boolean;
+  hasDescription?: boolean;
   createdAt?: string;
+  invoices?: Invoice[];
 }
 
 export interface AccountInfo {
@@ -112,5 +127,5 @@ export interface AccountInfo {
   lifetimeAppointments?: number;
   onboardingSeen?: boolean;
   createdAt?: string;
-
+  invoices?: Invoice[];
 }
