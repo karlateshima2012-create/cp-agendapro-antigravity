@@ -4,10 +4,12 @@
 class Auth {
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
+            $ttl = 30 * 24 * 60 * 60; // 30 dias
+            ini_set('session.gc_maxlifetime', $ttl);
             session_set_cookie_params([
-                'lifetime' => 0,
+                'lifetime' => $ttl,
                 'path' => '/',
-                'domain' => '', // Default to current domain
+                'domain' => '',
                 'secure' => true,
                 'httponly' => true,
                 'samesite' => 'Lax'
