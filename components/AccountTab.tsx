@@ -3,7 +3,7 @@ import { AccountInfo } from '../types';
 import {
   Shield, User, Bell, Save,
   Image as ImageIcon, Layout, Upload,
-  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X
+  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X, ChevronDown
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 
@@ -226,11 +226,10 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                    <Info size={16} />
+                    <ChevronDown size={16} />
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-bold text-gray-900">Histórico de Faturas</p>
-                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{(account.invoices || []).length} faturas registradas</p>
+                    <p className="text-xs font-bold text-gray-900">Próximo faturamento</p>
                   </div>
                 </div>
                 <div className="text-gray-300 group-hover:text-primary transition-colors">
@@ -585,36 +584,68 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                   <p className="text-sm font-bold text-gray-400">Nenhuma fatura encontrada.</p>
                 </div>
               ) : (
-                account.invoices.map(inv => {
-                  const statusColors = {
+                (() => {
+                  const pendingInvoice = account.invoices.find(inv => inv.status === 'pending');
+                  const historyInvoices = account.invoices.filter(inv => inv.id !== pendingInvoice?.id);
+                  
+                  const statusColors: Record<string, string> = {
                     pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
                     paid: 'bg-green-50 text-green-700 border-green-200',
                     overdue: 'bg-red-50 text-red-700 border-red-200',
                     canceled: 'bg-gray-100 text-gray-500 border-gray-200'
                   };
-                  const statusLabels = {
+                  const statusLabels: Record<string, string> = {
                     pending: 'Pendente',
                     paid: 'Pago',
                     overdue: 'Atrasado',
                     canceled: 'Cancelado'
                   };
+
                   return (
-                    <div key={inv.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div>
-                        <p className="text-sm font-black text-gray-900">{inv.planReference || 'Fatura de Assinatura'}</p>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 flex items-center gap-2">
-                          Vencimento: <span className="text-gray-900">{new Date(inv.dueDate).toLocaleDateString('pt-BR')}</span>
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                        <p className="text-lg font-black text-primary">R$ {Number(inv.amount).toFixed(2).replace('.',',')}</p>
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status]}`}>
-                          {statusLabels[inv.status]}
-                        </span>
-                      </div>
+                    <div className="flex flex-col gap-8">
+                      {pendingInvoice && (
+                        <div>
+                          <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Próximo Faturamento</h4>
+                          <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-3xl border border-blue-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                              <p className="text-base font-black text-gray-900">{pendingInvoice.planReference || 'Fatura de Assinatura'}</p>
+                              <p className="text-xs font-bold text-gray-500 mt-1 flex items-center gap-2">
+                                Vencimento: <span className="text-gray-900">{new Date(pendingInvoice.dueDate).toLocaleDateString('pt-BR')}</span>
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
+                              <p className="text-2xl font-black text-primary">R$ {Number(pendingInvoice.amount).toFixed(2).replace('.',',')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {historyInvoices.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Histórico</h4>
+                          <div className="space-y-3">
+                            {historyInvoices.map(inv => (
+                              <div key={inv.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                  <p className="text-sm font-black text-gray-900">{inv.planReference || 'Fatura de Assinatura'}</p>
+                                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 flex items-center gap-2">
+                                    Vencimento: <span className="text-gray-900">{new Date(inv.dueDate).toLocaleDateString('pt-BR')}</span>
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                                  <p className="text-lg font-black text-gray-900">R$ {Number(inv.amount).toFixed(2).replace('.',',')}</p>
+                                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status]}`}>
+                                    {statusLabels[inv.status]}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
-                })
+                })()
               )}
             </div>
 

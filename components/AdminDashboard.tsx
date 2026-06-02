@@ -3,7 +3,7 @@ import { User, PlanType, AccountStatus } from '../types';
 import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
   X, RefreshCw, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, ExternalLink, Upload,
-  AlertCircle, TrendingDown, Shield, MessageSquare
+  AlertCircle, TrendingDown, Shield, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -555,88 +555,190 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
-                  {editInvoices.length === 0 ? (
-                    <p className="text-center text-gray-400 text-xs font-medium py-4">Nenhuma fatura registrada.</p>
-                  ) : (
-                    editInvoices.map((inv, idx) => (
-                      <div key={inv.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col gap-3">
-                        <div className="flex justify-between items-center">
-                          <input 
-                            type="text" 
-                            value={inv.planReference} 
-                            onChange={(e) => {
-                              const arr = [...editInvoices];
-                              arr[idx].planReference = e.target.value;
-                              setEditInvoices(arr);
-                            }}
-                            className="bg-transparent border-b border-gray-300 outline-none text-xs font-black text-gray-800 w-1/2 focus:border-primary px-1"
-                            placeholder="Ex: Renovação Trimestral"
-                          />
-                          <button 
-                            onClick={() => {
-                              const arr = editInvoices.filter(i => i.id !== inv.id);
-                              setEditInvoices(arr);
-                            }}
-                            className="text-red-400 hover:text-red-600"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
-                            <input 
-                              type="number" 
-                              value={inv.amount} 
-                              onChange={(e) => {
-                                const arr = [...editInvoices];
-                                arr[idx].amount = Number(e.target.value);
-                                setEditInvoices(arr);
-                              }}
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Vencimento</label>
-                            <input 
-                              type="date" 
-                              value={inv.dueDate} 
-                              onChange={(e) => {
-                                const arr = [...editInvoices];
-                                arr[idx].dueDate = e.target.value;
-                                setEditInvoices(arr);
-                              }}
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Status</label>
-                            <select 
-                              value={inv.status} 
-                              onChange={(e) => {
-                                const arr = [...editInvoices];
-                                arr[idx].status = e.target.value;
-                                if(e.target.value === 'paid') arr[idx].paidAt = new Date().toISOString();
-                                setEditInvoices(arr);
-                              }}
-                              className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
-                                inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
-                                'bg-yellow-50 text-yellow-700 border-yellow-200'
-                              }`}
-                            >
-                              <option value="pending">Pendente</option>
-                              <option value="paid">Pago</option>
-                              <option value="overdue">Atrasado</option>
-                              <option value="canceled">Cancelado</option>
-                            </select>
-                          </div>
-                        </div>
+                {(() => {
+                  const pending = editInvoices.filter(i => i.status === 'pending');
+                  const history = editInvoices.filter(i => i.status !== 'pending');
+                  return (
+                    <>
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
+                        {pending.length === 0 ? (
+                          <p className="text-center text-gray-400 text-xs font-medium py-4">Nenhuma fatura pendente.</p>
+                        ) : (
+                          pending.map((inv) => {
+                            const idx = editInvoices.findIndex(i => i.id === inv.id);
+                            return (
+                              <div key={inv.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                  <input 
+                                    type="text" 
+                                    value={inv.planReference} 
+                                    onChange={(e) => {
+                                      const arr = [...editInvoices];
+                                      arr[idx].planReference = e.target.value;
+                                      setEditInvoices(arr);
+                                    }}
+                                    className="bg-transparent border-b border-gray-300 outline-none text-xs font-black text-gray-800 w-1/2 focus:border-primary px-1"
+                                    placeholder="Ex: Renovação Trimestral"
+                                  />
+                                  <button 
+                                    onClick={() => {
+                                      const arr = editInvoices.filter(i => i.id !== inv.id);
+                                      setEditInvoices(arr);
+                                    }}
+                                    className="text-red-400 hover:text-red-600"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
+                                    <input 
+                                      type="number" 
+                                      value={inv.amount} 
+                                      onChange={(e) => {
+                                        const arr = [...editInvoices];
+                                        arr[idx].amount = Number(e.target.value);
+                                        setEditInvoices(arr);
+                                      }}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Vencimento</label>
+                                    <input 
+                                      type="date" 
+                                      value={inv.dueDate} 
+                                      onChange={(e) => {
+                                        const arr = [...editInvoices];
+                                        arr[idx].dueDate = e.target.value;
+                                        setEditInvoices(arr);
+                                      }}
+                                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Status</label>
+                                    <select 
+                                      value={inv.status} 
+                                      onChange={(e) => {
+                                        const arr = [...editInvoices];
+                                        arr[idx].status = e.target.value;
+                                        if(e.target.value === 'paid') arr[idx].paidAt = new Date().toISOString();
+                                        setEditInvoices(arr);
+                                      }}
+                                      className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
+                                        inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                        inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                        'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                      }`}
+                                    >
+                                      <option value="pending">Pendente</option>
+                                      <option value="paid">Pago</option>
+                                      <option value="overdue">Atrasado</option>
+                                      <option value="canceled">Cancelado</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
+
+                      {history.length > 0 && (
+                        <div className="mt-6 pt-6 border-t border-gray-100">
+                          <details className="group">
+                            <summary className="flex items-center justify-between cursor-pointer list-none">
+                              <h5 className="text-xs font-black text-gray-500 uppercase tracking-widest">Histórico ({history.length})</h5>
+                              <ChevronDown size={16} className="text-gray-400 group-open:rotate-180 transition-transform" />
+                            </summary>
+                            <div className="mt-4 space-y-3 max-h-[200px] overflow-y-auto no-scrollbar pr-2">
+                              {history.map((inv) => {
+                                const idx = editInvoices.findIndex(i => i.id === inv.id);
+                                return (
+                                  <div key={inv.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex flex-col gap-3 opacity-70 hover:opacity-100 transition-opacity">
+                                    <div className="flex justify-between items-center">
+                                      <input 
+                                        type="text" 
+                                        value={inv.planReference} 
+                                        onChange={(e) => {
+                                          const arr = [...editInvoices];
+                                          arr[idx].planReference = e.target.value;
+                                          setEditInvoices(arr);
+                                        }}
+                                        className="bg-transparent border-b border-gray-300 outline-none text-xs font-black text-gray-800 w-1/2 focus:border-primary px-1"
+                                      />
+                                      <button 
+                                        onClick={() => {
+                                          const arr = editInvoices.filter(i => i.id !== inv.id);
+                                          setEditInvoices(arr);
+                                        }}
+                                        className="text-red-400 hover:text-red-600"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                      <div>
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor</label>
+                                        <input 
+                                          type="number" 
+                                          value={inv.amount} 
+                                          onChange={(e) => {
+                                            const arr = [...editInvoices];
+                                            arr[idx].amount = Number(e.target.value);
+                                            setEditInvoices(arr);
+                                          }}
+                                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Vencimento</label>
+                                        <input 
+                                          type="date" 
+                                          value={inv.dueDate} 
+                                          onChange={(e) => {
+                                            const arr = [...editInvoices];
+                                            arr[idx].dueDate = e.target.value;
+                                            setEditInvoices(arr);
+                                          }}
+                                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900 outline-none"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Status</label>
+                                        <select 
+                                          value={inv.status} 
+                                          onChange={(e) => {
+                                            const arr = [...editInvoices];
+                                            arr[idx].status = e.target.value;
+                                            if(e.target.value === 'paid') arr[idx].paidAt = new Date().toISOString();
+                                            setEditInvoices(arr);
+                                          }}
+                                          className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
+                                            inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                            inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                            'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                          }`}
+                                        >
+                                          <option value="pending">Pendente</option>
+                                          <option value="paid">Pago</option>
+                                          <option value="overdue">Atrasado</option>
+                                          <option value="canceled">Cancelado</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
 
