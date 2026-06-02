@@ -223,6 +223,7 @@ const App: React.FC = () => {
         lifetimeAppointments: account.lifetime_appointments || 0,
         onboardingSeen: !!account.onboarding_seen,
         createdAt: (account.created_at || '').replace(' ', 'T'),
+        invoices: account.invoices || [],
       };
       setProfile(accountInfo);
 

@@ -37,7 +37,8 @@ if ($path === 'admin/profiles' && $method === 'GET') {
 
             (SELECT COUNT(*)
                FROM cp_agenda_services
-              WHERE account_id = a.id) AS servicesCount,
+              WHERE account_id = a.id
+                AND is_active = 1) AS servicesCount,
 
             IF(a.telegram_chat_id  IS NOT NULL AND a.telegram_chat_id  != '', 1, 0) AS hasTelegram,
             IF(a.profile_image     IS NOT NULL AND a.profile_image     != '', 1, 0) AS hasProfileImage,
