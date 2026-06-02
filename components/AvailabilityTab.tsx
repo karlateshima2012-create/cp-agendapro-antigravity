@@ -162,9 +162,9 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
           onChange={(e) => setLocalConfig({ ...localConfig, intervalMinutes: Number(e.target.value) })}
           className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer"
         >
-          {[15, 30, 45, 60, 120, 180, 240, 300, 360, 480, 720, 1440].map(m => (
+          {[15, 30, 45, 60, 120, 180, 240, 270, 300, 330, 360, 480, 720, 1440].map(m => (
             <option key={m} value={m}>
-              {m < 60 ? `${m} minutos` : (m === 1440 ? '24 horas (Diária)' : `${m / 60} horas`)}
+              {m < 60 ? `${m} minutos` : (m === 1440 ? '24 horas (Diária)' : (m % 60 === 0 ? `${m / 60} horas` : `${Math.floor(m / 60)}:${m % 60} horas`))}
             </option>
           ))}
         </select>
