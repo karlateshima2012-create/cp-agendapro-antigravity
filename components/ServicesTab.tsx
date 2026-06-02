@@ -179,32 +179,18 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duração (minutos)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Duração do Serviço</label>
               <select
                 value={formState.duration || 30}
                 onChange={e => setFormState({ ...formState, duration: Number(e.target.value) })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none"
               >
-                {[15, 30, 45, 60, 120, 180, 240, 300, 360, 480, 720, 1440].map(m => (
-                  <option key={m} value={m}>
-                    {m < 60 ? `${m} min` : (m === 1440 ? '24h (Diária)' : `${m / 60}h`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Intervalo de Limpeza <span className="text-gray-400 font-normal">(Bloqueio extra)</span></label>
-              <select
-                value={formState.cleaning_buffer || 0}
-                onChange={e => setFormState({ ...formState, cleaning_buffer: Number(e.target.value) })}
-                className="w-full px-3 py-2 border border-blue-200 rounded-lg bg-blue-50/30 text-gray-900 focus:ring-2 focus:ring-primary outline-none"
-              >
-                <option value={0}>Nenhum</option>
-                {[15, 30, 45, 60, 90, 120, 180, 240, 360, 480].map(m => (
-                  <option key={m} value={m}>
-                    {m < 60 ? `${m} min` : `${m / 60}h`}
-                  </option>
-                ))}
+                {Array.from({ length: 16 }, (_, i) => (i + 1) * 30).concat([1440]).map(m => {
+                  const h = Math.floor(m / 60);
+                  const min = m % 60;
+                  const label = m === 1440 ? '24h (Diária)' : m < 60 ? `${m} min` : min === 0 ? `${h}h` : `${h}h ${min}min`;
+                  return <option key={m} value={m}>{label}</option>;
+                })}
               </select>
             </div>
 
