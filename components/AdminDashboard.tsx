@@ -62,15 +62,15 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       : 0;
     const services = c.servicesCount ?? 0;
 
-    // 🔴 Crítico: sinais reais de abandono (limiares adequados para clientes estabelecidas)
-    if (services === 0) return 'critical';                          // sem serviços = não pode receber agendamentos
-    if (sinceAccess > 45) return 'critical';                       // sem entrar no painel há 45+ dias
-    if (accountAge > 30 && sinceAppt > 90) return 'critical';      // conta madura sem agendamento há 90d
+    // 🔴 Crítico: sinais reais de abandono
+    if (services === 0) return 'critical';                                       // sem serviços ativos = não pode receber agendamentos
+    if (c.lastAccessAt && sinceAccess > 45) return 'critical';                   // sem entrar no painel há 45+ dias (só avalia se tiver dado)
+    if (accountAge > 30 && sinceAppt > 90) return 'critical';                    // conta madura sem agendamento confirmado há 90d
 
-    // 🟡 Em Risco: atenção necessária (sem penalizar clientes novas)
-    if (sinceAccess > 20) return 'risk';                           // sem entrar no painel há 20+ dias
-    if (accountAge > 14 && sinceAppt > 45) return 'risk';          // sem agendamento há 45d (após período de onboarding)
-    if (planLeft < 15) return 'risk';                              // plano vence em menos de 15 dias
+    // 🟡 Em Risco: atenção necessária (sem penalizar clientes novas ou sem histórico ainda)
+    if (c.lastAccessAt && sinceAccess > 20) return 'risk';                       // sem entrar no painel há 20+ dias
+    if (accountAge > 14 && sinceAppt > 45) return 'risk';                        // sem agendamento há 45d (após período de onboarding)
+    if (planLeft < 15) return 'risk';                                            // plano vence em menos de 15 dias
 
     return 'healthy';
   };
@@ -413,12 +413,12 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
                   {[
-                    { label: 'Último Acesso',   value: formatDaysAgo(detailsUser.lastAccessAt),      alert: daysAgo(detailsUser.lastAccessAt) > 15 },
-                    { label: 'Último Agend.',   value: formatDaysAgo(detailsUser.lastAppointmentAt), alert: daysAgo(detailsUser.lastAppointmentAt) > 30 },
-                    { label: 'Agend. 30d',      value: `${detailsUser.appointmentsLast30Days ?? 0} agendamentos`, alert: (detailsUser.appointmentsLast30Days ?? 0) === 0 },
-                    { label: 'Serviços',        value: `${detailsUser.servicesCount ?? 0} cadastrados`, alert: (detailsUser.servicesCount ?? 0) === 0 },
-                    { label: 'Telegram',        value: detailsUser.hasTelegram ? 'Configurado ✓' : 'Não configurado', alert: !detailsUser.hasTelegram },
-                    { label: 'Total Agend.',    value: `${detailsUser.appointmentCount ?? 0} confirmados`, alert: false },
+                    { label: 'Último Acesso (painel)',  value: formatDaysAgo(detailsUser.lastAccessAt),      alert: !!detailsUser.lastAccessAt && daysAgo(detailsUser.lastAccessAt) > 20 },
+                    { label: 'Último Agend.',          value: formatDaysAgo(detailsUser.lastAppointmentAt), alert: daysAgo(detailsUser.createdAt) > 14 && daysAgo(detailsUser.lastAppointmentAt) > 45 },
+                    { label: 'Agend. 30d',             value: `${detailsUser.appointmentsLast30Days ?? 0} agendamentos`, alert: (detailsUser.appointmentsLast30Days ?? 0) === 0 && daysAgo(detailsUser.createdAt) > 14 },
+                    { label: 'Serviços ativos',        value: `${detailsUser.servicesCount ?? 0} cadastrados`, alert: (detailsUser.servicesCount ?? 0) === 0 },
+                    { label: 'Telegram',               value: detailsUser.hasTelegram ? 'Configurado ✓' : 'Não configurado', alert: false },
+                    { label: 'Total Agend.',           value: `${detailsUser.appointmentCount ?? 0} confirmados`, alert: false },
                   ].map(item => (
                     <div key={item.label} className={`p-3 rounded-xl border ${item.alert ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
                       <p className={`text-[8px] font-black uppercase tracking-widest mb-1 ${item.alert ? 'text-red-400' : 'text-gray-400'}`}>{item.label}</p>
