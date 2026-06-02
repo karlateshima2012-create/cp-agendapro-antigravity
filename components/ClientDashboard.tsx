@@ -190,13 +190,13 @@ export const ClientDashboard: React.FC<Props> = ({
               </button>
 
               <button
-                onClick={() => { setActiveTab('clients'); setShowMobileMenu(false); }}
-                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'clients' ? 'text-[#25aae1]' : 'text-gray-400'}`}
+                onClick={() => { setActiveTab('account'); setShowMobileMenu(false); }}
+                className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'account' ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
-                <div className={`p-2.5 rounded-full transition-all ${activeTab === 'clients' ? 'bg-[#25aae1]/10' : ''}`}>
-                  <Contact2 size={20} />
+                <div className={`p-2.5 rounded-full transition-all ${activeTab === 'account' ? 'bg-[#25aae1]/10' : ''}`}>
+                  <Settings size={20} />
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-tight">Clientes</span>
+                <span className="text-[9px] font-bold uppercase tracking-tight">Perfil</span>
               </button>
 
               <button
@@ -228,11 +228,11 @@ export const ClientDashboard: React.FC<Props> = ({
                     </button>
                     
                     <button
-                      onClick={() => { setActiveTab('account'); setShowMobileMenu(false); }}
-                      className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'account' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
+                      onClick={() => { setActiveTab('clients'); setShowMobileMenu(false); }}
+                      className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'clients' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
                     >
-                      <Settings size={22} />
-                      <span className="font-bold text-[15px]">Configurações do Perfil</span>
+                      <Contact2 size={22} />
+                      <span className="font-bold text-[15px]">Clientes</span>
                     </button>
 
                     <button
