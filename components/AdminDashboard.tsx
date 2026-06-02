@@ -54,18 +54,25 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   };
 
   const getHealth = (c: User): HealthStatus => {
-    const accountAge   = daysAgo(c.createdAt);
-    const sinceAccess  = daysAgo(c.lastAccessAt);
-    const sinceAppt    = daysAgo(c.lastAppointmentAt);
-    const planLeft     = c.planExpiresAt
+    const accountAge  = daysAgo(c.createdAt);
+    const sinceAccess = daysAgo(c.lastAccessAt);
+    const sinceAppt   = daysAgo(c.lastAppointmentAt);
+    const planLeft    = c.planExpiresAt
       ? Math.floor((new Date(c.planExpiresAt).getTime() - nowMs) / dayInMs)
       : 0;
     const services = c.servicesCount ?? 0;
 
-    if (services === 0 || sinceAccess > 30 || (accountAge > 7 && sinceAppt > 60))
-      return 'critical';
-    if (sinceAccess > 15 || sinceAppt > 30 || planLeft < 15 || !c.hasTelegram)
-      return 'risk';
+    // 🔴 Crítico: sinais reais de abandono (limiares adequados para clientes estabelecidas)
+    if (services === 0) return 'critical';                          // sem serviços = não pode receber agendamentos
+    if (sinceAccess > 45) return 'critical';                       // sem entrar no painel há 45+ dias
+    if (accountAge > 30 && sinceAppt > 90) return 'critical';      // conta madura sem agendamento há 90d
+
+    // 🟡 Em Risco: atenção necessária (sem penalizar clientes novas)
+    if (sinceAccess > 20) return 'risk';                           // sem entrar no painel há 20+ dias
+    if (accountAge > 14 && sinceAppt > 45) return 'risk';          // sem agendamento há 45d (após período de onboarding)
+    if (planLeft < 15) return 'risk';                              // plano vence em menos de 15 dias
+    if (accountAge > 14 && !c.hasTelegram) return 'risk';          // sem Telegram após 14 dias (onboarding já foi)
+
     return 'healthy';
   };
 
@@ -232,7 +239,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
             <div>
               <h3 className="text-red-400 text-[10px] font-black uppercase tracking-widest">🔴 Críticas</h3>
               <p className="text-3xl font-black text-red-600 mt-0.5">{criticalCount}</p>
-              <p className="text-[9px] text-red-400 font-bold mt-0.5">sem serviços, sem acesso 30d ou sem agendamento 60d</p>
+              <p className="text-[9px] text-red-400 font-bold mt-0.5">sem serviços · sem acesso ao painel 45d · sem agendamento 90d (conta &gt; 30d)</p>
             </div>
           </div>
           <div className="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100 shadow-sm flex items-center gap-5">
@@ -240,7 +247,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
             <div>
               <h3 className="text-yellow-600 text-[10px] font-black uppercase tracking-widest">🟡 Em Risco</h3>
               <p className="text-3xl font-black text-yellow-700 mt-0.5">{riskCount}</p>
-              <p className="text-[9px] text-yellow-600 font-bold mt-0.5">sem acesso 15d, plano vencendo ou sem Telegram</p>
+              <p className="text-[9px] text-yellow-600 font-bold mt-0.5">sem acesso 20d · sem agendamento 45d · plano vence &lt;15d · sem Telegram (após 14d)</p>
             </div>
           </div>
         </div>
