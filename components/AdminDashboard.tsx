@@ -592,7 +592,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                   <div>
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (¥)</label>
                                     <input 
                                       type="number" 
                                       value={inv.amount} 

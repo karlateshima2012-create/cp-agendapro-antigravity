@@ -614,7 +614,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                               </p>
                             </div>
                             <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
-                              <p className="text-2xl font-black text-primary">R$ {Number(pendingInvoice.amount).toFixed(2).replace('.',',')}</p>
+                              <p className="text-2xl font-black text-primary">¥ {Number(pendingInvoice.amount).toLocaleString('ja-JP')}</p>
                             </div>
                           </div>
                         </div>
@@ -633,7 +633,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                                   </p>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                                  <p className="text-lg font-black text-gray-900">R$ {Number(inv.amount).toFixed(2).replace('.',',')}</p>
+                                  <p className="text-lg font-black text-gray-900">¥ {Number(inv.amount).toLocaleString('ja-JP')}</p>
                                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status]}`}>
                                     {statusLabels[inv.status]}
                                   </span>
