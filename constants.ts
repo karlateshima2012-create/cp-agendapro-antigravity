@@ -31,6 +31,7 @@ export const DEFAULT_SERVICES: Service[] = [
 export const DEFAULT_AVAILABILITY: AvailabilityConfig = {
   blockedDates: [],
   intervalMinutes: 30,
+  availableMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   workingHours: [
     { day: 'segunda', name: 'Segunda-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },
     { day: 'terca', name: 'Terça-feira', isWorking: true, startTime: '09:00', endTime: '18:00' },

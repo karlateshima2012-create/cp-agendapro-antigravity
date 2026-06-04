@@ -28,7 +28,9 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
   // Sincronizar estado local quando os props mudarem
   React.useEffect(() => {
     if (config) {
-      setLocalConfig(JSON.parse(JSON.stringify(config)));
+      const parsed = JSON.parse(JSON.stringify(config));
+      if (!parsed.availableMonths) parsed.availableMonths = [1,2,3,4,5,6,7,8,9,10,11,12];
+      setLocalConfig(parsed);
     }
   }, [config]);
 

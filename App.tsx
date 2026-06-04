@@ -342,7 +342,9 @@ const App: React.FC = () => {
             createdAt: a.created_at,
             updatedAt: a.updated_at
           }));
-          setAppointments(mappedAppts);
+          if (items.length > 0) {
+            setAppointments(mappedAppts);
+          }
         }
       });
     }, 15000);
@@ -456,12 +458,17 @@ const App: React.FC = () => {
   };
 
   const handleUpdateServices = async (s: Service[]) => {
+    const previous = services;
     try {
       setServices(s);
       const resp: any = await api.saveServices(s);
-      if (!resp.ok) throw new Error(resp.error);
+      if (!resp.ok) {
+        setServices(previous);
+        throw new Error(resp.error);
+      }
       showToast("Serviços atualizados!");
     } catch (e: any) {
+      setServices(previous);
       showToast("Erro ao salvar serviços.", "error");
     }
   };
