@@ -890,7 +890,7 @@ export const PublicBookingPage: React.FC<Props> = ({
       </div>
 
       <footer className="mt-12 mb-16 flex flex-col items-center opacity-30">
-        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] text-center">
+        <p className="text-[8px] font-bold text-gray-400 tracking-[0.2em] text-center">
           © {new Date().getFullYear()} creative print. todos os direitos reservados.
         </p>
       </footer>
