@@ -413,7 +413,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             </div>
             <div className="relative z-10 flex justify-between items-center border-t border-gray-100/50 pt-4">
               <div>
-                {svc.price > 0 && <span className="font-black text-xs text-gray-900 leading-none tracking-widest uppercase">¥ {svc.price.toLocaleString()}</span>}
+                {svc.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">¥ {svc.price.toLocaleString()}</span>}
               </div>
             </div>
           </div>

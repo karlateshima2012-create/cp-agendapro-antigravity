@@ -580,7 +580,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                         </div>
                         <div className="flex justify-between items-center border-t border-gray-100/50 pt-4">
                           <div>
-                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none tracking-widest uppercase">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">¥ {s.price.toLocaleString()}</span>}
                           </div>
                           <span 
                             className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
