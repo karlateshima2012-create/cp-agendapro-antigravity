@@ -81,10 +81,6 @@ jobs:
         cd dist && zip -r ../dist.zip . && cd ..
         cd backend && zip -r ../backend.zip api database migrate.php .env vendor && cd ..
 
-    - name: Testar Conexão SSH
-      run: |
-        nc -zv -w 20 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT }} || (echo "ERRO: Servidor SSH da Hostinger inacessível no momento." && exit 1)
-
     - name: Enviar Arquivos via SCP (Hostinger)
       uses: appleboy/scp-action@v0.1.7
       with:
