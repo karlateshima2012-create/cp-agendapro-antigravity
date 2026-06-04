@@ -221,7 +221,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
                 <Star size={20} className="text-yellow-500 mb-3" />
                 <p className="text-2xl font-black text-gray-900">{ticket > 0 ? yen(ticket) : '—'}</p>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Ticket médio estimado*</p>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Valor médio por agendamento*</p>
               </div>
             </>
           ) : (
