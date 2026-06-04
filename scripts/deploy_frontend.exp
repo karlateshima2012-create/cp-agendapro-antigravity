@@ -25,9 +25,13 @@ expect {
     }
     "$ " {
         send "cd domains/creativeprintjp.com/public_html/cpagendapro/ && rm -rf dist_old && mkdir -p dist_old\r"
+        expect "$ "
         send "cp -r assets index.html dist_old/ 2>/dev/null || true\r"
+        expect "$ "
         send "unzip -o dist.zip\r"
-        send "cp -r dist/* . && rm -rf dist dist.zip\r"
+        expect "$ "
+        send "rm dist.zip\r"
+        expect "$ "
         send "exit\r"
     }
 }

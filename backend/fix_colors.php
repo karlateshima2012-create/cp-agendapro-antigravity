@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/api/config.php';
+require_once __DIR__ . '/api/lib/Db.php';
 try {
-    $db = Database::getInstance()->getConnection();
+    $db = Db::getInstance()->getPdo();
     
     $stmt = $db->prepare("UPDATE cp_agenda_services SET name_color = NULL WHERE name_color = '#ffffff'");
     $stmt->execute();

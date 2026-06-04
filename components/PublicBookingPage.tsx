@@ -491,6 +491,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                 {(services || []).length > 0 ? (services || []).map(s => {
                   const isSelected = selectedServices.some(curr => curr.id === s.id);
                   
+                  if (viewMode === 'list') {
                       return (
                         <button
                           key={s.id}
@@ -539,6 +540,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                           </div>
                         </button>
                       );
+                  }
 
                   return (
                     <button
