@@ -417,18 +417,18 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               href="https://t.me/Cpagendaprobot?start=setup"
               target="_blank"
               rel="noreferrer"
-              className="bg-primary text-white text-center rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 h-14"
+              className="bg-primary text-white text-center rounded-2xl font-black text-[10px] uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 h-14"
             >
-              <Bell size={20} /> Clique para Ativar Chat ID
+              <Bell size={18} /> CLIQUE E COPIE O CHAT ID
             </a>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={telegramChatId}
                 onChange={e => setTelegramChatId(e.target.value)}
-                placeholder="Cole seu ID aqui"
-                className="flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-sm font-mono ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-300 shadow-sm h-14"
+                placeholder="COLE O CHAT ID AQUI"
+                className="flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
               />
               <button
                 onClick={testNotification}
