@@ -496,46 +496,42 @@ export const PublicBookingPage: React.FC<Props> = ({
                         <button
                           key={s.id}
                           onClick={() => toggleService(s)}
-                          className={`w-full bg-white border-2 rounded-2xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-md p-4`}
+                          className={`w-full bg-white border-2 rounded-2xl p-3 transition-all flex flex-row items-center gap-3 relative overflow-hidden group shadow-sm hover:shadow-md text-left`}
                           style={isSelected
                             ? { borderColor: primaryColor, backgroundColor: primaryColor + '08' }
                             : { borderColor: '#f3f4f6' }
                           }
                         >
-                          <div className="flex flex-row items-start gap-4">
-                            {/* Left: Image */}
-                            {s.imageUrl && (
-                              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-gray-100 bg-gray-50 relative">
-                                 <img 
-                                   src={s.imageUrl} 
-                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
-                                   style={{ opacity: (s.imageOpacity ?? 100) / 100 }}
-                                   alt={s.name}
-                                 />
-                              </div>
-                            )}
-
-                            {/* Center: Info */}
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
-                              <p className="text-xs sm:text-sm font-medium mt-1 mb-2 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
-                              
-                              <div className="flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
-                                <Clock size={14} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
-                              </div>
+                          {/* Left: Image (if any) */}
+                          {s.imageUrl && (
+                            <div className="w-14 h-14 shrink-0 rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-gray-50">
+                              <img 
+                                src={s.imageUrl} 
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                                style={{ opacity: (s.imageOpacity ?? 100) / 100 }}
+                                alt={s.name}
+                              />
+                              <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+                            </div>
+                          )}
+                          
+                          {/* Middle: Content */}
+                          <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <h3 className="font-black text-sm sm:text-base tracking-tight capitalize truncate" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
+                            
+                            <div className="mt-1 flex items-center gap-1.5 font-black text-[10px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                              <Clock size={12} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                             </div>
                           </div>
 
-                          {/* Bottom: Action */}
-                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                            <div className="flex-1">
-                               {s.price > 0 && <span className="font-black text-xs text-gray-900">¥ {s.price.toLocaleString()}</span>}
-                            </div>
+                          {/* Right: Price & Button */}
+                          <div className="shrink-0 flex flex-col items-end justify-center border-l border-gray-100 pl-3 ml-1 gap-1.5">
+                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
                             <span 
-                              className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white transition-all shadow-sm"
+                              className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg text-white shadow-sm"
                               style={{ backgroundColor: primaryColor }}
                             >
-                              {isSelected ? 'Selecionado ✓' : 'Selecionar'}
+                              {isSelected ? '✓' : 'Selecionar'}
                             </span>
                           </div>
                         </button>

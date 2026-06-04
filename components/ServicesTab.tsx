@@ -351,30 +351,29 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             return (
               <div 
                 key={svc.id} 
-                className="relative overflow-hidden bg-white p-4 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all group flex gap-4 items-center"
+                className="relative overflow-hidden bg-white p-3 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all group flex flex-row items-center gap-3"
               >
                 {/* Left: Image (if any) */}
                 {svc.imageUrl && (
-                  <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden shadow-sm relative">
+                  <div className="w-14 h-14 shrink-0 rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-gray-50">
                     <img src={svc.imageUrl} alt={svc.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                     <div className="absolute inset-0 bg-black/5 pointer-events-none" />
                   </div>
                 )}
                 
                 {/* Middle: Content */}
-                <div className="flex-1 min-w-0 py-1 flex flex-col justify-center">
-                  <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize truncate" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
-                  <p className="text-xs sm:text-sm font-medium mt-1 mb-2 line-clamp-2" style={{ color: svc.descriptionColor || '#9ca3af' }}>{svc.description}</p>
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <h3 className="font-black text-sm sm:text-base tracking-tight capitalize truncate" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
                   
-                  <div className="flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
-                    <Clock size={14} style={{ color: account.primaryColor || '#111827' }} /> 
+                  <div className="mt-1 flex items-center gap-1.5 font-black text-[10px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
+                    <Clock size={12} style={{ color: account.primaryColor || '#111827' }} /> 
                     {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
                     {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}
                   </div>
                 </div>
 
-                {/* Right: Price & Actions */}
-                <div className="shrink-0 flex flex-col items-end justify-center border-l border-gray-100 pl-4 ml-2 gap-3">
+                {/* Right: Actions & Price */}
+                <div className="shrink-0 flex flex-col items-end justify-center border-l border-gray-100 pl-3 ml-1 gap-1.5">
                   <div className="flex gap-1 bg-black/5 p-1 rounded-lg">
                     <button 
                       onClick={() => moveService(index, 'up')} 
@@ -382,7 +381,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                       className="p-1 text-gray-500 hover:text-black hover:bg-white rounded transition-all disabled:opacity-30 shadow-sm"
                       title="Mover para cima"
                     >
-                      <ArrowUp size={14} />
+                      <ArrowUp size={12} />
                     </button>
                     <button 
                       onClick={() => moveService(index, 'down')} 
@@ -390,24 +389,24 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                       className="p-1 text-gray-500 hover:text-black hover:bg-white rounded transition-all disabled:opacity-30 shadow-sm"
                       title="Mover para baixo"
                     >
-                      <ArrowDown size={14} />
+                      <ArrowDown size={12} />
                     </button>
                     <button 
                       onClick={() => startEdit(svc)} 
                       className="p-1 text-gray-500 hover:text-blue-500 hover:bg-white rounded transition-all shadow-sm"
                       title="Editar serviço"
                     >
-                      <Edit2 size={14} />
+                      <Edit2 size={12} />
                     </button>
                     <button 
                       onClick={() => handleDeleteRequest(svc)} 
                       className="p-1 text-gray-500 hover:text-red-500 hover:bg-white rounded transition-all shadow-sm"
                       title="Excluir serviço"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={12} />
                     </button>
                   </div>
-                  {svc.price > 0 && <span className="font-black text-sm text-gray-900 leading-none">¥ {svc.price.toLocaleString()}</span>}
+                  {svc.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">¥ {svc.price.toLocaleString()}</span>}
                 </div>
               </div>
             );
