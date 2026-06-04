@@ -464,7 +464,7 @@ export const PublicBookingPage: React.FC<Props> = ({
           {/* Conteúdo do header - NO FLUXO NORMAL para mobile, ABSOLUTE para desktop */}
           <div className="relative md:absolute px-6 pb-8 md:bottom-12 md:left-10 md:right-10 md:z-10 animate-fade-in md:pt-0">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
-              <span className="text-white text-[10px] font-black uppercase tracking-[0.3em] bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 shadow-lg">Agendamento Online</span>
+              <span className="text-white text-[10px] font-black uppercase tracking-[0.3em] bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/40 shadow-lg">Agendamento Online</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight mb-2 text-center md:text-left drop-shadow-lg">{companyName}</h1>
             {shortDescription && step === 1 && (
