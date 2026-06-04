@@ -406,20 +406,15 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                 </button>
               </div>
             </div>
-            <div className="relative z-10 flex items-center gap-4 mt-4 text-sm font-medium text-gray-700 border-t border-gray-100/60 pt-4">
-              <span className="flex items-center gap-1 bg-gray-100/90 px-3 py-1 rounded-full backdrop-blur-xs">
-                <Clock size={14} /> {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
-              </span>
-              {svc.price > 0 && (
-                <span className="flex items-center gap-1 bg-green-50/90 text-green-700 px-3 py-1 rounded-full border border-green-100/50 backdrop-blur-xs">
-                  {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(svc.price)}
-                </span>
-              )}
-              {svc.cleaning_buffer > 0 && (
-                <span className="flex items-center gap-1 bg-blue-50/90 text-blue-700 px-3 py-1 rounded-full border border-blue-100/50 backdrop-blur-xs">
-                  Limpeza: {svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`}
-                </span>
-              )}
+            <div className="relative z-10 flex justify-between items-center border-t border-gray-100/50 pt-4 mt-4">
+              <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
+                <Clock size={16} /> 
+                {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
+                {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                {svc.price > 0 && <span className="font-black text-xl text-gray-900 leading-none">¥ {svc.price.toLocaleString()}</span>}
+              </div>
             </div>
           </div>
         ))}
