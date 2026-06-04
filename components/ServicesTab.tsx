@@ -363,40 +363,40 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             )}
 
             <div className="relative z-10 flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-lg capitalize" style={{ color: svc.nameColor || '#111827' }}>{svc.name}</h3>
-                <p className="text-sm mt-1 line-clamp-2 capitalize" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
+              <div className="flex-1 pr-4">
+                <h3 className="font-bold text-lg capitalize tracking-tight" style={{ color: svc.nameColor || '#111827' }}>{svc.name}</h3>
+                <p className="text-sm mt-1 line-clamp-2 capitalize leading-relaxed" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 bg-black/80 p-1.5 rounded-xl backdrop-blur-sm shadow-sm border border-white/10 shrink-0">
                 <button 
                   onClick={() => moveService(index, 'up')} 
                   disabled={index === 0}
-                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all disabled:opacity-30"
+                  className="p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-lg transition-all disabled:opacity-30"
                   title="Mover para cima"
                 >
-                  <ArrowUp size={18} />
+                  <ArrowUp size={16} />
                 </button>
                 <button 
                   onClick={() => moveService(index, 'down')} 
                   disabled={index === services.length - 1}
-                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all disabled:opacity-30"
+                  className="p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-lg transition-all disabled:opacity-30"
                   title="Mover para baixo"
                 >
-                  <ArrowDown size={18} />
+                  <ArrowDown size={16} />
                 </button>
                 <button 
                   onClick={() => startEdit(svc)} 
-                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"
+                  className="p-1.5 text-white/70 hover:text-blue-400 hover:bg-white/20 rounded-lg transition-all"
                   title="Editar serviço"
                 >
-                  <Edit2 size={18} />
+                  <Edit2 size={16} />
                 </button>
                 <button 
                   onClick={() => handleDelete(svc.id)} 
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                  className="p-1.5 text-white/70 hover:text-red-400 hover:bg-white/20 rounded-lg transition-all"
                   title="Excluir serviço"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>

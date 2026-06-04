@@ -491,63 +491,54 @@ export const PublicBookingPage: React.FC<Props> = ({
                 {(services || []).length > 0 ? (services || []).map(s => {
                   const isSelected = selectedServices.some(curr => curr.id === s.id);
                   
-                  if (viewMode === 'list') {
-                     return (
+                      return (
                         <button
                           key={s.id}
                           onClick={() => toggleService(s)}
-                          className={`w-full bg-white border-2 rounded-2xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-xl flex items-center p-4 gap-6`}
+                          className={`w-full bg-white border-2 rounded-2xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-md p-4`}
                           style={isSelected
                             ? { borderColor: primaryColor, backgroundColor: primaryColor + '08' }
                             : { borderColor: '#f3f4f6' }
                           }
                         >
-                          {/* Left: Image */}
-                          {s.imageUrl && (
-                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 border border-gray-100 bg-gray-50">
-                               <img 
-                                 src={s.imageUrl} 
-                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
-                                 style={{ opacity: (s.imageOpacity ?? 100) / 100 }}
-                                 alt={s.name}
-                               />
-                            </div>
-                          )}
-
-                          {/* Center: Info */}
-                          <div className="flex-1 flex flex-col h-full justify-center">
-                            <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
-                            <p className="text-xs sm:text-sm font-medium mt-1 mb-3 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
-                            
-                            <div className="flex flex-wrap items-center gap-4">
-                              <div className="flex items-center gap-1 font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500">
-                                <Clock size={14} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                          <div className="flex flex-row items-start gap-4">
+                            {/* Left: Image */}
+                            {s.imageUrl && (
+                              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 border border-gray-100 bg-gray-50 relative">
+                                 <img 
+                                   src={s.imageUrl} 
+                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                                   style={{ opacity: (s.imageOpacity ?? 100) / 100 }}
+                                   alt={s.name}
+                                 />
                               </div>
-                              {s.price > 0 && <span className="font-black text-sm sm:text-base text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                            )}
+
+                            {/* Center: Info */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
+                              <p className="text-xs sm:text-sm font-medium mt-1 mb-2 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
+                              
+                              <div className="flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                                <Clock size={14} /> {formatDurationFriendly(s.duration)}
+                              </div>
                             </div>
                           </div>
 
-                          {/* Right: Select Action */}
-                          <div className="shrink-0 flex flex-col items-end justify-center pr-2">
-                             <div
-                               className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${isSelected ? 'scale-110' : 'bg-gray-50 group-hover:bg-gray-100'}`}
-                               style={isSelected ? { backgroundColor: primaryColor } : {}}
-                             >
-                               {isSelected
-                                 ? <Check size={20} color="white" />
-                                 : <Briefcase size={20} className={isSelected ? "text-white" : "text-gray-400 group-hover:text-primary"} />
-                               }
-                             </div>
-                             <span 
-                               className="hidden sm:block text-[9px] font-black uppercase tracking-widest mt-2 px-3 py-1 rounded-lg text-white"
-                               style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
-                             >
-                               {isSelected ? 'Selecionado' : 'Selecionar'}
-                             </span>
+                          {/* Bottom: Action */}
+                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <div className="flex-1">
+                               {s.price > 0 && <span className="font-black text-lg sm:text-xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                            </div>
+                            <span 
+                              className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white transition-all shadow-sm"
+                              style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
+                            >
+                              {isSelected ? 'Selecionado ✓' : 'Selecionar'}
+                            </span>
                           </div>
                         </button>
-                     );
-                  }
+                      );
 
                   return (
                     <button
@@ -577,31 +568,22 @@ export const PublicBookingPage: React.FC<Props> = ({
 
                       <div className="relative z-10 flex flex-col h-full justify-between w-full">
                         <div>
-                          <div className="flex items-center gap-4 mb-5">
-                            <div
-                              className="p-3 rounded-xl flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: primaryColor }}
-                            >
-                              {isSelected
-                                ? <Check size={22} color="white" />
-                                : <Briefcase size={22} color="white" />
-                              }
-                            </div>
+                          <div className="mb-4">
                             <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
                           </div>
                           <p className="text-sm font-medium mb-8 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
                         </div>
-                        <div className="flex justify-between items-center border-t border-gray-100 pt-6 mt-4">
-                          <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">
-                            <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                        <div className="flex justify-between items-center border-t border-gray-100/50 pt-6 mt-4">
+                          <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                            <Clock size={16} /> {formatDurationFriendly(s.duration)}
                           </div>
-                          <div className="flex flex-col items-end">
-                            {s.price > 0 && <span className="font-black text-2xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                          <div className="flex flex-col items-end gap-2">
+                            {s.price > 0 && <span className="font-black text-2xl text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
                             <span 
-                              className="text-[9px] font-black uppercase tracking-widest mt-1 px-4 py-1.5 rounded-lg text-white text-center inline-block"
-                              style={{ backgroundColor: primaryColor }}
+                              className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
+                              style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
                             >
-                              {isSelected ? 'Selecionado' : 'Selecionar'}
+                              {isSelected ? 'Selecionado ✓' : 'Selecionar'}
                             </span>
                           </div>
                         </div>
