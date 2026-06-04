@@ -747,7 +747,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Nome Completo *</label>
                   <div className="relative group focus-within-text-dynamic">
                     <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-current transition-colors" size={20} />
-                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus-border-dynamic focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-400 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: João da Silva" />
+                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus-border-dynamic focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-400 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: Maria Bonita" />
                   </div>
                 </div>
                 <div className="space-y-2">
