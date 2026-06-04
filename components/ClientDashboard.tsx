@@ -5,15 +5,10 @@ import {
   Briefcase,
   Settings,
   LogOut,
-  LayoutGrid,
-  Activity,
-  Star,
-  Users,
   History,
   Contact2,
   MoreHorizontal,
-  Menu as MenuIcon,
-  X
+  BarChart2
 } from 'lucide-react';
 import { AccountInfo, Appointment, AvailabilityConfig, Service, AppointmentStatus } from '../types';
 import { DashboardHeader } from './DashboardHeader';
@@ -25,6 +20,7 @@ import { OnboardingModal } from './OnboardingModal';
 import { Logo } from './Logo';
 import { ClientsTab } from './ClientsTab';
 import { HistoryTab } from './HistoryTab';
+import { GestaoTab } from './GestaoTab';
 
 interface Props {
   account: AccountInfo;
@@ -58,7 +54,7 @@ export const ClientDashboard: React.FC<Props> = ({
   onUpdateAvailability,
   onUpdateAccount
 }) => {
-  const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'clients' | 'history' | 'account'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'availability' | 'services' | 'clients' | 'history' | 'account' | 'gestao'>('appointments');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
@@ -94,6 +90,7 @@ export const ClientDashboard: React.FC<Props> = ({
             <NavItem id="services" label="Serviços" icon={Briefcase} />
             <NavItem id="clients" label="Clientes" icon={Contact2} />
             <NavItem id="history" label="Histórico" icon={History} />
+            <NavItem id="gestao" label="Gestão" icon={BarChart2} />
             <NavItem id="account" label="Configurações" icon={Settings} />
           </nav>
 
@@ -147,6 +144,10 @@ export const ClientDashboard: React.FC<Props> = ({
 
               <div className={activeTab === 'history' ? 'block' : 'hidden'}>
                 <HistoryTab />
+              </div>
+
+              <div className={activeTab === 'gestao' ? 'block' : 'hidden'}>
+                <GestaoTab services={services} appointments={appointments} />
               </div>
 
               <div className={activeTab === 'account' ? 'block' : 'hidden'}>
@@ -235,6 +236,14 @@ export const ClientDashboard: React.FC<Props> = ({
                     >
                       <Contact2 size={22} />
                       <span className="font-bold text-[15px]">Clientes</span>
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('gestao'); setShowMobileMenu(false); }}
+                      className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'gestao' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
+                    >
+                      <BarChart2 size={22} />
+                      <span className="font-bold text-[15px]">Gestão</span>
                     </button>
 
                     <button

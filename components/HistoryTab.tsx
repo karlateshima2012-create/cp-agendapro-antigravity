@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../src/api';
 import { Appointment } from '../types';
-import { 
-  Search, 
-  Calendar, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import {
+  Search,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Clock,
   Trash2,
   Loader2,
-  TrendingUp,
-  Award,
-  BarChart3,
   Archive,
   History as HistoryIcon,
   ChevronDown
@@ -107,31 +104,6 @@ export const HistoryTab: React.FC = () => {
     );
   });
 
-  // METRICS CALCULATION (Only for the visible set or fetched data)
-  const activeAppts = appointments.filter(a => !a.deleted_at && a.status === 'confirmed');
-  
-  const serviceCounts: Record<string, number> = {};
-  activeAppts.forEach(a => {
-    const name = a.serviceName || 'Serviço Padrão';
-    serviceCounts[name] = (serviceCounts[name] || 0) + 1;
-  });
-  const topService = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
-
-  const clientCounts: Record<string, number> = {};
-  activeAppts.forEach(a => {
-    const name = a.clientName || 'Anônimo';
-    clientCounts[name] = (clientCounts[name] || 0) + 1;
-  });
-  const topClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0] || ['-', 0];
-
-  const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-  const dayCounts: Record<number, number> = {};
-  activeAppts.forEach(a => {
-    const day = parseSafeDate(a.startAt).getDay();
-    dayCounts[day] = (dayCounts[day] || 0) + 1;
-  });
-  const busyDayIdx = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-  const busyDay = busyDayIdx !== undefined ? dayNames[parseInt(busyDayIdx)] : '-';
 
   const getStatusBadge = (appointment: Appointment) => {
     if (appointment.deleted_at) {
@@ -191,42 +163,6 @@ export const HistoryTab: React.FC = () => {
           >
             <Archive size={16} /> ARQUIVADO
           </button>
-        </div>
-      </div>
-
-      {/* METRICS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
-        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-              <TrendingUp size={24} />
-            </div>
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Serviço Mais Procurado</h3>
-          </div>
-          <p className="text-xl font-black text-gray-900 truncate">{topService[0]}</p>
-          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">{topService[1]} agendamentos realizados</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
-              <Award size={24} />
-            </div>
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Cliente Fidelizado</h3>
-          </div>
-          <p className="text-xl font-black text-gray-900 truncate">{topClient[0]}</p>
-          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">{topClient[1]} visitas registradas</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
-              <BarChart3 size={24} />
-            </div>
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Pico de Movimento</h3>
-          </div>
-          <p className="text-xl font-black text-gray-900">{busyDay}</p>
-          <p className="text-xs text-gray-400 font-bold mt-1 uppercase">Dia da semana com mais procura</p>
         </div>
       </div>
 
