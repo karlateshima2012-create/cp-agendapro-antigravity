@@ -489,7 +489,8 @@ const App: React.FC = () => {
         const normalized = {
           workingHours: mapWorkingHours(payload.workingHours),
           blockedDates: payload.blockedDates,
-          intervalMinutes: payload.intervalMinutes
+          intervalMinutes: payload.intervalMinutes,
+          availableMonths: payload.availableMonths
         };
         console.log('✅ Disponibilidade salva e normalizada:', JSON.stringify(normalized, null, 2));
         setAvailability(normalized);
