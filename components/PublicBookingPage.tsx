@@ -738,20 +738,20 @@ export const PublicBookingPage: React.FC<Props> = ({
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Nome Completo *</label>
                   <div className="relative group">
-                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={20} />
-                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-300 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: João da Silva" />
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
+                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-400 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: João da Silva" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">WhatsApp / Telefone *</label>
                   <div className="relative group">
-                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={20} />
+                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                     <input
                       required
                       type="tel"
                       inputMode="numeric"
                       maxLength={13}
-                      className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-300"
+                      className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}
                       placeholder="090 0000 0000"
@@ -768,13 +768,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     </span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">E-mail (Opcional)</label>
-                  <div className="relative group">
-                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-primary transition-colors" size={20} />
-                    <input type="email" className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-300 placeholder:font-medium" value={clientData.email || ''} onChange={e => setClientData({ ...clientData, email: e.target.value })} placeholder="exemplo@email.com" />
-                  </div>
-                </div>
+
 
                 <button type="submit" className="w-full py-5 text-white font-black rounded-3xl shadow-2xl shadow-primary/30 uppercase tracking-[0.2em] text-[11px] mt-10 transition-all hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-3" style={{ backgroundColor: primaryColor }}>
                   Revisar Agendamento <ArrowRight size={18} />
@@ -838,15 +832,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                       <p className="font-bold text-gray-900">{clientData.phone}</p>
                     </div>
                   </div>
-                  {clientData.email && (
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100" style={{ color: primaryColor }}><Mail size={18} /></div>
-                      <div>
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">E-mail</p>
-                        <p className="font-bold text-gray-900">{clientData.email}</p>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               </div>
 
