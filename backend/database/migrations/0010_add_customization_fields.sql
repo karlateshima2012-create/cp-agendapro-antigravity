@@ -5,5 +5,5 @@ ADD COLUMN `cover_opacity` INT DEFAULT 100 AFTER `view_mode`;
 
 -- 2. Add name_color and description_color to services
 ALTER TABLE `cp_agenda_services`
-ADD COLUMN `name_color` VARCHAR(7) DEFAULT '#ffffff' AFTER `image_opacity`,
-ADD COLUMN `description_color` VARCHAR(7) DEFAULT '#9ca3af' AFTER `name_color`;
+ADD COLUMN `name_color` VARCHAR(7) DEFAULT NULL AFTER `image_opacity`,
+ADD COLUMN `description_color` VARCHAR(7) DEFAULT NULL AFTER `name_color`;

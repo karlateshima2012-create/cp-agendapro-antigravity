@@ -181,10 +181,10 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                 <label className="block text-sm font-medium text-gray-700">Nome</label>
                 <div className="flex items-center gap-1.5 cursor-pointer" title="Cor do Nome">
                   <span className="text-[10px] text-gray-400 uppercase font-black">Cor</span>
-                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.nameColor || '#ffffff' }}>
+                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.nameColor || '#111827' }}>
                     <input
                       type="color"
-                      value={formState.nameColor || '#ffffff'}
+                      value={formState.nameColor || '#111827'}
                       onChange={e => setFormState({ ...formState, nameColor: e.target.value })}
                       className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer opacity-0"
                     />
@@ -216,10 +216,10 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                 <label className="block text-sm font-medium text-gray-700">Descrição</label>
                 <div className="flex items-center gap-1.5 cursor-pointer" title="Cor da Descrição">
                   <span className="text-[10px] text-gray-400 uppercase font-black">Cor</span>
-                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.descriptionColor || '#9ca3af' }}>
+                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.descriptionColor || '#6b7280' }}>
                     <input
                       type="color"
-                      value={formState.descriptionColor || '#9ca3af'}
+                      value={formState.descriptionColor || '#6b7280'}
                       onChange={e => setFormState({ ...formState, descriptionColor: e.target.value })}
                       className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer opacity-0"
                     />
