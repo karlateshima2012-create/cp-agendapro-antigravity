@@ -371,7 +371,12 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             <div className="relative z-10 flex justify-between items-start">
               <div className="flex-1 min-w-0 pr-4">
                 <h3 className="font-bold text-lg capitalize tracking-tight truncate break-words" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
-                <p className="text-sm mt-1 line-clamp-2 capitalize leading-relaxed break-words" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
+                <p className="text-sm mt-1 mb-3 line-clamp-2 capitalize leading-relaxed break-words" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
+                <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest mb-1" style={{ color: svc.descriptionColor || '#9ca3af' }}>
+                  <Clock size={16} style={{ color: account.primaryColor || '#111827' }} /> 
+                  {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
+                  {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}
+                </div>
               </div>
               <div className="flex gap-1 bg-black/80 p-1.5 rounded-xl backdrop-blur-sm shadow-sm border border-white/10 shrink-0">
                 <button 
@@ -406,13 +411,8 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                 </button>
               </div>
             </div>
-            <div className="relative z-10 flex justify-between items-center border-t border-gray-100/50 pt-4 mt-4">
-              <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
-                <Clock size={16} style={{ color: account.primaryColor || '#111827' }} /> 
-                {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
-                {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}
-              </div>
-              <div className="flex flex-col items-end gap-2">
+            <div className="relative z-10 flex justify-between items-end border-t border-gray-100/50 pt-4 mt-4">
+              <div>
                 {svc.price > 0 && <span className="font-black text-xl text-gray-900 leading-none">¥ {svc.price.toLocaleString()}</span>}
               </div>
             </div>

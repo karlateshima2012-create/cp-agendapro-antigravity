@@ -573,21 +573,21 @@ export const PublicBookingPage: React.FC<Props> = ({
                           <div className="mb-4">
                             <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
                           </div>
-                          <p className="text-sm font-medium mb-8 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
-                        </div>
-                        <div className="flex justify-between items-center border-t border-gray-100/50 pt-6 mt-4">
-                          <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                          <p className="text-sm font-medium mb-6 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
+                          <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest mb-2" style={{ color: s.descriptionColor || '#9ca3af' }}>
                             <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                           </div>
-                          <div className="flex flex-col items-end gap-2">
+                        </div>
+                        <div className="flex justify-between items-end border-t border-gray-100/50 pt-6 mt-4">
+                          <div>
                             {s.price > 0 && <span className="font-black text-2xl text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
-                            <span 
-                              className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
-                              style={{ backgroundColor: primaryColor }}
-                            >
-                              {isSelected ? 'Selecionado ✓' : 'Selecionar'}
-                            </span>
                           </div>
+                          <span 
+                            className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
+                            style={{ backgroundColor: primaryColor }}
+                          >
+                            {isSelected ? 'Selecionado ✓' : 'Selecionar'}
+                          </span>
                         </div>
                       </div>
                     </button>
