@@ -305,7 +305,8 @@ export const PublicBookingPage: React.FC<Props> = ({
       const daySlots = selectedServices.length > 0 ? getSlotsForDate(dateStr) : [];
       const hasNoSlots = selectedServices.length > 0 && scheduleForDay && (scheduleForDay as any).timeType === 'fixed' && (!( scheduleForDay as any).fixedTimes || (scheduleForDay as any).fixedTimes.length === 0);
       const isDayFull = hasNoSlots || (selectedServices.length > 0 ? daySlots.length > 0 && daySlots.every(s => !s.isAvailable) : false);
-      const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull;
+      const isMonthAvailable = (availability.availableMonths || [1,2,3,4,5,6,7,8,9,10,11,12]).includes(month + 1);
+      const isUnavailable = isPastOrToday || isDayOff || isFullDayBlocked || isDayFull || !isMonthAvailable;
 
       // Cores para os finais de semana
       let weekendStyle = {};

@@ -72,6 +72,7 @@ export interface AvailabilityConfig {
   workingHours: WorkingHour[];
   blockedDates: BlockedDate[];
   intervalMinutes: number;
+  availableMonths?: number[];
 }
 
 export interface User {

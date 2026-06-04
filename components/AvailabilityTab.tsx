@@ -10,9 +10,13 @@ interface Props {
 
 export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
   const [localConfig, setLocalConfig] = useState<AvailabilityConfig>(() => {
-    if (!config) return { workingHours: [], blockedDates: [], intervalMinutes: 30 };
-    try { return JSON.parse(JSON.stringify(config)); }
-    catch (e) { return { workingHours: [], blockedDates: [], intervalMinutes: 30 }; }
+    if (!config) return { workingHours: [], blockedDates: [], intervalMinutes: 30, availableMonths: [1,2,3,4,5,6,7,8,9,10,11,12] };
+    try { 
+      const parsed = JSON.parse(JSON.stringify(config));
+      if (!parsed.availableMonths) parsed.availableMonths = [1,2,3,4,5,6,7,8,9,10,11,12];
+      return parsed; 
+    }
+    catch (e) { return { workingHours: [], blockedDates: [], intervalMinutes: 30, availableMonths: [1,2,3,4,5,6,7,8,9,10,11,12] }; }
   });
 
   const [newBlockDate, setNewBlockDate] = useState('');
@@ -387,6 +391,39 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 animate-fade-in">
+        <h3 className="text-lg font-bold text-gray-800 mb-2">Meses Disponíveis</h3>
+        <p className="text-gray-500 text-sm mb-6">
+          Selecione quais meses devem aparecer no calendário da página pública. Desmarque para impedir agendamentos naquele mês.
+        </p>
+
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2">
+          {['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'].map((monthName, index) => {
+            const monthNum = index + 1;
+            const isEnabled = (localConfig.availableMonths || [1,2,3,4,5,6,7,8,9,10,11,12]).includes(monthNum);
+            
+            return (
+              <button
+                key={monthNum}
+                onClick={() => {
+                  const current = localConfig.availableMonths || [1,2,3,4,5,6,7,8,9,10,11,12];
+                  const updated = isEnabled ? current.filter(m => m !== monthNum) : [...current, monthNum];
+                  setLocalConfig({ ...localConfig, availableMonths: updated.sort((a,b) => a - b) });
+                }}
+                className={`relative h-14 rounded-xl flex flex-col items-center justify-center transition-all ${
+                  isEnabled
+                    ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105 z-10 font-black'
+                    : 'bg-gray-50 border border-gray-200 text-gray-400 hover:bg-gray-100 font-bold'
+                }`}
+              >
+                {isEnabled && <Check size={14} className="absolute top-1 right-1 opacity-70" />}
+                <span className="text-xs">{monthName}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

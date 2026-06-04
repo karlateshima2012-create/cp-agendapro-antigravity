@@ -41,7 +41,7 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     }
 
     // Fetch Availability
-    $availability = Db::fetch('SELECT working_hours, interval_minutes FROM cp_agenda_availability WHERE account_id = ?', [$profile['id']]);
+    $availability = Db::fetch('SELECT working_hours, interval_minutes, available_months FROM cp_agenda_availability WHERE account_id = ?', [$profile['id']]);
     
     // Fetch Blocked Dates
     $blocked = Db::fetchAll('SELECT blocked_date as date, start_time as startTime, end_time as endTime, reason FROM cp_agenda_blocked_dates WHERE account_id = ?', [$profile['id']]);
@@ -51,13 +51,19 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
         $availability['workingHours'] = is_string($rawHours) ? json_decode($rawHours, true) : $rawHours;
         $availability['blockedDates'] = $blocked;
         $availability['intervalMinutes'] = (int)($availability['interval_minutes'] ?? 30);
+        
+        $rawMonths = $availability['available_months'] ?? null;
+        $availability['availableMonths'] = is_string($rawMonths) ? json_decode($rawMonths, true) : ($rawMonths ?? [1,2,3,4,5,6,7,8,9,10,11,12]);
+        
         unset($availability['working_hours']);
         unset($availability['interval_minutes']);
+        unset($availability['available_months']);
     } else {
         $availability = [
             'workingHours' => [], 
             'blockedDates' => $blocked, 
-            'intervalMinutes' => 30
+            'intervalMinutes' => 30,
+            'availableMonths' => [1,2,3,4,5,6,7,8,9,10,11,12]
         ];
     }
 
