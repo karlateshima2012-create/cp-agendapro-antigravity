@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Service, AccountInfo } from '../types';
-import { Plus, Edit2, Trash2, Clock, Upload, Image as ImageIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Clock, Upload, Image as ImageIcon, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 
 interface Props {
   account: AccountInfo;
@@ -11,6 +11,7 @@ interface Props {
 
 export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, services, onUpdateServices }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   // Form state
   const [formState, setFormState] = useState<Partial<Service>>({});
 
@@ -61,9 +62,14 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
     cancelEdit();
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Tem certeza que deseja excluir este serviço?')) {
-      onUpdateServices(services.filter(s => s.id !== id));
+  const handleDeleteRequest = (svc: Service) => {
+    setServiceToDelete(svc);
+  };
+
+  const confirmDelete = () => {
+    if (serviceToDelete) {
+      onUpdateServices(services.filter(s => s.id !== serviceToDelete.id));
+      setServiceToDelete(null);
     }
   };
 
@@ -392,7 +398,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                   <Edit2 size={16} />
                 </button>
                 <button 
-                  onClick={() => handleDelete(svc.id)} 
+                  onClick={() => handleDeleteRequest(svc)} 
                   className="p-1.5 text-white/70 hover:text-red-400 hover:bg-white/20 rounded-lg transition-all"
                   title="Excluir serviço"
                 >
@@ -418,6 +424,36 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {serviceToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setServiceToDelete(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in fade-in zoom-in duration-200 border border-gray-100">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4 mx-auto">
+              <AlertTriangle className="text-red-500" size={24} />
+            </div>
+            <h3 className="text-lg font-black text-center text-gray-900 mb-2">Excluir Serviço?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
+              Tem certeza que deseja excluir o serviço <span className="font-bold text-gray-900">"{serviceToDelete.name}"</span>? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setServiceToDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm shadow-red-500/20"
+              >
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
