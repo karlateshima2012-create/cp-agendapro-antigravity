@@ -529,7 +529,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                           {/* Bottom: Action */}
                           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                             <div className="flex-1">
-                               {s.price > 0 && <span className="font-black text-lg sm:text-xl text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                               {s.price > 0 && <span className="font-black text-xs text-gray-900">¥ {s.price.toLocaleString()}</span>}
                             </div>
                             <span 
                               className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white transition-all shadow-sm"
@@ -574,13 +574,13 @@ export const PublicBookingPage: React.FC<Props> = ({
                             <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
                           </div>
                           <p className="text-sm font-medium mb-4 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
-                          <div className="mt-auto mb-2 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                          <div className="mt-auto mb-3 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
                             <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                           </div>
                         </div>
-                        <div className="flex justify-between items-end border-t border-gray-100/50 pt-6 mt-4">
+                        <div className="flex justify-between items-center border-t border-gray-100/50 pt-4">
                           <div>
-                            {s.price > 0 && <span className="font-black text-2xl text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none tracking-widest uppercase">¥ {s.price.toLocaleString()}</span>}
                           </div>
                           <span 
                             className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
