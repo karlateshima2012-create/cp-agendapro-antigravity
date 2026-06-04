@@ -363,9 +363,9 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             )}
 
             <div className="relative z-10 flex justify-between items-start">
-              <div className="flex-1 pr-4">
-                <h3 className="font-bold text-lg capitalize tracking-tight" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
-                <p className="text-sm mt-1 line-clamp-2 capitalize leading-relaxed" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
+              <div className="flex-1 min-w-0 pr-4">
+                <h3 className="font-bold text-lg capitalize tracking-tight truncate break-words" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
+                <p className="text-sm mt-1 line-clamp-2 capitalize leading-relaxed break-words" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
               </div>
               <div className="flex gap-1 bg-black/80 p-1.5 rounded-xl backdrop-blur-sm shadow-sm border border-white/10 shrink-0">
                 <button 
