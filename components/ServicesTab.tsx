@@ -368,11 +368,11 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
               <div className="absolute inset-0 bg-white/60 pointer-events-none z-0" />
             )}
 
-            <div className="relative z-10 flex justify-between items-start">
-              <div className="flex-1 min-w-0 pr-4">
+            <div className="relative z-10 flex justify-between items-start flex-1">
+              <div className="flex-1 min-w-0 pr-4 flex flex-col">
                 <h3 className="font-bold text-lg capitalize tracking-tight truncate break-words" style={{ color: svc.nameColor || account.primaryColor || '#111827' }}>{svc.name}</h3>
-                <p className="text-sm mt-1 mb-3 line-clamp-2 capitalize leading-relaxed break-words" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
-                <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest mb-1" style={{ color: svc.descriptionColor || '#9ca3af' }}>
+                <p className="text-sm mt-1 mb-4 line-clamp-2 capitalize leading-relaxed break-words" style={{ color: svc.descriptionColor || '#6b7280' }}>{svc.description}</p>
+                <div className="mt-auto mb-2 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
                   <Clock size={16} style={{ color: account.primaryColor || '#111827' }} /> 
                   {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
                   {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}

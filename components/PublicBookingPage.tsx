@@ -569,12 +569,12 @@ export const PublicBookingPage: React.FC<Props> = ({
                       )}
 
                       <div className="relative z-10 flex flex-col h-full justify-between w-full">
-                        <div>
+                        <div className="flex-1 flex flex-col">
                           <div className="mb-4">
                             <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
                           </div>
-                          <p className="text-sm font-medium mb-6 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
-                          <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest mb-2" style={{ color: s.descriptionColor || '#9ca3af' }}>
+                          <p className="text-sm font-medium mb-4 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
+                          <div className="mt-auto mb-2 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
                             <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                           </div>
                         </div>
