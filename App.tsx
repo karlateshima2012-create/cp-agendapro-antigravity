@@ -133,6 +133,8 @@ const App: React.FC = () => {
         servicesSubtitle: prof.services_subtitle || '',
         coverImage: prof.cover_image || '',
         profileImage: prof.profile_image || '',
+        viewMode: prof.view_mode || 'card',
+        coverOpacity: prof.cover_opacity ?? 100,
         lifetimeAppointments: prof.lifetime_appointments || 0,
         createdAt: (prof.created_at || '').replace(' ', 'T'),
       };
@@ -218,6 +220,8 @@ const App: React.FC = () => {
         servicesSubtitle: account.services_subtitle || '',
         coverImage: account.cover_image || '',
         profileImage: account.profile_image || '',
+        viewMode: account.view_mode || 'card',
+        coverOpacity: account.cover_opacity ?? 100,
         telegramBotToken: account.telegram_bot_token || '',
         telegramChatId: account.telegram_chat_id || '',
         lifetimeAppointments: account.lifetime_appointments || 0,

@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_accounts` (
     `services_title` VARCHAR(255) DEFAULT 'Meus Serviços',
     `services_subtitle` VARCHAR(255) DEFAULT 'Selecione abaixo o serviço desejado',
     `cover_image` VARCHAR(255) DEFAULT '',
+    `view_mode` VARCHAR(10) DEFAULT 'card',
+    `cover_opacity` INT DEFAULT 100,
     `profile_image` VARCHAR(255) DEFAULT '',
     `telegram_bot_token` VARCHAR(255) DEFAULT '',
     `telegram_chat_id` VARCHAR(255) DEFAULT '',
@@ -58,6 +60,8 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_services` (
     `sort_order` INT DEFAULT 0,
     `image_url` LONGTEXT DEFAULT NULL,
     `image_opacity` INT DEFAULT 100,
+    `name_color` VARCHAR(7) DEFAULT '#ffffff',
+    `description_color` VARCHAR(7) DEFAULT '#9ca3af',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_service_account` FOREIGN KEY (`account_id`) REFERENCES `cp_agenda_accounts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

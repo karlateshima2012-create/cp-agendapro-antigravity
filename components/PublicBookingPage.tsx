@@ -27,6 +27,8 @@ interface Props {
   servicesSubtitle?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  viewMode?: 'card' | 'list';
+  coverOpacity?: number;
   services: Service[];
   availability: AvailabilityConfig;
   appointments: Appointment[];
@@ -44,6 +46,8 @@ export const PublicBookingPage: React.FC<Props> = ({
   servicesSubtitle,
   primaryColor = '#25aae1',
   secondaryColor = '#1f2937',
+  viewMode = 'card',
+  coverOpacity = 100,
   services,
   availability,
   appointments,
@@ -373,9 +377,9 @@ export const PublicBookingPage: React.FC<Props> = ({
 
         <header className="relative h-auto min-h-[280px] md:h-80 bg-gray-100 overflow-hidden">
           {/* Imagem de capa - preenche TODO o header */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-black">
             {coverImage ? (
-              <img src={coverImage} className="w-full h-full object-cover" alt="Banner" />
+              <img src={coverImage} className="w-full h-full object-cover" style={{ opacity: coverOpacity / 100 }} alt="Banner" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-primary to-indigo-900 opacity-90"></div>
             )}
@@ -460,11 +464,11 @@ export const PublicBookingPage: React.FC<Props> = ({
           {/* Conteúdo do header - NO FLUXO NORMAL para mobile, ABSOLUTE para desktop */}
           <div className="relative md:absolute px-6 pb-8 md:bottom-12 md:left-10 md:right-10 md:z-10 animate-fade-in md:pt-0">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
-              <span className="text-white/80 text-[10px] font-black uppercase tracking-[0.3em] bg-white/10 px-3 py-1 rounded-full border border-white/10">Agendamento Online</span>
+              <span className="text-white text-[10px] font-black uppercase tracking-[0.3em] bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 shadow-lg">Agendamento Online</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight mb-2 text-center md:text-left">{companyName}</h1>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight mb-2 text-center md:text-left drop-shadow-lg">{companyName}</h1>
             {shortDescription && step === 1 && (
-              <p className="text-white/70 text-sm md:text-base font-medium max-w-lg line-clamp-2 text-center md:text-left mx-auto md:mx-0">{shortDescription}</p>
+              <p className="text-white text-sm md:text-base font-bold max-w-lg line-clamp-2 text-center md:text-left mx-auto md:mx-0 drop-shadow-md">{shortDescription}</p>
             )}
           </div>
         </header>
@@ -483,9 +487,68 @@ export const PublicBookingPage: React.FC<Props> = ({
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={viewMode === 'list' ? "flex flex-col gap-4" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
                 {(services || []).length > 0 ? (services || []).map(s => {
                   const isSelected = selectedServices.some(curr => curr.id === s.id);
+                  
+                  if (viewMode === 'list') {
+                     return (
+                        <button
+                          key={s.id}
+                          onClick={() => toggleService(s)}
+                          className={`w-full bg-white border-2 rounded-2xl text-left transition-all group relative overflow-hidden shadow-sm hover:shadow-xl flex items-center p-4 gap-6`}
+                          style={isSelected
+                            ? { borderColor: primaryColor, backgroundColor: primaryColor + '08' }
+                            : { borderColor: '#f3f4f6' }
+                          }
+                        >
+                          {/* Left: Image */}
+                          {s.imageUrl && (
+                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 border border-gray-100 bg-gray-50">
+                               <img 
+                                 src={s.imageUrl} 
+                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                                 style={{ opacity: (s.imageOpacity ?? 100) / 100 }}
+                                 alt={s.name}
+                               />
+                            </div>
+                          )}
+
+                          {/* Center: Info */}
+                          <div className="flex-1 flex flex-col h-full justify-center">
+                            <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
+                            <p className="text-xs sm:text-sm font-medium mt-1 mb-3 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
+                            
+                            <div className="flex flex-wrap items-center gap-4">
+                              <div className="flex items-center gap-1 font-black text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-500">
+                                <Clock size={14} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
+                              </div>
+                              {s.price > 0 && <span className="font-black text-sm sm:text-base text-gray-900">¥ {s.price.toLocaleString()}</span>}
+                            </div>
+                          </div>
+
+                          {/* Right: Select Action */}
+                          <div className="shrink-0 flex flex-col items-end justify-center pr-2">
+                             <div
+                               className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${isSelected ? 'scale-110' : 'bg-gray-50 group-hover:bg-gray-100'}`}
+                               style={isSelected ? { backgroundColor: primaryColor } : {}}
+                             >
+                               {isSelected
+                                 ? <Check size={20} color="white" />
+                                 : <Briefcase size={20} className={isSelected ? "text-white" : "text-gray-400 group-hover:text-primary"} />
+                               }
+                             </div>
+                             <span 
+                               className="hidden sm:block text-[9px] font-black uppercase tracking-widest mt-2 px-3 py-1 rounded-lg text-white"
+                               style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
+                             >
+                               {isSelected ? 'Selecionado' : 'Selecionar'}
+                             </span>
+                          </div>
+                        </button>
+                     );
+                  }
+
                   return (
                     <button
                       key={s.id}
@@ -524,9 +587,9 @@ export const PublicBookingPage: React.FC<Props> = ({
                                 : <Briefcase size={22} color="white" />
                               }
                             </div>
-                            <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: isSelected ? primaryColor : '#111827' }}>{s.name}</h3>
+                            <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
                           </div>
-                          <p className="text-sm text-gray-400 font-medium mb-8 leading-relaxed line-clamp-3">{s.description}</p>
+                          <p className="text-sm font-medium mb-8 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
                         </div>
                         <div className="flex justify-between items-center border-t border-gray-100 pt-6 mt-4">
                           <div className="flex items-center gap-2 font-black text-[11px] text-gray-500 uppercase tracking-widest">

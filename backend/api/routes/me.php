@@ -15,7 +15,7 @@ if ($path === 'me' && $method === 'GET') {
     $account = Db::fetch(
         'SELECT name, status, plan_type, plan_expires_at,
                 primary_color, secondary_color, short_description, services_title,
-                services_subtitle, cover_image, profile_image, contact_phone,
+                services_subtitle, cover_image, view_mode, cover_opacity, profile_image, contact_phone,
                 telegram_bot_token, telegram_chat_id, onboarding_seen,
                 lifetime_appointments, created_at, invoices
          FROM cp_agenda_accounts WHERE id = ?',
@@ -36,7 +36,7 @@ if ($path === 'me/profile' && $method === 'PATCH') {
     $data = json_decode(file_get_contents('php://input'), true);
     
     // Filter allowed fields
-    $allowed = ['name', 'short_description', 'services_title', 'services_subtitle', 'primary_color', 'secondary_color', 'cover_image', 'profile_image', 'telegram_bot_token', 'telegram_chat_id'];
+    $allowed = ['name', 'short_description', 'services_title', 'services_subtitle', 'primary_color', 'secondary_color', 'cover_image', 'view_mode', 'cover_opacity', 'profile_image', 'telegram_bot_token', 'telegram_chat_id'];
     $sets = [];
     $params = [];
     foreach ($data as $key => $val) {

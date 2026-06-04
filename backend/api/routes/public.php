@@ -8,7 +8,7 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     $profile = Db::fetch('
         SELECT a.id, a.name, a.status, a.plan_type, a.plan_expires_at, a.primary_color, 
                a.secondary_color, a.short_description, a.services_title, a.services_subtitle, 
-               a.cover_image, a.profile_image, a.lifetime_appointments 
+               a.cover_image, a.view_mode, a.cover_opacity, a.profile_image, a.lifetime_appointments 
         FROM cp_agenda_accounts a
         JOIN cp_agenda_users u ON u.account_id = a.id
         WHERE u.id = ?', [$userId]);
@@ -30,12 +30,14 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
 
 
     // Fetch Services
-    $services = Db::fetchAll('SELECT id, name, description, duration_min AS duration, cleaning_buffer_min AS cleaning_buffer, price, image_url, image_opacity FROM cp_agenda_services WHERE account_id = ? ORDER BY sort_order ASC', [$profile['id']]);
+    $services = Db::fetchAll('SELECT id, name, description, duration_min AS duration, cleaning_buffer_min AS cleaning_buffer, price, image_url, image_opacity, name_color, description_color FROM cp_agenda_services WHERE account_id = ? ORDER BY sort_order ASC', [$profile['id']]);
     foreach ($services as &$s) {
         $s['price'] = (float)$s['price'];
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer'];
         $s['imageUrl'] = $s['image_url'] ?? '';
         $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
+        $s['nameColor'] = $s['name_color'] ?? '#ffffff';
+        $s['descriptionColor'] = $s['description_color'] ?? '#9ca3af';
     }
 
     // Fetch Availability

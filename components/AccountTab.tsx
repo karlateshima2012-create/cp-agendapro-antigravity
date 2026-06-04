@@ -30,6 +30,8 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   const [servicesSubtitle, setServicesSubtitle] = useState(account.servicesSubtitle || '');
   const [primaryColor, setPrimaryColor] = useState(account.primaryColor || '#25aae1');
   const [secondaryColor, setSecondaryColor] = useState(account.secondaryColor || '#1f2937');
+  const [viewMode, setViewMode] = useState<'card'|'list'>(account.viewMode || 'card');
+  const [coverOpacity, setCoverOpacity] = useState<number>(account.coverOpacity ?? 100);
 
   // Sincronizar estado local quando os props mudarem (ex: após salvar ou carregar)
   useEffect(() => {
@@ -42,6 +44,8 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
     setServicesSubtitle(account.servicesSubtitle || '');
     setPrimaryColor(account.primaryColor || '#25aae1');
     setSecondaryColor(account.secondaryColor || '#1f2937');
+    setViewMode(account.viewMode || 'card');
+    setCoverOpacity(account.coverOpacity ?? 100);
   }, [account]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +155,12 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       }
       if (secondaryColor !== origSecondaryColor) {
         payload.secondaryColor = secondaryColor;
+      }
+      if (viewMode !== (account.viewMode || 'card')) {
+        payload.viewMode = viewMode;
+      }
+      if (coverOpacity !== (account.coverOpacity ?? 100)) {
+        payload.coverOpacity = coverOpacity;
       }
 
       // Se houver campos alterados, faz o update. Caso contrário, apenas encerra salvamento instantaneamente (sucesso)
@@ -304,7 +314,40 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
-                <div>
+                <div className="mt-4">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Opacidade da Capa ({coverOpacity}%)</label>
+                  <input 
+                    type="range" 
+                    min="0" max="100" 
+                    value={coverOpacity} 
+                    onChange={e => setCoverOpacity(parseInt(e.target.value))}
+                    className="w-full accent-primary"
+                  />
+                  <p className="text-[9px] text-gray-400 mt-1">Ajuste a transparência da imagem de capa para destacar melhor os textos.</p>
+                </div>
+
+                <div className="mt-6">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase mb-2 block">Modo de Exibição dos Serviços</label>
+                  <div className="flex gap-4">
+                    <label className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all ${viewMode === 'card' ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-blue-200'}`}>
+                      <input type="radio" name="viewMode" value="card" checked={viewMode === 'card'} onChange={() => setViewMode('card')} className="hidden" />
+                      <div className="w-8 h-8 rounded-md bg-gray-200 mb-2 flex items-center justify-center">
+                         <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-700">Cards</span>
+                    </label>
+                    <label className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all ${viewMode === 'list' ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-blue-200'}`}>
+                      <input type="radio" name="viewMode" value="list" checked={viewMode === 'list'} onChange={() => setViewMode('list')} className="hidden" />
+                      <div className="w-8 h-8 rounded-md bg-transparent border-2 border-gray-200 mb-2 flex flex-col items-center justify-center gap-1 p-1">
+                         <div className="w-full h-1.5 bg-gray-400 rounded-sm"></div>
+                         <div className="w-full h-1.5 bg-gray-400 rounded-sm"></div>
+                      </div>
+                      <span className="text-xs font-bold text-gray-700">Lista Elegante</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mt-6">
                   <label className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <ImageIcon size={16} /> Logo / Foto de Perfil
                   </label>

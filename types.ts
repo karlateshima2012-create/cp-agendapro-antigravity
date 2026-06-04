@@ -13,6 +13,8 @@ export interface Service {
   price: number;
   imageUrl?: string;
   imageOpacity?: number;
+  nameColor?: string;
+  descriptionColor?: string;
 }
 
 export interface Appointment {
@@ -105,6 +107,8 @@ export interface User {
   hasDescription?: boolean;
   createdAt?: string;
   invoices?: Invoice[];
+  viewMode?: 'card' | 'list';
+  coverOpacity?: number;
 }
 
 export interface AccountInfo {
@@ -128,4 +132,6 @@ export interface AccountInfo {
   onboardingSeen?: boolean;
   createdAt?: string;
   invoices?: Invoice[];
+  viewMode?: 'card' | 'list';
+  coverOpacity?: number;
 }

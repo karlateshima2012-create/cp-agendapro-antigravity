@@ -12,6 +12,8 @@ if ($path === 'services' && $method === 'GET') {
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer_min'];
         $s['imageUrl'] = $s['image_url'] ?? '';
         $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
+        $s['nameColor'] = $s['name_color'] ?? '#ffffff';
+        $s['descriptionColor'] = $s['description_color'] ?? '#9ca3af';
     }
     Response::ok($services);
 }
@@ -29,7 +31,7 @@ if ($path === 'services' && $method === 'PUT') {
 
         foreach ($data as $index => $svc) {
             Db::query(
-                'INSERT INTO cp_agenda_services (account_id, name, description, duration_min, cleaning_buffer_min, price, sort_order, image_url, image_opacity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO cp_agenda_services (account_id, name, description, duration_min, cleaning_buffer_min, price, sort_order, image_url, image_opacity, name_color, description_color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $accountId,
                     $svc['name'] ?? 'Serviço',
@@ -39,7 +41,9 @@ if ($path === 'services' && $method === 'PUT') {
                     $svc['price'] ?? 0,
                     $index,
                     $svc['imageUrl'] ?? null,
-                    $svc['imageOpacity'] ?? 100
+                    $svc['imageOpacity'] ?? 100,
+                    $svc['nameColor'] ?? '#ffffff',
+                    $svc['descriptionColor'] ?? '#9ca3af'
                 ]
             );
         }
