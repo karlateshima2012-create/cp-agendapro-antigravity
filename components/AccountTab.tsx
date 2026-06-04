@@ -417,22 +417,22 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               href="https://t.me/Cpagendaprobot?start=setup"
               target="_blank"
               rel="noreferrer"
-              className="bg-primary text-white text-center rounded-2xl font-black text-[10px] uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 h-14"
+              className="bg-primary w-full text-white text-center rounded-2xl font-black text-[10px] uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 h-14"
             >
               <Bell size={18} /> CLIQUE E COPIE O CHAT ID
             </a>
             
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-2">
               <input
                 type="text"
                 value={telegramChatId}
                 onChange={e => setTelegramChatId(e.target.value)}
                 placeholder="COLE O CHAT ID AQUI"
-                className="flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
+                className="w-full flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
               />
               <button
                 onClick={testNotification}
-                className="bg-gray-900 text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10 h-14 shrink-0"
+                className="w-full sm:w-auto bg-gray-900 text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10 h-14 shrink-0"
               >
                 <Bell size={16} /> Testar
               </button>
