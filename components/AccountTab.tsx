@@ -407,72 +407,35 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
 
         {/* TELEGRAM */}
         <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
-          <h3 className="font-bold text-gray-900 mb-8 flex items-center gap-3">
+          <h3 className="font-bold text-gray-900 flex items-center gap-3">
             <Bell size={20} className="text-yellow-500" /> Notificações via Telegram
           </h3>
+          <p className="text-sm text-gray-500 mt-2 mb-6">Ative Lembretes automáticos com aviso sonoro via Telegram</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100 flex flex-col gap-6 transition-all hover:bg-blue-50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center font-black shadow-lg shadow-primary/20 rotate-3">1</div>
-                  <div>
-                    <p className="text-base font-black text-gray-900 uppercase tracking-tight">Ative seu Assistente</p>
-                    <p className="text-xs text-gray-500 font-medium leading-relaxed">Clique no botão abaixo para abrir o Robô Oficial. Lá você receberá seu <b>ID de Notificação</b> instantaneamente.</p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <a
-                    href="https://t.me/Cpagendaprobot?start=setup"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-primary text-white text-center py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20 flex items-center justify-center gap-3"
-                  >
-                    <Bell size={20} /> Clique para Ativar Chat ID
-                  </a>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">O robô responderá seu ID na hora</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-blue-100/50">
-                  <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-3">O que você receberá no Telegram:</p>
-                  <div className="bg-white/60 p-4 rounded-2xl border border-blue-50 text-[11px] text-gray-600 font-medium leading-relaxed italic">
-                    "Olá! 🆔 Seu Chat ID: 128010XXXX... Copie este número e cole no campo ao lado."
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-100 space-y-4">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">Configuração Final</label>
-                <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase mb-2 ml-1">Seu Chat ID</label>
-                  <input
-                    type="text"
-                    value={telegramChatId}
-                    onChange={e => setTelegramChatId(e.target.value)}
-                    placeholder="Digite seu ID"
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-sm font-mono ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-300 shadow-sm"
-                  />
-                </div>
-                <button
-                  onClick={testNotification}
-                  className="w-full bg-gray-900 text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10"
-                >
-                  <Bell size={16} /> Testar Notificação
-                </button>
-              </div>
-
-              <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 flex items-start gap-3">
-                <Info size={16} className="text-gray-400 mt-1 flex-shrink-0" />
-                <p className="text-[10px] text-gray-500 font-bold leading-relaxed uppercase tracking-tight">
-                  Após inserir o ID, lembre-se de clicar no botão "Salvar Alterações" no fim da página.
-                </p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a
+              href="https://t.me/Cpagendaprobot?start=setup"
+              target="_blank"
+              rel="noreferrer"
+              className="bg-primary text-white text-center rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3 h-14"
+            >
+              <Bell size={20} /> Clique para Ativar Chat ID
+            </a>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={telegramChatId}
+                onChange={e => setTelegramChatId(e.target.value)}
+                placeholder="Cole seu ID aqui"
+                className="flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-sm font-mono ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-300 shadow-sm h-14"
+              />
+              <button
+                onClick={testNotification}
+                className="bg-gray-900 text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10 h-14 shrink-0"
+              >
+                <Bell size={16} /> Testar
+              </button>
             </div>
           </div>
         </div>
