@@ -12,8 +12,8 @@ if ($path === 'services' && $method === 'GET') {
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer_min'];
         $s['imageUrl'] = $s['image_url'] ?? '';
         $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
-        $s['nameColor'] = $s['name_color'] ?? '#ffffff';
-        $s['descriptionColor'] = $s['description_color'] ?? '#9ca3af';
+        $s['nameColor'] = $s['name_color'] ?? null;
+        $s['descriptionColor'] = $s['description_color'] ?? null;
     }
     Response::ok($services);
 }
@@ -42,8 +42,8 @@ if ($path === 'services' && $method === 'PUT') {
                     $index,
                     $svc['imageUrl'] ?? null,
                     $svc['imageOpacity'] ?? 100,
-                    $svc['nameColor'] ?? '#ffffff',
-                    $svc['descriptionColor'] ?? '#9ca3af'
+                    $svc['nameColor'] ?? null,
+                    $svc['descriptionColor'] ?? null
                 ]
             );
         }

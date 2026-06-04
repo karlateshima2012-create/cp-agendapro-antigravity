@@ -516,7 +516,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
                             {/* Center: Info */}
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
+                              <h3 className="font-black text-lg sm:text-xl tracking-tight capitalize" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
                               <p className="text-xs sm:text-sm font-medium mt-1 mb-2 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
                               
                               <div className="flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
@@ -569,7 +569,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                       <div className="relative z-10 flex flex-col h-full justify-between w-full">
                         <div>
                           <div className="mb-4">
-                            <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || (isSelected ? primaryColor : '#111827') }}>{s.name}</h3>
+                            <h3 className="font-black text-2xl capitalize tracking-tight" style={{ color: s.nameColor || primaryColor }}>{s.name}</h3>
                           </div>
                           <p className="text-sm font-medium mb-8 leading-relaxed line-clamp-3" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
                         </div>

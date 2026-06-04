@@ -36,8 +36,8 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
         $s['cleaning_buffer'] = (int)$s['cleaning_buffer'];
         $s['imageUrl'] = $s['image_url'] ?? '';
         $s['imageOpacity'] = isset($s['image_opacity']) ? (int)$s['image_opacity'] : 100;
-        $s['nameColor'] = $s['name_color'] ?? '#ffffff';
-        $s['descriptionColor'] = $s['description_color'] ?? '#9ca3af';
+        $s['nameColor'] = $s['name_color'] ?? null;
+        $s['descriptionColor'] = $s['description_color'] ?? null;
     }
 
     // Fetch Availability
