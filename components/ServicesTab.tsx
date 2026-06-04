@@ -408,7 +408,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             </div>
             <div className="relative z-10 flex justify-between items-center border-t border-gray-100/50 pt-4 mt-4">
               <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: svc.descriptionColor || '#9ca3af' }}>
-                <Clock size={16} /> 
+                <Clock size={16} style={{ color: account.primaryColor || '#111827' }} /> 
                 {svc.duration < 60 ? `${svc.duration} min` : (svc.duration === 1440 ? '24h (Diária)' : `${svc.duration / 60}h`)}
                 {svc.cleaning_buffer > 0 && ` (+${svc.cleaning_buffer < 60 ? `${svc.cleaning_buffer}m` : `${svc.cleaning_buffer / 60}h`} Limpeza)`}
               </div>

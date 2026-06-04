@@ -521,7 +521,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                               <p className="text-xs sm:text-sm font-medium mt-1 mb-2 line-clamp-2" style={{ color: s.descriptionColor || '#9ca3af' }}>{s.description}</p>
                               
                               <div className="flex items-center gap-1.5 font-black text-[10px] sm:text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
-                                <Clock size={14} /> {formatDurationFriendly(s.duration)}
+                                <Clock size={14} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                               </div>
                             </div>
                           </div>
@@ -533,7 +533,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                             </div>
                             <span 
                               className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white transition-all shadow-sm"
-                              style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
+                              style={{ backgroundColor: primaryColor }}
                             >
                               {isSelected ? 'Selecionado ✓' : 'Selecionar'}
                             </span>
@@ -577,13 +577,13 @@ export const PublicBookingPage: React.FC<Props> = ({
                         </div>
                         <div className="flex justify-between items-center border-t border-gray-100/50 pt-6 mt-4">
                           <div className="flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest" style={{ color: s.descriptionColor || '#9ca3af' }}>
-                            <Clock size={16} /> {formatDurationFriendly(s.duration)}
+                            <Clock size={16} style={{ color: primaryColor }} /> {formatDurationFriendly(s.duration)}
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             {s.price > 0 && <span className="font-black text-2xl text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
                             <span 
                               className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
-                              style={{ backgroundColor: isSelected ? primaryColor : '#d1d5db' }}
+                              style={{ backgroundColor: primaryColor }}
                             >
                               {isSelected ? 'Selecionado ✓' : 'Selecionar'}
                             </span>
