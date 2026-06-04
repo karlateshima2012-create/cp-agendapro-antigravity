@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Service } from '../types';
+import { Service, AccountInfo } from '../types';
 import { Plus, Edit2, Trash2, Clock, Upload, Image as ImageIcon, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Props {
+  account: AccountInfo;
+  onUpdateAccount: (settings: Partial<AccountInfo>) => void;
   services: Service[];
   onUpdateServices: (services: Service[]) => void;
 }
 
-export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => {
+export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, services, onUpdateServices }) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   // Form state
   const [formState, setFormState] = useState<Partial<Service>>({});
@@ -137,17 +139,33 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Meus Serviços</h2>
           <p className="text-gray-500 text-sm">Gerencie os serviços que seus clientes podem agendar.</p>
         </div>
-        <button
-          onClick={startNew}
-          className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2"
-        >
-          <Plus size={20} /> Novo Serviço
-        </button>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex bg-gray-100 p-1 rounded-xl items-center shadow-inner flex-1 sm:flex-none">
+            <button
+              onClick={() => onUpdateAccount({ viewMode: 'card' })}
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1.5 ${(!account.viewMode || account.viewMode === 'card') ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Cards
+            </button>
+            <button
+              onClick={() => onUpdateAccount({ viewMode: 'list' })}
+              className={`flex-1 sm:flex-none px-4 py-2 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1.5 ${account.viewMode === 'list' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Lista
+            </button>
+          </div>
+          <button
+            onClick={startNew}
+            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 flex-shrink-0"
+          >
+            <Plus size={20} /> Novo
+          </button>
+        </div>
       </div>
 
       {editingId !== null && (
@@ -159,7 +177,20 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
           <h3 className="font-bold text-lg mb-4 text-primary">{editingId === 0 ? 'Novo Serviço' : 'Editar Serviço'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Nome</label>
+                <div className="flex items-center gap-1.5 cursor-pointer" title="Cor do Nome">
+                  <span className="text-[10px] text-gray-400 uppercase font-black">Cor</span>
+                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.nameColor || '#ffffff' }}>
+                    <input
+                      type="color"
+                      value={formState.nameColor || '#ffffff'}
+                      onChange={e => setFormState({ ...formState, nameColor: e.target.value })}
+                      className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer opacity-0"
+                    />
+                  </div>
+                </div>
+              </div>
               <input
                 type="text"
                 name="service_name_field"
@@ -181,7 +212,20 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Descrição</label>
+                <div className="flex items-center gap-1.5 cursor-pointer" title="Cor da Descrição">
+                  <span className="text-[10px] text-gray-400 uppercase font-black">Cor</span>
+                  <div className="relative w-5 h-5 rounded-full overflow-hidden border border-gray-300 shadow-sm" style={{ backgroundColor: formState.descriptionColor || '#9ca3af' }}>
+                    <input
+                      type="color"
+                      value={formState.descriptionColor || '#9ca3af'}
+                      onChange={e => setFormState({ ...formState, descriptionColor: e.target.value })}
+                      className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer opacity-0"
+                    />
+                  </div>
+                </div>
+              </div>
               <textarea
                 rows={2}
                 name="service_description_field"
@@ -191,29 +235,6 @@ export const ServicesTab: React.FC<Props> = ({ services, onUpdateServices }) => 
                 onChange={e => setFormState({ ...formState, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary outline-none capitalize"
               />
-            </div>
-
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cor do Nome</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={formState.nameColor || '#ffffff'}
-                  onChange={e => setFormState({ ...formState, nameColor: e.target.value })}
-                  className="w-full h-10 rounded-lg cursor-pointer bg-transparent border-none"
-                />
-              </div>
-            </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cor da Descrição</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={formState.descriptionColor || '#9ca3af'}
-                  onChange={e => setFormState({ ...formState, descriptionColor: e.target.value })}
-                  className="w-full h-10 rounded-lg cursor-pointer bg-transparent border-none"
-                />
-              </div>
             </div>
 
             <div className="col-span-2 md:col-span-1">

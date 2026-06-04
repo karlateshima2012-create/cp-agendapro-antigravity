@@ -134,6 +134,8 @@ export const ClientDashboard: React.FC<Props> = ({
               <div className={activeTab === 'services' ? 'block' : 'hidden'}>
                 <ServicesTab
                   key={JSON.stringify(services)}
+                  account={account}
+                  onUpdateAccount={onUpdateAccount}
                   services={services}
                   onUpdateServices={onUpdateServices}
                 />

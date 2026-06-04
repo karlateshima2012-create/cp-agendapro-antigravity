@@ -1,7 +1,7 @@
 #!/usr/bin/expect -f
 
 set timeout 300
-set password "23KDHkt10cp$"
+set password "Creative23SSHcp@"
 set user "u176367625"
 set host "46.202.186.144"
 set port "65002"

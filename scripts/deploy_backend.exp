@@ -3,7 +3,7 @@ set timeout 300
 set port 65002
 set user "u176367625"
 set host "46.202.186.144"
-set password "23KDHkt10cp$"
+set password "Creative23SSHcp@"
 set remote_path "domains/creativeprintjp.com/public_html/cpagendapro"
 
 # Note: This script assumes 'backend_deploy.zip' is already created by the caller (shell script)
