@@ -505,7 +505,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       {/* FOOTER & TERMOS */}
       <div className="flex flex-col items-center justify-center pt-8 pb-12 opacity-60 hover:opacity-100 transition-opacity mt-8">
         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">
-          © {new Date().getFullYear()} CREATIVE PRINT. TODOS OS DIREITOS RESERVADOS.
+          © {new Date().getFullYear()} creative print. todos os direitos reservados.
         </p>
         <button 
           onClick={() => setShowTermsModal(true)}

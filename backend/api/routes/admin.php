@@ -228,7 +228,7 @@ if ($path === 'admin/users' && $method === 'POST') {
                 </p>
             </div>
             <div style='background: #f1f5f9; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;'>
-                © " . date('Y') . " Creative Print - CP Agenda Pro. Todos os direitos reservados.
+                © " . date('Y') . " creative print. todos os direitos reservados.
             </div>
         </div>
         ";
