@@ -404,22 +404,27 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
           {['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'].map((monthName, index) => {
             const monthNum = index + 1;
             const isEnabled = (localConfig.availableMonths || [1,2,3,4,5,6,7,8,9,10,11,12]).includes(monthNum);
+            const currentMonthNum = new Date().getMonth() + 1;
+            const isPast = monthNum < currentMonthNum;
             
             return (
               <button
                 key={monthNum}
+                disabled={isPast}
                 onClick={() => {
                   const current = localConfig.availableMonths || [1,2,3,4,5,6,7,8,9,10,11,12];
                   const updated = isEnabled ? current.filter(m => m !== monthNum) : [...current, monthNum];
                   setLocalConfig({ ...localConfig, availableMonths: updated.sort((a,b) => a - b) });
                 }}
                 className={`relative h-14 rounded-xl flex flex-col items-center justify-center transition-all ${
-                  isEnabled
-                    ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105 z-10 font-black'
-                    : 'bg-gray-50 border border-gray-200 text-gray-400 hover:bg-gray-100 font-bold'
+                  isPast
+                    ? 'bg-gray-100 border border-gray-200 text-gray-400 opacity-50 line-through cursor-not-allowed'
+                    : isEnabled
+                      ? 'bg-primary text-white shadow-md shadow-primary/20 scale-105 z-10 font-black'
+                      : 'bg-gray-50 border border-gray-200 text-gray-400 hover:bg-gray-100 font-bold'
                 }`}
               >
-                {isEnabled && <Check size={14} className="absolute top-1 right-1 opacity-70" />}
+                {isEnabled && !isPast && <Check size={14} className="absolute top-1 right-1 opacity-70" />}
                 <span className="text-xs">{monthName}</span>
               </button>
             );
