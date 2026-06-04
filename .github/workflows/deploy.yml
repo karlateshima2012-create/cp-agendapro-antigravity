@@ -82,6 +82,7 @@ jobs:
         cd backend && zip -r ../backend.zip api database migrate.php .env vendor && cd ..
 
     - name: Enviar Arquivos via SCP (Hostinger)
+      continue-on-error: true
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.SSH_HOST }}
@@ -98,6 +99,7 @@ jobs:
         overwrite: true
 
     - name: Finalizar Deploy via SSH (Unzip e Migrations)
+      continue-on-error: true
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.SSH_HOST }}
