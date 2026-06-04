@@ -374,6 +374,14 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center">
+      <style>{`
+        .focus-border-dynamic:focus {
+          border-color: ${primaryColor} !important;
+        }
+        .focus-within-text-dynamic:focus-within {
+          color: ${primaryColor} !important;
+        }
+      `}</style>
       <div className="w-full max-w-4xl bg-white md:my-10 md:rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-screen md:min-h-0 border border-gray-100">
 
         <header className="relative h-auto min-h-[280px] md:h-80 bg-gray-100 overflow-hidden">
@@ -737,21 +745,21 @@ export const PublicBookingPage: React.FC<Props> = ({
               <form onSubmit={(e) => { e.preventDefault(); setStep(4); }} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Nome Completo *</label>
-                  <div className="relative group">
-                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
-                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-400 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: João da Silva" />
+                  <div className="relative group focus-within-text-dynamic">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-current transition-colors" size={20} />
+                    <input required className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus-border-dynamic focus:bg-white text-gray-900 outline-none transition-all font-bold text-lg placeholder:text-gray-400 placeholder:font-medium" value={clientData.name} onChange={e => setClientData({ ...clientData, name: toTitleCase(e.target.value) })} placeholder="Ex: João da Silva" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">WhatsApp / Telefone *</label>
-                  <div className="relative group">
-                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
+                  <div className="relative group focus-within-text-dynamic">
+                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-current transition-colors" size={20} />
                     <input
                       required
                       type="tel"
                       inputMode="numeric"
                       maxLength={13}
-                      className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus:border-primary focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
+                      className="w-full pl-16 pr-6 py-5 rounded-3xl bg-white border-2 border-gray-200 shadow-sm focus-border-dynamic focus:bg-white text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}
                       placeholder="090 0000 0000"
