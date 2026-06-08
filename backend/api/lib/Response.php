@@ -5,7 +5,13 @@ class Response {
     public static function json($payload, $code = 200) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code($code);
-        echo json_encode($payload);
+        $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($encoded === false) {
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'JSON encoding failed: ' . json_last_error_msg()]);
+        } else {
+            echo $encoded;
+        }
         exit;
     }
 

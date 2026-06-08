@@ -428,7 +428,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                 value={telegramChatId}
                 onChange={e => setTelegramChatId(e.target.value)}
                 placeholder="COLE O CHAT ID AQUI"
-                className="block w-full sm:flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
+                className="block appearance-none m-0 w-full sm:flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
               />
               <button
                 onClick={testNotification}
