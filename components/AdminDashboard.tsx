@@ -467,6 +467,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                           <div className={`text-[9px] font-black mt-0.5 ${(client.servicesCount ?? 0) === 0 ? 'text-red-500' : 'text-gray-500'}`}>
                             {client.servicesCount ?? 0} serviço{(client.servicesCount ?? 0) !== 1 ? 's' : ''}
                           </div>
+                          <div className="w-full border-t border-gray-100 pt-1 mt-0.5 flex justify-center gap-1 items-center">
+                            <span className="text-[10px]">👁️</span>
+                            <span className="text-[9px] text-gray-500 font-bold">{client.pageViews || 0} views</span>
+                          </div>
                         </div>
                       </td>
 

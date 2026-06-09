@@ -147,7 +147,7 @@ export const ClientDashboard: React.FC<Props> = ({
               </div>
 
               <div className={activeTab === 'gestao' ? 'block' : 'hidden'}>
-                <GestaoTab services={services} appointments={appointments} />
+                <GestaoTab services={services} appointments={appointments} account={account} />
               </div>
 
               <div className={activeTab === 'account' ? 'block' : 'hidden'}>

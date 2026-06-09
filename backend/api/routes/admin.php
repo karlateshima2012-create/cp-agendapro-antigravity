@@ -21,6 +21,7 @@ if ($path === 'admin/profiles' && $method === 'GET') {
             a.lifetime_appointments AS appointmentCount,
             a.last_access_at  AS lastAccessAt,
             a.created_at      AS createdAt,
+            a.page_views      AS pageViews,
 
             (SELECT MAX(start_at)
                FROM cp_agenda_appointments
@@ -238,7 +239,8 @@ if ($path === 'admin/users' && $method === 'POST') {
         Response::ok(['id' => $pdo->lastInsertId()]);
     } catch (Exception $e) {
         $pdo->rollBack();
-        Response::fail($e->getMessage());
+        Monitor::critical('Falha ao criar usuário admin', ['error' => $e->getMessage()]);
+        Response::fail('Erro interno ao criar usuário. Tente novamente.', 500);
     }
 }
 

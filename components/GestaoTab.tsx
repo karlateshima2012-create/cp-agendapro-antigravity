@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../src/api';
-import { Appointment, Service } from '../types';
+import { Appointment, Service, AccountInfo } from '../types';
 import {
   TrendingUp, Award, BarChart3, Users, AlertCircle,
   Clock, CheckCircle2, XCircle, Star, Calendar,
@@ -10,9 +10,10 @@ import {
 interface Props {
   services: Service[];
   appointments: Appointment[];
+  account?: AccountInfo;
 }
 
-export const GestaoTab: React.FC<Props> = ({ services }) => {
+export const GestaoTab: React.FC<Props> = ({ services, account }) => {
   const [allHistory, setAllHistory] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +75,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
     const n = a.serviceName || 'Serviço';
     if (!svcMap[n]) svcMap[n] = { count: 0, revenue: 0 };
     svcMap[n].count++;
-    svcMap[n].revenue += getPrice(n);
+    svcMap[n].revenue += (getPrice(n) as number);
   });
   const svcRanking = Object.entries(svcMap)
     .map(([name, d]) => ({ name, ...d }))
@@ -211,6 +212,14 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
             <p className="text-[9px] text-gray-300 font-bold mt-0.5">{lastMAppts.length} no mês anterior</p>
           </div>
 
+          <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <TrendingUp size={20} className="text-blue-500" />
+            </div>
+            <p className="text-3xl font-black text-gray-900">{account?.pageViews || 0}</p>
+            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">VIEWS NA PÁGINA PÚBLICA</p>
+          </div>
+
           {hasAnyPrice ? (
             <>
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
@@ -236,6 +245,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
             <p className="text-3xl font-black text-gray-900">{uniqueClients}</p>
             <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Clientes únicos (total)</p>
           </div>
+          
         </div>
       </section>
 

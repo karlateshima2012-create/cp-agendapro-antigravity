@@ -51,6 +51,7 @@ jobs:
         SECRET_TELEGRAM: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         SECRET_TELEGRAM_MONITOR: ${{ secrets.TELEGRAM_MONITOR_TOKEN }}
         SECRET_TELEGRAM_ERROR_CHAT_ID: ${{ secrets.TELEGRAM_ERROR_CHAT_ID }}
+        SECRET_TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
         SECRET_SMTP_USER: ${{ secrets.SMTP_USER }}
         SECRET_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         SECRET_SMTP_FROM: ${{ secrets.SMTP_FROM }}
@@ -67,6 +68,7 @@ jobs:
         echo "TELEGRAM_BOT_TOKEN=${SECRET_TELEGRAM}" >> backend/.env
         echo "TELEGRAM_MONITOR_TOKEN=${SECRET_TELEGRAM_MONITOR}" >> backend/.env
         echo "TELEGRAM_ERROR_CHAT_ID=${SECRET_TELEGRAM_ERROR_CHAT_ID}" >> backend/.env
+        echo "TELEGRAM_ADMIN_CHAT_ID=${SECRET_TELEGRAM_ADMIN_CHAT_ID}" >> backend/.env
         echo "SMTP_HOST=smtp.hostinger.com" >> backend/.env
         echo "SMTP_PORT=465" >> backend/.env
         echo "SMTP_USER=${SECRET_SMTP_USER}" >> backend/.env
@@ -100,20 +102,34 @@ jobs:
         script: |
           set -e
 
+          # Verificação de identidade — aborta se o diretório for de outro projeto
+          PROJECT_MARKER="/var/www/cpagendapro/.project-id"
+          EXPECTED_ID="cpagenda-jp-v1"
+          if [ ! -f "$PROJECT_MARKER" ]; then
+            echo "ERRO: .project-id ausente em /var/www/cpagendapro. Deploy cancelado."
+            exit 1
+          fi
+          ACTUAL_ID=$(cat "$PROJECT_MARKER")
+          if [ "$ACTUAL_ID" != "$EXPECTED_ID" ]; then
+            echo "ERRO: ID de projeto incorreto ('$ACTUAL_ID' != '$EXPECTED_ID'). Deploy cancelado."
+            exit 1
+          fi
+          echo "Identidade verificada: $ACTUAL_ID"
+
           # Backend: descompactar sobre a pasta existente
           unzip -o /tmp/backend.zip -d /var/www/cpagendapro/backend/
           rm /tmp/backend.zip
           chmod 640 /var/www/cpagendapro/backend/.env
 
           # Frontend: limpar e descompactar
-          rm -rf /var/www/cpagendapro/public/*
+          rm -rf /var/www/cpagendapro/public/assets
           unzip -o /tmp/dist.zip -d /var/www/cpagendapro/public/
           rm /tmp/dist.zip
 
           # Migrations (idempotente — seguro rodar em todo deploy)
           php /var/www/cpagendapro/backend/migrate.php
 
-          # Recarregar PHP-FPM para limpar opcache
-          sudo systemctl reload php8.3-fpm
+          # Recarregar PHP-FPM e corrigir permissões via script validado
+          /home/deploy/bin/safe-deploy-jp.sh
 
           echo "Deploy concluído com sucesso em $(date)"

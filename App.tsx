@@ -116,6 +116,10 @@ const App: React.FC = () => {
     try {
       const resp = await api.getPublicProfile(userId); // Need to add this to api.ts or use a generic one
       if (!resp.ok) return;
+      
+      // Increment page views in background
+      api.incrementPublicView(userId).catch(console.error);
+      
       const { profile: prof, services: svcs, availability: avail, appointments: appts } = resp.data as any;
 
       const accountInfo: AccountInfo = {
@@ -228,6 +232,7 @@ const App: React.FC = () => {
         onboardingSeen: !!account.onboarding_seen,
         createdAt: (account.created_at || '').replace(' ', 'T'),
         invoices: account.invoices || [],
+        pageViews: account.page_views || 0,
       };
       setProfile(accountInfo);
 

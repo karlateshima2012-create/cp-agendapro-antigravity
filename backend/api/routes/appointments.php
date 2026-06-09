@@ -144,8 +144,11 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
         // TELEGRAM NOTIFICATION (Outside transaction)
         try {
             $acc = Db::fetch('SELECT telegram_bot_token, telegram_chat_id FROM cp_agenda_accounts WHERE id = ?', [$accId]);
-            if ($acc && !empty($acc['telegram_bot_token']) && !empty($acc['telegram_chat_id'])) {
-                $token = $acc['telegram_bot_token'];
+            // Prefer account-specific bot; fall back to official bot from env var
+            $officialToken = get_env_var('TELEGRAM_BOT_TOKEN', '');
+            $resolvedToken = !empty($acc['telegram_bot_token']) ? $acc['telegram_bot_token'] : $officialToken;
+            if ($acc && !empty($resolvedToken) && !empty($acc['telegram_chat_id'])) {
+                $token = $resolvedToken;
                 $chatId = $acc['telegram_chat_id'];
                 
                 $clientName = $data['clientName'] ?? 'Cliente';

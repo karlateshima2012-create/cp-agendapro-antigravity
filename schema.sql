@@ -135,3 +135,4 @@ SET @acc_id = LAST_INSERT_ID();
 INSERT INTO `cp_agenda_users` (account_id, role, name, email, password_hash) 
 VALUES (@acc_id, 'super_admin', 'Suporte', 'suporte@creativeprintjp.com', '$2y$10$U.p1b1Z9.I6/Wf.998uWEOzL/pY.o.S3M5rQf...REPLACE_WITH_ACTUAL_HASH');
 */
+ALTER TABLE cp_agenda_accounts ADD COLUMN page_views INT DEFAULT 0;

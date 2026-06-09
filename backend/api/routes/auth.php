@@ -1,21 +1,35 @@
 <?php
 // deploy_hostinger/public_html/api/routes/auth.php
 
-// ✅ SECURITY [A-5]: File-based rate limiter (works without Redis/APCu)
+// File-based rate limiter with exclusive lock covering read+write (prevents TOCTOU race condition)
 function checkRateLimit(string $key, int $maxAttempts, int $ttlSeconds): bool {
     $cacheDir = sys_get_temp_dir() . '/cp_agenda_ratelimit';
-    if (!is_dir($cacheDir)) mkdir($cacheDir, 0700, true);
+    if (!is_dir($cacheDir)) @mkdir($cacheDir, 0700, true);
+
     $file = $cacheDir . '/' . md5($key) . '.json';
-    $now = time();
-    $data = [];
-    if (file_exists($file)) {
-        $data = json_decode(file_get_contents($file), true) ?? [];
-        // Remove expired attempts
-        $data = array_filter($data, fn($t) => ($now - $t) < $ttlSeconds);
+    $fp   = @fopen($file, 'c+');
+    if (!$fp) return true; // fail-open: never block users due to filesystem issues
+
+    flock($fp, LOCK_EX); // hold lock for entire read-check-write cycle
+
+    $now      = time();
+    $contents = stream_get_contents($fp);
+    $data     = $contents ? (json_decode($contents, true) ?? []) : [];
+    $data     = array_values(array_filter($data, fn($t) => ($now - $t) < $ttlSeconds));
+
+    if (count($data) >= $maxAttempts) {
+        flock($fp, LOCK_UN);
+        fclose($fp);
+        return false;
     }
-    if (count($data) >= $maxAttempts) return false; // Limit exceeded
+
     $data[] = $now;
-    file_put_contents($file, json_encode(array_values($data)), LOCK_EX);
+    rewind($fp);
+    ftruncate($fp, 0);
+    fwrite($fp, json_encode($data));
+    fflush($fp);
+    flock($fp, LOCK_UN);
+    fclose($fp);
     return true;
 }
 
@@ -142,7 +156,8 @@ if ($path === 'auth/reset-password' && $method === 'POST') {
     $newPass = $data['password'] ?? '';
     
     if (empty($code) || empty($newPass)) Response::fail('Code and password required');
-    
+    if (strlen($newPass) < 8) Response::fail('A senha deve ter no mínimo 8 caracteres', 400);
+
     $user = Db::fetch('SELECT id FROM cp_agenda_users WHERE reset_token = ? AND reset_expires > NOW()', [$code]);
     if (!$user) {
         Response::fail('Invalid or expired reset code', 400);

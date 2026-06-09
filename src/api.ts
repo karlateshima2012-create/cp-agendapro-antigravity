@@ -108,6 +108,10 @@ export const api = {
         return apiClient.get(`/public/profile/${id}`);
     },
 
+    async incrementPublicView(id: string): Promise<ApiResponse> {
+        return apiClient.post(`/public/view/${id}`);
+    },
+
     async updateProfile(data: ProfileUpdatePayload): Promise<ApiResponse> {
         return apiClient.patch('/me/profile', data);
     },
@@ -160,6 +164,10 @@ export const api = {
 
     async confirmPasswordReset(code: string, password: string): Promise<ApiResponse> {
         return apiClient.post('/auth/reset-password', { code, password });
+    },
+
+    async testTelegramNotification(chatId: string): Promise<ApiResponse> {
+        return apiClient.post('/me/test-telegram', { chat_id: chatId });
     }
 };
 

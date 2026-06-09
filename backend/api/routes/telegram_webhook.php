@@ -14,8 +14,8 @@ $chatId = $message['chat']['id'] ?? null;
 $text = $message['text'] ?? '';
 
 if ($chatId && (strpos($text, '/start') === 0)) {
-    // Definimos o Token Oficial fornecido pelo usuário
-    $token = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
+    $token = get_env_var('TELEGRAM_BOT_TOKEN', '');
+    if (empty($token)) { header('HTTP/1.1 200 OK'); echo json_encode(['status' => 'ok']); exit; }
     
     // Prepare the message in the format requested by the user
     $msg = "Olá! Bem-vindo ao assistente do <b>CP Agenda Pro</b> 🚀\n\n"

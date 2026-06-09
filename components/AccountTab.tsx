@@ -6,6 +6,7 @@ import {
   Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X, ChevronDown
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
+import { api } from '../src/api';
 
 interface Props {
   account: AccountInfo;
@@ -84,8 +85,6 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   };
 
 
-  const OFFICIAL_BOT_TOKEN = '8679011580:AAGYmZRTeLJTkekfHcJzM-4KriplY_g_6Rk';
-
   const handleCopyLink = async () => {
     const linkToCopy = account.publicLink || window.location.origin;
 
@@ -132,9 +131,6 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       if (cleanTelegramChatId !== origTelegramChatId) {
         payload.telegramChatId = cleanTelegramChatId;
       }
-      if (OFFICIAL_BOT_TOKEN !== account.telegramBotToken) {
-        payload.telegramBotToken = OFFICIAL_BOT_TOKEN;
-      }
       if (cleanCoverImage !== origCoverImage) {
         payload.coverImage = cleanCoverImage;
       }
@@ -176,18 +172,14 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
       return;
     }
     try {
-      const text = "<b>🔔 CP Agenda Pro</b>: Teste de Notificação bem-sucedido!";
-      const url = `https://api.telegram.org/bot${OFFICIAL_BOT_TOKEN}/sendMessage?chat_id=${cleanChatId}&parse_mode=HTML&text=${encodeURIComponent(text)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.ok) {
+      const res = await api.testTelegramNotification(cleanChatId);
+      if (res.ok) {
         alert('✅ Sucesso! Verifique seu Telegram.');
       } else {
-        alert('❌ Erro: ' + (data.description || 'ID Inválido ou Bot não iniciado'));
+        alert('❌ Erro: ' + (res.error || 'ID Inválido ou Bot não iniciado pelo usuário'));
       }
     } catch (e) {
-      alert('Erro de conexão com a API do Telegram.');
+      alert('Erro de conexão.');
     }
   };
 

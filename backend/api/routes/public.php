@@ -79,4 +79,25 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     ]);
 }
 
+if (preg_match('/^public\/view\/([^\/]+)$/', $path, $matches) && $method === 'POST') {
+    $userId = $matches[1];
+    
+    // Check if the current logged-in user is the same as the user profile being viewed
+    $currentUser = Auth::getUser();
+    if ($currentUser && isset($currentUser['id']) && (string)$currentUser['id'] === (string)$userId) {
+        // Skip increment
+        Response::ok(['success' => true, 'skipped' => true]);
+    }
+    
+    // Increment page_views for the account associated with this user ID
+    $updated = Db::query('UPDATE cp_agenda_accounts SET page_views = page_views + 1 WHERE id = (SELECT account_id FROM cp_agenda_users WHERE id = ?)', [$userId]);
+    
+    if ($updated) {
+        Response::ok(['success' => true]);
+    } else {
+        Response::fail('Account not found', 404);
+    }
+}
+
 Response::fail('Not Found', 404);
+

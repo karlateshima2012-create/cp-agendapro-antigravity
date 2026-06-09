@@ -17,7 +17,7 @@ if ($path === 'me' && $method === 'GET') {
                 primary_color, secondary_color, short_description, services_title,
                 services_subtitle, cover_image, view_mode, cover_opacity, profile_image, contact_phone,
                 telegram_bot_token, telegram_chat_id, onboarding_seen,
-                lifetime_appointments, created_at, invoices
+                lifetime_appointments, created_at, invoices, page_views
          FROM cp_agenda_accounts WHERE id = ?',
         [$user['account_id']]
     );
@@ -40,12 +40,23 @@ if ($path === 'me/profile' && $method === 'PATCH') {
     $sets = [];
     $params = [];
     foreach ($data as $key => $val) {
-        // Map camelCase to snake_case if needed, but here they seem consistent or easily handled
         $snake = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $key));
-        if (in_array($snake, $allowed)) {
-            $sets[] = "`$snake` = ?";
-            $params[] = $val;
+        if (!in_array($snake, $allowed)) continue;
+
+        // Validate hex colors
+        if (in_array($snake, ['primary_color', 'secondary_color'])) {
+            if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $val)) continue;
         }
+
+        // Reject oversized images (max 6MB as base64)
+        if (in_array($snake, ['cover_image', 'profile_image'])) {
+            if (strlen((string)$val) > 6 * 1024 * 1024) {
+                Response::fail('Imagem muito grande. Máximo permitido: 5MB.', 400);
+            }
+        }
+
+        $sets[] = "`$snake` = ?";
+        $params[] = $val;
     }
     
     if ($sets) {
@@ -59,7 +70,7 @@ if ($path === 'me/change-password' && $method === 'POST') {
     $user = Auth::requireAuth();
     $data = json_decode(file_get_contents('php://input'), true);
     $newPass = $data['password'] ?? '';
-    if (strlen($newPass) < 6) Response::fail('Password too short');
+    if (strlen($newPass) < 8) Response::fail('A senha deve ter no mínimo 8 caracteres', 400);
     
     $hash = password_hash($newPass, PASSWORD_DEFAULT);
     Db::query('UPDATE cp_agenda_users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [$hash, $user['id']]);
@@ -70,6 +81,44 @@ if ($path === 'me/change-password' && $method === 'POST') {
     }
     
     Response::ok(['msg' => 'Password updated']);
+}
+
+if ($path === 'me/test-telegram' && $method === 'POST') {
+    $user = Auth::requireAuth();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $chatId = trim($data['chat_id'] ?? '');
+
+    if (empty($chatId) || !preg_match('/^-?\d+$/', $chatId)) {
+        Response::fail('Chat ID inválido. Deve conter apenas números.', 400);
+    }
+
+    $token = get_env_var('TELEGRAM_BOT_TOKEN', '');
+    if (empty($token)) {
+        Response::fail('Bot não configurado no servidor.', 500);
+    }
+
+    $text  = "<b>🔔 CP Agenda Pro</b>: Teste de Notificação bem-sucedido!";
+    $url   = "https://api.telegram.org/bot{$token}/sendMessage";
+    $payload = http_build_query(['chat_id' => $chatId, 'text' => $text, 'parse_mode' => 'HTML']);
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method'        => 'POST',
+            'header'        => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content'       => $payload,
+            'timeout'       => 5,
+            'ignore_errors' => true,
+        ],
+    ]);
+    $res    = @file_get_contents($url, false, $ctx);
+    $result = $res ? json_decode($res, true) : null;
+
+    if ($result && $result['ok']) {
+        Response::ok(['msg' => 'Notificação enviada com sucesso']);
+    } else {
+        $desc = $result['description'] ?? 'Chat ID inválido ou bot não iniciado pelo usuário';
+        Response::fail($desc, 400);
+    }
 }
 
 if ($path === 'me/onboarding' && $method === 'POST') {

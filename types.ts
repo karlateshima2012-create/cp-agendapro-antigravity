@@ -110,6 +110,7 @@ export interface User {
   invoices?: Invoice[];
   viewMode?: 'card' | 'list';
   coverOpacity?: number;
+  pageViews?: number;
 }
 
 export interface AccountInfo {
@@ -135,4 +136,5 @@ export interface AccountInfo {
   invoices?: Invoice[];
   viewMode?: 'card' | 'list';
   coverOpacity?: number;
+  pageViews?: number;
 }

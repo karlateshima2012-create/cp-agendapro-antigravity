@@ -33,9 +33,12 @@ if ($path === 'clients' && $method === 'POST') {
         Response::fail('Nome e Telefone são obrigatórios', 400);
     }
     
-    // Normalize phone
+    // Normalize phone — strip non-digits, then reject if empty
     $phone = preg_replace('/\D/', '', $phoneRaw);
-    
+    if (empty($phone)) {
+        Response::fail('Telefone inválido', 400);
+    }
+
     Db::query(
         'INSERT INTO cp_agenda_clients (account_id, name, phone, email) 
          VALUES (?, ?, ?, ?) 

@@ -20,6 +20,7 @@ class Auth {
 
     public static function login($user) {
         self::init();
+        session_regenerate_id(true);
         $_SESSION['user'] = [
             'id' => $user['id'],
             'account_id' => $user['account_id'],
