@@ -115,10 +115,13 @@ jobs:
           # Backend: descompactar sobre a pasta existente
           unzip -o /tmp/backend.zip -d /var/www/cpagendapro/backend/
           rm /tmp/backend.zip
+
+          # Corrigir owner do backend para que PHP-FPM (www-data) leia o .env
+          sudo chown -R deploy:www-data /var/www/cpagendapro/backend
           chmod 640 /var/www/cpagendapro/backend/.env
 
           # Instalar dependências PHP na VPS (sem dev, sem fazer upload do vendor/)
-          cd /var/www/cpagendapro/backend && composer install --no-dev --optimize-autoloader --no-interaction --quiet
+          cd /var/www/cpagendapro/backend && composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
 
           # Frontend: limpar e descompactar
           rm -rf /var/www/cpagendapro/public/assets
