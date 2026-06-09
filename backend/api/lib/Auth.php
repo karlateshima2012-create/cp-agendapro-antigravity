@@ -6,6 +6,8 @@ class Auth {
         if (session_status() === PHP_SESSION_NONE) {
             $ttl = 30 * 24 * 60 * 60; // 30 dias
             ini_set('session.gc_maxlifetime', $ttl);
+            // Store sessions outside systemd's phpsessionclean scope (cleans at 24 min by default)
+            session_save_path('/home/deploy/php-sessions');
             session_set_cookie_params([
                 'lifetime' => $ttl,
                 'path' => '/',
