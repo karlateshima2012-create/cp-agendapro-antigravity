@@ -1,0 +1,13 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -p 65002 -o StrictHostKeyChecking=no u176367625@46.202.186.144 "mysql -u u176367625_cpagendakt -p'u5RjUpN\$4/rX' u176367625_CPagendaPro -e 'SELECT COUNT(*) AS contas FROM cp_agenda_accounts; SELECT COUNT(*) AS agendamentos FROM cp_agenda_appointments; SELECT COUNT(*) AS clientes FROM cp_agenda_clients;'"
+expect {
+    "password:" {
+        send "23KDHkt10cp\$\r"
+        exp_continue
+    }
+    "Permission denied" {
+        exit 1
+    }
+    eof
+}

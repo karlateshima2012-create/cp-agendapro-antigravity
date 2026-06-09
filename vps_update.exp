@@ -1,0 +1,9 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no root@76.13.209.192 "apt update && DEBIAN_FRONTEND=noninteractive apt upgrade -y"
+expect {
+    "password:" {
+        send "3b&RqGlm.PsvKD23@\r"
+    }
+}
+expect eof

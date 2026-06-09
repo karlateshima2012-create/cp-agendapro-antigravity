@@ -1,0 +1,4 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no deploy@76.13.209.192 "sudo mysql -e 'DROP DATABASE cp_agenda_pro; CREATE DATABASE cp_agenda_pro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;' && sudo sed -i 's/DEFINER=[^ ]* / /g' /tmp/backup_cpagenda.sql && sudo mysql cp_agenda_pro < /tmp/backup_cpagenda.sql && echo 'Restauracao concluida com DEFINER removido'"
+expect eof

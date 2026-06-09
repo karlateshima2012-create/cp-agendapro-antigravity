@@ -1,0 +1,9 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -o StrictHostKeyChecking=no root@76.13.209.192 "id deploy || adduser deploy --disabled-password --gecos '' ; usermod -aG sudo deploy ; mkdir -p /home/deploy/.ssh ; chmod 700 /home/deploy/.ssh ; echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICHihOwQG36PgbYt5BrvjnW5ZICu53Y3IsxFFy6za0Bd github-actions-cpagenda' >> /home/deploy/.ssh/authorized_keys ; echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKyKREkff7SgOttsM3SorFCJpwn0XsDrsQ1I4pTYqYor karla.teshima.2012@gmail.com' >> /home/deploy/.ssh/authorized_keys ; chmod 600 /home/deploy/.ssh/authorized_keys ; chown -R deploy:deploy /home/deploy/.ssh"
+expect {
+    "password:" {
+        send "3b&RqGlm.PsvKD23@\r"
+    }
+}
+expect eof

@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh -p 65002 -o StrictHostKeyChecking=no u176367625@46.202.186.144 "cat domains/creativeprintjp.com/public_html/cpagendapro/.env"
+expect {
+    "password:" {
+        send "Creative23SSHcp@\r"
+        expect eof
+    }
+    eof
+}

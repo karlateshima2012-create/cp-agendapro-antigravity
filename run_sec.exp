@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn scp -o StrictHostKeyChecking=no vps_sec.sh root@76.13.209.192:/root/vps_sec.sh
+expect {
+    "password:" {
+        send "3b&RqGlm.PsvKD23@\r"
+        expect eof
+    }
+    eof
+}
+
+spawn ssh -o StrictHostKeyChecking=no root@76.13.209.192 "bash /root/vps_sec.sh && rm /root/vps_sec.sh"
+expect {
+    "password:" {
+        send "3b&RqGlm.PsvKD23@\r"
+        expect eof
+    }
+    eof
+}
