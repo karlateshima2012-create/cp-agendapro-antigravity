@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../src/api';
 import { Logo } from './Logo';
 
 interface Props {
-  onLogin: (email: string, pass: string) => void;
+  onLogin: (email: string, pass: string) => Promise<void>;
 }
 
 
@@ -18,14 +18,21 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!email || !password) {
       setError('Preencha seu e-mail e senha para acessar.');
       return;
     }
-    onLogin(email, password);
+    setLoading(true);
+    try {
+      await onLogin(email, password);
+    } catch (err: any) {
+      setError(err.message || 'E-mail ou senha incorretos. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const goToForgot = () => {
@@ -194,8 +201,12 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
               </div>
             </div>
 
-            <button type="submit" className="w-full bg-primary hover:bg-primary-hover text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all transform active:scale-95 text-xs uppercase tracking-widest">
-              Acessar Painel
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary hover:bg-primary-hover text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all transform active:scale-95 text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? <><Loader2 className="animate-spin" size={18} /> Entrando...</> : 'Acessar Painel'}
             </button>
 
             <div className="text-center pt-2">

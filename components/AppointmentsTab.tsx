@@ -206,6 +206,9 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startDay = new Date(year, month, 1).getDay();
 
+    // Check month availability (matches PublicBookingPage logic)
+    const isMonthAvailable = (availability.availableMonths ?? [1,2,3,4,5,6,7,8,9,10,11,12]).includes(month + 1);
+
     const jsDayToPtDay: Record<number, string> = {
       0: 'domingo', 1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado'
     };
@@ -238,9 +241,16 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       const isToday = d === todayJST.getDate() && month === todayJST.getMonth() && year === todayJST.getFullYear();
       const isSelected = d === selectedDay.getDate() && month === selectedDay.getMonth() && year === selectedDay.getFullYear();
 
-      const blocked = availability.blockedDates.find(b => {
+      // Full-day block: any blocked entry without startTime (matches PublicBookingPage)
+      const isFullDayBlocked = (availability.blockedDates || []).some(b => {
         const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
-        return bDate === dateStr && !b.startTime && !b.endTime;
+        return bDate === dateStr && !b.startTime;
+      });
+
+      // Partial-day block: blocked entry with a startTime set
+      const hasPartialBlock = !isFullDayBlocked && (availability.blockedDates || []).some(b => {
+        const bDate = b.date?.includes('T') ? b.date.split('T')[0] : b.date;
+        return bDate === dateStr && !!b.startTime;
       });
 
       const dayAppts = appointments
@@ -252,7 +262,8 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
         .sort((a: Appointment, b: Appointment) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
       // ---- MOBILE cell ----
-      const mobileNumBase = isPast || !isDayEnabled ? 'text-gray-300' : 'text-gray-800';
+      const isDayUnavailable = !isMonthAvailable || isFullDayBlocked || !isDayEnabled;
+      const mobileNumBase = isPast || isDayUnavailable ? 'text-gray-300' : 'text-gray-800';
       mobileDays.push(
         <div
           key={`m-${d}`}
@@ -263,11 +274,15 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
             ${isToday ? 'bg-red-500 text-white shadow-sm shadow-red-500/20' : ''}
             ${isSelected && !isToday ? 'bg-primary/15 text-primary font-black' : ''}
             ${!isToday && !isSelected ? mobileNumBase : ''}
+            ${isFullDayBlocked && !isToday ? 'line-through' : ''}
           `}>
             {d}
           </div>
           <div className="flex justify-center h-1.5 items-center w-full">
-            {dayAppts.length > 0 && (
+            {hasPartialBlock && !isPast && (
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            )}
+            {!hasPartialBlock && dayAppts.length > 0 && (
               <div
                 className={`w-1.5 h-1.5 rounded-full ${dayAppts[0].status === 'confirmed' ? 'bg-primary' : 'bg-amber-400'} ${isToday ? 'bg-red-400' : ''} ${isPast ? 'opacity-40' : ''}`}
               />
@@ -280,12 +295,18 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
       let dayClass = 'bg-white border-gray-100 hover:border-primary/20 hover:shadow-sm';
       let dayNumClass = 'text-gray-800';
 
-      if (blocked) {
+      if (!isMonthAvailable) {
+        dayClass = 'bg-gray-50/60 border-gray-100/60';
+        dayNumClass = 'text-gray-200';
+      } else if (isFullDayBlocked) {
         dayClass = 'bg-red-50/70 border-red-100';
         dayNumClass = 'text-red-500';
       } else if (!isDayEnabled) {
         dayClass = 'bg-gray-50/50 border-gray-100/80';
         dayNumClass = 'text-gray-300';
+      } else if (hasPartialBlock) {
+        dayClass = 'bg-amber-50/40 border-amber-100';
+        dayNumClass = 'text-gray-800';
       } else if (isPast) {
         dayClass = 'bg-white border-gray-100 opacity-55';
         dayNumClass = 'text-gray-400';
@@ -305,9 +326,19 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               <span className={`text-sm font-bold ${dayNumClass}`}>{d}</span>
             )}
           </div>
-          {blocked && (
+          {isFullDayBlocked && (
             <div className="px-1 py-0.5 rounded-md bg-red-100 text-red-600 text-[8px] font-black uppercase tracking-wide text-center mb-0.5">
               Bloqueado
+            </div>
+          )}
+          {hasPartialBlock && !isFullDayBlocked && (
+            <div className="px-1 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[8px] font-black uppercase tracking-wide text-center mb-0.5">
+              Parcial
+            </div>
+          )}
+          {!isMonthAvailable && (
+            <div className="px-1 py-0.5 rounded-md bg-gray-100 text-gray-400 text-[8px] font-black uppercase tracking-wide text-center mb-0.5">
+              Inativo
             </div>
           )}
           <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">
@@ -354,9 +385,16 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
           >
             <ArrowRightCircle className="rotate-180" size={20} />
           </button>
-          <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-widest">
-            {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-          </h3>
+          <div className="flex flex-col items-center gap-0.5">
+            <h3 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-widest">
+              {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+            </h3>
+            {!isMonthAvailable && (
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                Mês indisponível na agenda pública
+              </span>
+            )}
+          </div>
           <button
             onClick={() => { const n = new Date(currentMonth); n.setMonth(n.getMonth() + 1); setCurrentMonth(n); }}
             className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-colors"
@@ -390,6 +428,12 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
             <h2 className="text-3xl font-black text-gray-900 capitalize tracking-tight mt-1">
               {currentMonth.toLocaleDateString('pt-BR', { month: 'long' })}
             </h2>
+            {!isMonthAvailable && (
+              <div className="mt-1.5 px-3 py-1.5 bg-gray-100 rounded-xl flex items-center gap-2">
+                <Ban size={12} className="text-gray-400 flex-shrink-0" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Mês indisponível na agenda pública</span>
+              </div>
+            )}
           </div>
 
           {/* Compact month grid */}
@@ -483,7 +527,12 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               <div className="w-1.5 h-1.5 rounded-full bg-primary" /> Confirmado
             </div>
             <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-gray-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Pendente
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Pendente / Parcial
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-3 h-3 rounded-sm bg-gray-100" style={{ textDecoration: 'line-through' }}>
+                <span className="sr-only">riscado</span>
+              </div> Bloqueado
             </div>
           </div>
         </div>
@@ -508,7 +557,13 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
               <div className="w-2 h-2 bg-red-100 border border-red-200 rounded-sm" /> Dia Bloqueado
             </div>
             <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-              <div className="w-2 h-2 bg-gray-100 rounded-sm" /> Passado / Inativo
+              <div className="w-2 h-2 bg-amber-100 border border-amber-200 rounded-sm" /> Parcialmente Bloqueado
+            </div>
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 bg-gray-100 border border-gray-200 rounded-sm" /> Mês Indisponível
+            </div>
+            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
+              <div className="w-2 h-2 bg-white border border-gray-100 rounded-sm opacity-55" /> Passado / Inativo
             </div>
           </div>
         </div>
