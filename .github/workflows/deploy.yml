@@ -73,65 +73,58 @@ jobs:
         echo "SMTP_FROM_NAME=${SECRET_SMTP_FROM_NAME}" >> backend/.env
         echo ".env gerado com $(wc -l < backend/.env) linhas"
 
-    - name: Empacotar artefatos de deploy
+    - name: Configurar chave SSH
       run: |
-        cd dist && zip -r ../dist.zip . && cd ..
-        cd backend && zip -r ../backend.zip api database migrate.php .env composer.json composer.lock && cd ..
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-    - name: Enviar artefatos para a VPS via SCP
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "dist.zip,backend.zip"
-        target: "/tmp/"
+    - name: Verificar identidade do projeto na VPS
+      run: |
+        ACTUAL=$(ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          "cat /var/www/cpagendapro/.project-id 2>/dev/null || echo MISSING")
+        if [ "$ACTUAL" != "cpagenda-jp-v1" ]; then
+          echo "ERRO: .project-id incorreto ('$ACTUAL'). Deploy cancelado."
+          exit 1
+        fi
+        echo "Identidade verificada: $ACTUAL"
 
-    - name: Finalizar Deploy via SSH (unzip, migrations, reload PHP-FPM)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          set -e
+    - name: Enviar frontend via rsync
+      run: |
+        rsync -az --delete \
+          -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
+          dist/ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/cpagendapro/public/
 
-          # Verificação de identidade — aborta se o diretório for de outro projeto
-          PROJECT_MARKER="/var/www/cpagendapro/.project-id"
-          EXPECTED_ID="cpagenda-jp-v1"
-          if [ ! -f "$PROJECT_MARKER" ]; then
-            echo "ERRO: .project-id ausente em /var/www/cpagendapro. Deploy cancelado."
-            exit 1
-          fi
-          ACTUAL_ID=$(cat "$PROJECT_MARKER")
-          if [ "$ACTUAL_ID" != "$EXPECTED_ID" ]; then
-            echo "ERRO: ID de projeto incorreto ('$ACTUAL_ID' != '$EXPECTED_ID'). Deploy cancelado."
-            exit 1
-          fi
-          echo "Identidade verificada: $ACTUAL_ID"
+    - name: Enviar backend via rsync
+      run: |
+        rsync -az \
+          -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
+          --exclude='vendor/' \
+          backend/api/ backend/database/ backend/migrate.php backend/.env backend/composer.json backend/composer.lock \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/cpagendapro/backend/
 
-          # Backend: descompactar sobre a pasta existente
-          unzip -o /tmp/backend.zip -d /var/www/cpagendapro/backend/
-          rm /tmp/backend.zip
+    - name: Finalizar deploy via SSH
+      run: |
+        ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }} \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'ENDSSH'
+        set -e
 
-          # Corrigir owner do backend para que PHP-FPM (www-data) leia o .env
-          sudo chown -R deploy:www-data /var/www/cpagendapro/backend
-          chmod 640 /var/www/cpagendapro/backend/.env
+        # Corrigir owner para que PHP-FPM (www-data) leia o .env
+        sudo chown -R deploy:www-data /var/www/cpagendapro/backend
+        chmod 640 /var/www/cpagendapro/backend/.env
 
-          # Instalar dependências PHP na VPS (sem dev, sem fazer upload do vendor/)
-          cd /var/www/cpagendapro/backend && composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
+        # Instalar dependências PHP na VPS (sem dev)
+        cd /var/www/cpagendapro/backend
+        composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
 
-          # Frontend: limpar e descompactar
-          rm -rf /var/www/cpagendapro/public/assets
-          unzip -o /tmp/dist.zip -d /var/www/cpagendapro/public/
-          rm /tmp/dist.zip
+        # Migrations (idempotente — seguro rodar em todo deploy)
+        php /var/www/cpagendapro/backend/migrate.php
 
-          # Migrations (idempotente — seguro rodar em todo deploy)
-          php /var/www/cpagendapro/backend/migrate.php
+        # Backup, permissões do public e reload PHP-FPM
+        /home/deploy/bin/safe-deploy-jp.sh
 
-          # Recarregar PHP-FPM e corrigir permissões via script validado
-          /home/deploy/bin/safe-deploy-jp.sh
-
-          echo "Deploy concluído com sucesso em $(date)"
+        echo "Deploy concluído com sucesso em $(date)"
+        ENDSSH
