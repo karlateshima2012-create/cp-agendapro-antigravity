@@ -37,10 +37,6 @@ jobs:
       working-directory: ./backend
       run: ./vendor/bin/phpstan analyse --error-format=github
 
-    - name: Remover dependências de desenvolvimento
-      working-directory: ./backend
-      run: composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-interaction
-
     - name: Gerar .env de produção a partir dos GitHub Secrets
       env:
         SECRET_DB_HOST: ${{ secrets.DB_HOST }}
@@ -80,7 +76,7 @@ jobs:
     - name: Empacotar artefatos de deploy
       run: |
         cd dist && zip -r ../dist.zip . && cd ..
-        cd backend && zip -r ../backend.zip api database migrate.php .env vendor && cd ..
+        cd backend && zip -r ../backend.zip api database migrate.php .env composer.json composer.lock && cd ..
 
     - name: Enviar artefatos para a VPS via SCP
       uses: appleboy/scp-action@v0.1.7
@@ -120,6 +116,9 @@ jobs:
           unzip -o /tmp/backend.zip -d /var/www/cpagendapro/backend/
           rm /tmp/backend.zip
           chmod 640 /var/www/cpagendapro/backend/.env
+
+          # Instalar dependências PHP na VPS (sem dev, sem fazer upload do vendor/)
+          cd /var/www/cpagendapro/backend && composer install --no-dev --optimize-autoloader --no-interaction --quiet
 
           # Frontend: limpar e descompactar
           rm -rf /var/www/cpagendapro/public/assets
