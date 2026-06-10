@@ -563,37 +563,55 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                 </div>
               ) : (
                 (() => {
-                  const pendingInvoice = account.invoices.find(inv => inv.status === 'pending');
-                  const historyInvoices = account.invoices.filter(inv => inv.id !== pendingInvoice?.id);
-                  
+                  const ACTIVE_STATUSES = ['pending', 'upcoming', 'overdue'];
+                  const activeInvoices = account.invoices
+                    .filter((inv: any) => ACTIVE_STATUSES.includes(inv.status))
+                    .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+                  const historyInvoices = account.invoices
+                    .filter((inv: any) => !ACTIVE_STATUSES.includes(inv.status))
+                    .sort((a: any, b: any) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+
                   const statusColors: Record<string, string> = {
-                    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-                    paid: 'bg-green-50 text-green-700 border-green-200',
-                    overdue: 'bg-red-50 text-red-700 border-red-200',
-                    canceled: 'bg-gray-100 text-gray-500 border-gray-200'
+                    pending:  'bg-yellow-50 text-yellow-700 border-yellow-200',
+                    upcoming: 'bg-blue-50 text-blue-700 border-blue-200',
+                    overdue:  'bg-red-50 text-red-700 border-red-200',
+                    paid:     'bg-green-50 text-green-700 border-green-200',
+                    canceled: 'bg-gray-100 text-gray-500 border-gray-200',
                   };
                   const statusLabels: Record<string, string> = {
-                    pending: 'Pendente',
-                    paid: 'Pago',
-                    overdue: 'Atrasado',
-                    canceled: 'Cancelado'
+                    pending:  'Pendente',
+                    upcoming: 'A Vencer',
+                    overdue:  'Vencido',
+                    paid:     'Pago',
+                    canceled: 'Cancelado',
                   };
 
                   return (
                     <div className="flex flex-col gap-8">
-                      {pendingInvoice && (
+                      {activeInvoices.length > 0 && (
                         <div>
                           <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Próximo Faturamento</h4>
-                          <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-3xl border border-blue-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <div>
-                              <p className="text-base font-black text-gray-900">{pendingInvoice.planReference || 'Fatura de Assinatura'}</p>
-                              <p className="text-xs font-bold text-gray-500 mt-1 flex items-center gap-2">
-                                Vencimento: <span className="text-gray-900">{new Date(pendingInvoice.dueDate).toLocaleDateString('pt-BR')}</span>
-                              </p>
-                            </div>
-                            <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
-                              <p className="text-2xl font-black text-primary">¥ {Number(pendingInvoice.amount).toLocaleString('ja-JP')}</p>
-                            </div>
+                          <div className="space-y-3">
+                            {activeInvoices.map((inv: any) => (
+                              <div key={inv.id} className={`p-6 rounded-3xl border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+                                inv.status === 'overdue'  ? 'bg-red-50/40 border-red-100' :
+                                inv.status === 'upcoming' ? 'bg-blue-50/40 border-blue-100' :
+                                'bg-gradient-to-br from-blue-50 to-white border-blue-100'
+                              }`}>
+                                <div>
+                                  <p className="text-base font-black text-gray-900">{inv.planReference || 'Fatura de Assinatura'}</p>
+                                  <p className="text-xs font-bold text-gray-500 mt-1">
+                                    Vencimento: <span className="text-gray-900">{new Date(inv.dueDate).toLocaleDateString('pt-BR')}</span>
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                                  <p className="text-2xl font-black text-primary">¥ {Number(inv.amount).toLocaleString('ja-JP')}</p>
+                                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status] ?? statusColors.pending}`}>
+                                    {statusLabels[inv.status] ?? inv.status}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -602,18 +620,18 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                         <div>
                           <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Histórico</h4>
                           <div className="space-y-3">
-                            {historyInvoices.map(inv => (
+                            {historyInvoices.map((inv: any) => (
                               <div key={inv.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
                                   <p className="text-sm font-black text-gray-900">{inv.planReference || 'Fatura de Assinatura'}</p>
-                                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 flex items-center gap-2">
+                                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
                                     Vencimento: <span className="text-gray-900">{new Date(inv.dueDate).toLocaleDateString('pt-BR')}</span>
                                   </p>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
                                   <p className="text-lg font-black text-gray-900">¥ {Number(inv.amount).toLocaleString('ja-JP')}</p>
-                                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status]}`}>
-                                    {statusLabels[inv.status]}
+                                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status] ?? statusColors.canceled}`}>
+                                    {statusLabels[inv.status] ?? inv.status}
                                   </span>
                                 </div>
                               </div>
