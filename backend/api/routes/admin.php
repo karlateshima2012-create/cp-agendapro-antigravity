@@ -95,9 +95,13 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
     $params = [];
     $newEmail = null;
 
+    $validPlanTypes = ['trial', '1m', '3m', '6m', '12m'];
+
     foreach ($data as $key => $val) {
         if (isset($fieldMap[$key])) {
             $col = $fieldMap[$key];
+            // Skip plan_type if value is empty or not in the allowed ENUM
+            if ($col === 'plan_type' && !in_array($val, $validPlanTypes, true)) continue;
             $sets[] = "`$col` = ?";
             $params[] = is_array($val) ? json_encode($val) : $val;
         } elseif ($key === 'email') {
