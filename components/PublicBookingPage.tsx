@@ -61,12 +61,20 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
 
-  // Japanese phone format: 0XX XXXX XXXX (11 digits total)
+  // Japanese phone format: accepts 09011886491 (11 digits) or 9011886491 (10 digits, no leading zero)
   const formatJapanesePhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3)  return digits;
-    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    if (digits.startsWith('0')) {
+      // Com zero inicial: 090 1188 6491
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+      return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    } else {
+      // Sem zero inicial: 90 1188 6491
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+      return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`;
+    }
   };
 
   const handlePhoneChange = (value: string) => {
@@ -347,9 +355,9 @@ export const PublicBookingPage: React.FC<Props> = ({
       setIsSubmitting(false);
       return;
     }
-    // Japanese phone validation: must have exactly 11 digits
-    if (rawPhoneDigits.length !== 11) {
-      setErrorMsg('O telefone deve ter 11 dígitos no formato 0XX-XXXX-XXXX.');
+    // Japanese phone: 11 digits (with leading zero) or 10 digits (without leading zero)
+    if (rawPhoneDigits.length < 10 || rawPhoneDigits.length > 11) {
+      setErrorMsg('Telefone inválido. Use o formato 090 1234 5678 (11 dígitos) ou 90 1234 5678 (10 dígitos).');
       setIsSubmitting(false);
       return;
     }
@@ -768,11 +776,11 @@ export const PublicBookingPage: React.FC<Props> = ({
                   {/* Digit counter */}
                   <div className="flex justify-end px-2 mt-1">
                     <span className={`text-[10px] font-bold tabular-nums transition-colors ${
-                      rawPhoneDigits.length === 11 ? 'text-green-500' :
-                      rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
+                      (rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) ? 'text-green-500' :
+                      rawPhoneDigits.length > 0 ? 'text-amber-500' : 'text-gray-300'
                     }`}>
-                      {rawPhoneDigits.length}/11 dígitos
-                      {rawPhoneDigits.length === 11 && ' ✓'}
+                      {rawPhoneDigits.length} dígitos
+                      {(rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) && ' ✓'}
                     </span>
                   </div>
                 </div>

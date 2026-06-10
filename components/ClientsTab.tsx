@@ -33,12 +33,20 @@ export const ClientsTab: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Japanese phone format helper
+  // Japanese phone format helper: accepts 11 digits (with leading zero) or 10 digits (without)
   const formatJapanesePhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3)  return digits;
-    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    if (digits.startsWith('0')) {
+      // Com zero inicial: 090 1188 6491
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+      return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    } else {
+      // Sem zero inicial: 90 1188 6491
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+      return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`;
+    }
   };
 
   const handlePhoneChange = (val: string) => {
@@ -230,10 +238,10 @@ export const ClientsTab: React.FC = () => {
                 {/* Digit counter */}
                 <div className="flex justify-end px-2">
                   <span className={`text-[10px] font-bold tabular-nums transition-colors ${
-                    rawPhoneDigits.length === 11 ? 'text-green-500' :
-                    rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
+                    (rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) ? 'text-green-500' :
+                    rawPhoneDigits.length > 0 ? 'text-amber-500' : 'text-gray-300'
                   }`}>
-                    {rawPhoneDigits.length}/11 dígitos {rawPhoneDigits.length === 11 && '✓'}
+                    {rawPhoneDigits.length} dígitos {(rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) && '✓'}
                   </span>
                 </div>
               </div>

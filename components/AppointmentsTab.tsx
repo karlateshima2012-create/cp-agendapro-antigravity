@@ -35,9 +35,9 @@ interface Props {
 function normalizePhoneToE164JP(phoneRaw: string) {
   const digits = (phoneRaw || '').replace(/\D/g, '');
   if (!digits) return '';
-  if (digits.startsWith('81')) return digits;
-  if (digits.startsWith('0')) return '81' + digits.slice(1);
-  return digits;
+  if (digits.startsWith('81')) return digits;      // já internacional
+  if (digits.startsWith('0'))  return '81' + digits.slice(1); // 09011.. → 81901..
+  return '81' + digits;                            // 9011.. → 81901..
 }
 
 function formatWhenJST(startAt: string) {
