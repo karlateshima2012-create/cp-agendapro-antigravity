@@ -102,6 +102,12 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
             $col = $fieldMap[$key];
             // Skip plan_type if value is empty or not in the allowed ENUM
             if ($col === 'plan_type' && !in_array($val, $validPlanTypes, true)) continue;
+            // Normalize datetime fields: convert ISO 8601 (JS) to MySQL DATETIME
+            if ($col === 'plan_expires_at' && is_string($val) && $val !== '') {
+                $dt = date_create($val);
+                $val = $dt ? date_format($dt, 'Y-m-d H:i:s') : null;
+                if ($val === null) continue;
+            }
             $sets[] = "`$col` = ?";
             $params[] = is_array($val) ? json_encode($val) : $val;
         } elseif ($key === 'email') {
