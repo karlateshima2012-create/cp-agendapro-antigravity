@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_accounts` (
     `name` VARCHAR(255) NOT NULL,
     `owner_name` VARCHAR(255) DEFAULT '',
     `status` ENUM('active', 'expired', 'blocked', 'deleted') DEFAULT 'active',
-    `plan_type` ENUM('trial', '6m', '12m') DEFAULT '6m',
+    `plan_type` ENUM('trial', '1m', '3m', '6m', '12m') DEFAULT '6m',
     `plan_expires_at` DATETIME NULL,
     `primary_color` VARCHAR(7) DEFAULT '#25aae1',
     `secondary_color` VARCHAR(7) DEFAULT '#1f2937',
