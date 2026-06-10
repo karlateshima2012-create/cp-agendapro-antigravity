@@ -832,8 +832,9 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                 </div>
 
                 {(() => {
-                  const pending = editInvoices.filter(i => i.status === 'pending');
-                  const history = editInvoices.filter(i => i.status !== 'pending');
+                  const ACTIVE_STATUSES = ['pending', 'upcoming', 'overdue'];
+                  const pending = editInvoices.filter(i => ACTIVE_STATUSES.includes(i.status));
+                  const history = editInvoices.filter(i => !ACTIVE_STATUSES.includes(i.status));
                   return (
                     <>
                       <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
@@ -904,14 +905,17 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                                         setEditInvoices(arr);
                                       }}
                                       className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
-                                        inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                        inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                        inv.status === 'paid'     ? 'bg-green-50 text-green-700 border-green-200' :
+                                        inv.status === 'overdue'  ? 'bg-red-50 text-red-700 border-red-200' :
+                                        inv.status === 'upcoming' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        inv.status === 'canceled' ? 'bg-gray-100 text-gray-500 border-gray-200' :
                                         'bg-yellow-50 text-yellow-700 border-yellow-200'
                                       }`}
                                     >
                                       <option value="pending">Pendente</option>
+                                      <option value="upcoming">A Vencer</option>
+                                      <option value="overdue">Vencido</option>
                                       <option value="paid">Pago</option>
-                                      <option value="overdue">Atrasado</option>
                                       <option value="canceled">Cancelado</option>
                                     </select>
                                   </div>
@@ -993,14 +997,17 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                                             setEditInvoices(arr);
                                           }}
                                           className={`w-full px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer ${
-                                            inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                            inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                            inv.status === 'paid'     ? 'bg-green-50 text-green-700 border-green-200' :
+                                            inv.status === 'overdue'  ? 'bg-red-50 text-red-700 border-red-200' :
+                                            inv.status === 'upcoming' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                            inv.status === 'canceled' ? 'bg-gray-100 text-gray-500 border-gray-200' :
                                             'bg-yellow-50 text-yellow-700 border-yellow-200'
                                           }`}
                                         >
                                           <option value="pending">Pendente</option>
+                                          <option value="upcoming">A Vencer</option>
+                                          <option value="overdue">Vencido</option>
                                           <option value="paid">Pago</option>
-                                          <option value="overdue">Atrasado</option>
                                           <option value="canceled">Cancelado</option>
                                         </select>
                                       </div>
