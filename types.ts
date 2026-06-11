@@ -115,6 +115,7 @@ export interface User {
   timezone?: string;
   currency?: string;
   phone_country_code?: string;
+  hotmart_url?: string;
 }
 
 export interface AccountInfo {
@@ -145,4 +146,5 @@ export interface AccountInfo {
   timezone?: string;
   currency?: string;
   phone_country_code?: string;
+  hotmart_url?: string;
 }

@@ -18,7 +18,7 @@ if ($path === 'me' && $method === 'GET') {
                 services_subtitle, cover_image, view_mode, cover_opacity, profile_image, contact_phone,
                 telegram_bot_token, telegram_chat_id, onboarding_seen,
                 lifetime_appointments, created_at, invoices, page_views,
-                country, timezone, currency, phone_country_code
+                country, timezone, currency, phone_country_code, hotmart_url
          FROM cp_agenda_accounts WHERE id = ?',
         [$user['account_id']]
     );

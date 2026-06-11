@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_accounts` (
     `timezone` VARCHAR(50) NOT NULL DEFAULT 'Asia/Tokyo',
     `currency` VARCHAR(3) NOT NULL DEFAULT 'JPY',
     `phone_country_code` VARCHAR(5) NOT NULL DEFAULT '81',
+    `hotmart_url` VARCHAR(255) NOT NULL DEFAULT '',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

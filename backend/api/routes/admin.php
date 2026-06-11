@@ -98,6 +98,8 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
         'currency'          => 'currency',
         'phoneCountryCode'  => 'phone_country_code',
         'phone_country_code'=> 'phone_country_code',
+        'hotmart_url'       => 'hotmart_url',
+        'hotmartUrl'        => 'hotmart_url',
     ];
 
     $sets = [];
@@ -237,8 +239,10 @@ if ($path === 'admin/users' && $method === 'POST') {
         if (!in_array($currency, ['BRL', 'JPY'], true)) $currency = 'JPY';
         if (!in_array($phoneCode, ['55', '81'], true)) $phoneCode = '81';
 
-        Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at, country, timezone, currency, phone_country_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-            [$data['companyName'], $data['ownerName'], 'active', $data['contactPhone'] ?? '', $planType, $expiresAt, $country, $timezone, $currency, $phoneCode]);
+        $hotmartUrl = $data['hotmartUrl'] ?? $data['hotmart_url'] ?? '';
+
+        Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at, country, timezone, currency, phone_country_code, hotmart_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            [$data['companyName'], $data['ownerName'], 'active', $data['contactPhone'] ?? '', $planType, $expiresAt, $country, $timezone, $currency, $phoneCode, $hotmartUrl]);
         $accId = $pdo->lastInsertId();
         
         Db::query('INSERT INTO cp_agenda_users (account_id, email, password_hash, role, name, must_change_password) VALUES (?, ?, ?, ?, ?, ?)', [

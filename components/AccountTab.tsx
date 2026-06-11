@@ -214,30 +214,52 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Próximo Vencimento</label>
                 <p className="text-red-600 font-bold text-xs">
-                  {new Date(account.planExpiresAt).toLocaleDateString('pt-BR')}
+                  {account.country === 'BR' ? 'Via Hotmart' : new Date(account.planExpiresAt).toLocaleDateString('pt-BR')}
                 </p>
               </div>
             </div>
             </div>
             
-            {/* Botão para abrir o Modal de Faturas */}
+            {/* Botão para abrir o Modal de Faturas ou Link Hotmart */}
             <div className="pt-4 mt-4 border-t border-gray-100">
-              <button
-                onClick={() => setShowInvoicesModal(true)}
-                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                    <ChevronDown size={16} />
+              {account.country === 'BR' ? (
+                <a
+                  href={account.hotmart_url || 'https://consumer.hotmart.com'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
+                      <ExternalLink size={16} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-gray-900">Plano gerenciado pela Hotmart</p>
+                      <p className="text-[10px] text-gray-400 font-medium">Clique para acessar sua assinatura</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-gray-900">Próximo faturamento</p>
+                  <div className="text-gray-300 group-hover:text-orange-500 transition-colors">
+                    <ExternalLink size={16} />
                   </div>
-                </div>
-                <div className="text-gray-300 group-hover:text-primary transition-colors">
-                  <ExternalLink size={16} />
-                </div>
-              </button>
+                </a>
+              ) : (
+                <button
+                  onClick={() => setShowInvoicesModal(true)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                      <ChevronDown size={16} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-gray-900">Próximo faturamento</p>
+                    </div>
+                  </div>
+                  <div className="text-gray-300 group-hover:text-primary transition-colors">
+                    <ExternalLink size={16} />
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 

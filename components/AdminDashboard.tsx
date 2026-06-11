@@ -48,6 +48,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     planType: '6m' as PlanType,
     country: 'JP' as string,
     brState: 'SP' as string,
+    hotmartUrl: '',
   });
 
   const now = new Date();
@@ -258,7 +259,8 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       email: user.email,
       planType: user.planType,
       country: userCountry,
-      brState: reverseState
+      brState: reverseState,
+      hotmart_url: user.hotmart_url || ''
     });
     setEditInvoices(user.invoices || []);
     if (user.planExpiresAt) {
@@ -294,10 +296,11 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       country: newUser.country,
       timezone,
       currency,
-      phoneCountryCode
+      phone_country_code: phoneCountryCode,
+      hotmartUrl: newUser.country === 'BR' ? newUser.hotmartUrl.trim() : ''
     };
     const success = await onAddUser(userData);
-    if (success) { setShowAddForm(false); setCreatedUser(userData); setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m', country: 'JP', brState: 'SP' }); }
+    if (success) { setShowAddForm(false); setCreatedUser(userData); setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m', country: 'JP', brState: 'SP', hotmartUrl: '' }); }
     setIsSubmitting(false);
   };
 
@@ -331,7 +334,8 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       country: targetCountry,
       timezone,
       currency,
-      phone_country_code: phoneCountryCode
+      phone_country_code: phoneCountryCode,
+      hotmart_url: targetCountry === 'BR' ? editData.hotmart_url || '' : ''
     };
     if (manualExpiryDate) { const d = new Date(manualExpiryDate); d.setHours(23,59,59,999); updateData.planExpiresAt = d.toISOString(); }
     const updateSuccess = await onUpdateAdminUser(detailsUser.id, updateData);
@@ -824,14 +828,20 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                       </select>
                     </div>
                     {editData.country === 'BR' && (
-                      <div>
-                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Estado (Fuso Horário)</label>
-                        <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" value={editData.brState || 'SP'} onChange={e => setEditData({ ...editData, brState: e.target.value })}>
-                          {BR_STATES.map(s => (
-                            <option key={s.value} value={s.value}>{s.label}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <>
+                        <div>
+                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Estado (Fuso Horário)</label>
+                          <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" value={editData.brState || 'SP'} onChange={e => setEditData({ ...editData, brState: e.target.value })}>
+                            {BR_STATES.map(s => (
+                              <option key={s.value} value={s.value}>{s.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Link de Assinatura Hotmart</label>
+                          <input type="text" value={editData.hotmart_url || ''} onChange={e => setEditData({ ...editData, hotmart_url: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" placeholder="https://checkout.hotmart.com/..." />
+                        </div>
+                      </>
                     )}
                     <div>
                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Responsável (Info Interna)</label>
@@ -901,7 +911,8 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
               </div>
 
               {/* ── Faturas ── */}
-              <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 mt-6 shadow-sm">
+              {editData.country !== 'BR' && (
+                <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 mt-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-50 rounded-xl shadow-sm flex items-center justify-center text-green-600"><CheckCircle size={20} /></div>
@@ -1118,7 +1129,8 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                     </>
                   );
                 })()}
-              </div>
+                </div>
+              )}
 
 
               {/* ── QR Code ── */}
@@ -1183,14 +1195,20 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   </select>
                 </div>
                 {newUser.country === 'BR' ? (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado (Fuso Horário)</label>
-                    <select className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all appearance-none" value={newUser.brState} onChange={e => setNewUser({ ...newUser, brState: e.target.value })}>
-                      {BR_STATES.map(s => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado (Fuso Horário)</label>
+                      <select className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all appearance-none" value={newUser.brState} onChange={e => setNewUser({ ...newUser, brState: e.target.value })}>
+                        {BR_STATES.map(s => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link de Assinatura Hotmart</label>
+                      <input className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all" placeholder="https://checkout.hotmart.com/..." value={newUser.hotmartUrl} onChange={e => setNewUser({ ...newUser, hotmartUrl: e.target.value })} />
+                    </div>
+                  </>
                 ) : (
                   <div className="hidden sm:block" />
                 )}
