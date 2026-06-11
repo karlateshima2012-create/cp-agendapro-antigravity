@@ -1,10 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../src/api';
-import { Client } from '../types';
+import { Client, AccountInfo } from '../types';
 import { Search, Trash2, User, Phone, Mail, Calendar, Loader2, Plus, X } from 'lucide-react';
+import { formatPhone, validatePhone } from '../utils/phone';
 
-export const ClientsTab: React.FC = () => {
+interface Props {
+  account: AccountInfo;
+}
+
+export const ClientsTab: React.FC<Props> = ({ account }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -33,24 +37,8 @@ export const ClientsTab: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Japanese phone format helper: accepts 11 digits (with leading zero) or 10 digits (without)
-  const formatJapanesePhone = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.startsWith('0')) {
-      // Com zero inicial: 090 1188 6491
-      if (digits.length <= 3) return digits;
-      if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-      return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
-    } else {
-      // Sem zero inicial: 90 1188 6491
-      if (digits.length <= 2) return digits;
-      if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
-      return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`;
-    }
-  };
-
   const handlePhoneChange = (val: string) => {
-    setFormData({ ...formData, phone: formatJapanesePhone(val) });
+    setFormData({ ...formData, phone: formatPhone(val, account.country ?? 'JP') });
   };
 
   const rawPhoneDigits = (formData.phone || '').replace(/\D/g, '');
@@ -58,6 +46,14 @@ export const ClientsTab: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim()) return;
+    if (!validatePhone(rawPhoneDigits, account.country ?? 'JP')) {
+      alert(
+        account.country === 'BR'
+          ? 'Telefone inválido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX.'
+          : 'Telefone inválido. Use o formato 090 1234 5678 (11 dígitos) ou 90 1234 5678 (10 dígitos).'
+      );
+      return;
+    }
     
     try {
       setIsSaving(true);
@@ -157,7 +153,7 @@ export const ClientsTab: React.FC = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Phone size={14} className="text-gray-400" />
-                          <span className="font-mono">{client.phone}</span>
+                          <span className="font-mono">{formatPhone(client.phone, account.country ?? 'JP')}</span>
                         </div>
                         {client.email && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -228,20 +224,20 @@ export const ClientsTab: React.FC = () => {
                     required
                     type="tel"
                     inputMode="numeric"
-                    maxLength={13}
+                    maxLength={14}
                     value={formData.phone}
                     onChange={e => handlePhoneChange(e.target.value)}
-                    placeholder="090 0000 0000"
+                    placeholder={account.country === 'BR' ? '(11) 98765-4321' : '090 0000 0000'}
                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-mono font-bold"
                   />
                 </div>
                 {/* Digit counter */}
                 <div className="flex justify-end px-2">
                   <span className={`text-[10px] font-bold tabular-nums transition-colors ${
-                    (rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) ? 'text-green-500' :
+                    validatePhone(rawPhoneDigits, account.country ?? 'JP') ? 'text-green-500' :
                     rawPhoneDigits.length > 0 ? 'text-amber-500' : 'text-gray-300'
                   }`}>
-                    {rawPhoneDigits.length} dígitos {(rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) && '✓'}
+                    {rawPhoneDigits.length} dígitos {validatePhone(rawPhoneDigits, account.country ?? 'JP') && '✓'}
                   </span>
                 </div>
               </div>

@@ -605,7 +605,12 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                                   </p>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                                  <p className="text-2xl font-black text-primary">¥ {Number(inv.amount).toLocaleString('ja-JP')}</p>
+                                  <p className="text-2xl font-black text-primary">
+                                    {new Intl.NumberFormat(
+                                      account.country === 'BR' ? 'pt-BR' : 'ja-JP',
+                                      { style: 'currency', currency: account.currency ?? 'JPY' }
+                                    ).format(Number(inv.amount))}
+                                  </p>
                                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status] ?? statusColors.pending}`}>
                                     {statusLabels[inv.status] ?? inv.status}
                                   </span>
@@ -629,7 +634,12 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                                   </p>
                                 </div>
                                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                                  <p className="text-lg font-black text-gray-900">¥ {Number(inv.amount).toLocaleString('ja-JP')}</p>
+                                  <p className="text-lg font-black text-gray-900">
+                                    {new Intl.NumberFormat(
+                                      account.country === 'BR' ? 'pt-BR' : 'ja-JP',
+                                      { style: 'currency', currency: account.currency ?? 'JPY' }
+                                    ).format(Number(inv.amount))}
+                                  </p>
                                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusColors[inv.status] ?? statusColors.canceled}`}>
                                     {statusLabels[inv.status] ?? inv.status}
                                   </span>

@@ -157,7 +157,13 @@ export const GestaoTab: React.FC<Props> = ({ services, account }) => {
   if (thisMAppts.length === 0) alerts.push({ icon: <AlertCircle size={16} />, text: 'Nenhum atendimento confirmado este mês ainda', color: 'text-orange-600 bg-orange-50 border-orange-100' });
   if (atRisk > 0) alerts.push({ icon: <AlertCircle size={16} />, text: `${atRisk} cliente${atRisk > 1 ? 's' : ''} sem retorno há mais de 45 dias`, color: 'text-yellow-700 bg-yellow-50 border-yellow-100' });
 
-  const yen = (v: number) => `¥${Math.round(v).toLocaleString('ja-JP')}`;
+  const yen = (v: number) => {
+    const isBR = account?.country === 'BR';
+    return new Intl.NumberFormat(
+      isBR ? 'pt-BR' : 'ja-JP',
+      { style: 'currency', currency: account?.currency ?? 'JPY' }
+    ).format(Math.round(v));
+  };
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-400">

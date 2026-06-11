@@ -141,6 +141,10 @@ const App: React.FC = () => {
         coverOpacity: prof.cover_opacity ?? 100,
         lifetimeAppointments: prof.lifetime_appointments || 0,
         createdAt: (prof.created_at || '').replace(' ', 'T'),
+        country: prof.country || 'JP',
+        timezone: prof.timezone || 'Asia/Tokyo',
+        currency: prof.currency || 'JPY',
+        phone_country_code: prof.phone_country_code || '81',
       };
 
       if (prof.status === 'deleted' || prof.status === 'blocked' || prof.status === 'expired') {
@@ -233,6 +237,10 @@ const App: React.FC = () => {
         createdAt: (account.created_at || '').replace(' ', 'T'),
         invoices: account.invoices || [],
         pageViews: account.page_views || 0,
+        country: account.country || 'JP',
+        timezone: account.timezone || 'Asia/Tokyo',
+        currency: account.currency || 'JPY',
+        phone_country_code: account.phone_country_code || '81',
       };
       setProfile(accountInfo);
 

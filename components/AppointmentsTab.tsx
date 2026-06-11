@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Appointment, AppointmentStatus, AvailabilityConfig } from '../types';
+import { Appointment, AppointmentStatus, AvailabilityConfig, AccountInfo } from '../types';
 import {
   Calendar,
   Clock,
@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
+import { normalizeE164, formatPhone } from '../utils/phone';
 
 interface Props {
   appointments: Appointment[];
@@ -29,20 +30,13 @@ interface Props {
   onDeleteAppointment: (id: number) => void;
   onBulkDelete?: (ids: number[]) => void;
   publicLink?: string;
+  account: AccountInfo;
 }
 
 // Funções utilitárias para WhatsApp
-function normalizePhoneToE164JP(phoneRaw: string) {
-  const digits = (phoneRaw || '').replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('81')) return digits;      // já internacional
-  if (digits.startsWith('0'))  return '81' + digits.slice(1); // 09011.. → 81901..
-  return '81' + digits;                            // 9011.. → 81901..
-}
-
-function formatWhenJST(startAt: string) {
+function formatWhenInTimezone(startAt: string, timezone: string) {
   return new Date(startAt).toLocaleString('pt-BR', {
-    timeZone: 'Asia/Tokyo',
+    timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -51,10 +45,10 @@ function formatWhenJST(startAt: string) {
   });
 }
 
-function buildWhatsAppMessage(appt: any, status: 'confirmed' | 'rejected' | 'canceled') {
+function buildWhatsAppMessage(appt: any, status: 'confirmed' | 'rejected' | 'canceled', account: AccountInfo) {
   const nome = appt.clientName?.trim() || 'Olá';
   const servico = appt.serviceName?.trim() || 'seu serviço';
-  const when = appt.startAt ? formatWhenJST(appt.startAt) : '';
+  const when = appt.startAt ? formatWhenInTimezone(appt.startAt, account.timezone ?? 'Asia/Tokyo') : '';
 
   if (status === 'confirmed') {
     return `${nome}! Seu agendamento foi CONFIRMADO.\n\n Serviço: ${servico}\n Data/Hora: ${when}\n\nQualquer ajuste é só me chamar por aqui.`;
@@ -65,8 +59,8 @@ function buildWhatsAppMessage(appt: any, status: 'confirmed' | 'rejected' | 'can
   return `${nome}! Seu agendamento foi CANCELADO.\n\n Serviço: ${servico}\n Data/Hora: ${when}\n\nSe quiser reagendar, me chama por aqui.`;
 }
 
-function openWhatsApp(phoneRaw: string, message: string) {
-  const phone = normalizePhoneToE164JP(phoneRaw);
+function openWhatsApp(phoneRaw: string, message: string, account: AccountInfo) {
+  const phone = normalizeE164(phoneRaw, account.country ?? 'JP');
   if (!phone) {
     alert('Telefone do cliente não encontrado neste agendamento.');
     return;
@@ -75,15 +69,15 @@ function openWhatsApp(phoneRaw: string, message: string) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'rejected' | 'canceled') {
+function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'rejected' | 'canceled', account: AccountInfo) {
   // botão WhatsApp "manual": usa a mensagem conforme status atual
   const st = (status === 'pending' ? 'confirmed' : status) as any; // ou crie msg específica p/ pending
-  const msg = buildWhatsAppMessage(appt, st);
-  const phone = normalizePhoneToE164JP(appt.clientPhone);
+  const msg = buildWhatsAppMessage(appt, st, account);
+  const phone = normalizeE164(appt.clientPhone, account.country ?? 'JP');
   return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : '#';
 }
 
-export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, onBulkDelete, publicLink }) => {
+export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, onBulkDelete, publicLink, account }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<'grid' | 'list' | 'calendar'>('grid');
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
@@ -117,6 +111,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   };
 
   const getJSTDate = (dateStr: string | number | Date) => {
+    const tz = account.timezone ?? 'Asia/Tokyo';
     let d: Date;
     if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
       // Treat as local wall-clock time (do NOT add Z)
@@ -126,9 +121,9 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     }
     if (isNaN(d.getTime())) return new Date();
     
-    // Obter data e hora formatadas para Tokyo em formato compatível com o Safari (sem vírgulas)
-    const yStr = d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // "YYYY-MM-DD"
-    const tStr = d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo' }); // "HH:MM:SS"
+    // Obter data e hora formatadas para Local em formato compatível com o Safari (sem vírgulas)
+    const yStr = d.toLocaleDateString('sv-SE', { timeZone: tz }); // "YYYY-MM-DD"
+    const tStr = d.toLocaleTimeString('en-GB', { timeZone: tz }); // "HH:MM:SS"
     return new Date(`${yStr}T${tStr}`);
   };
 
@@ -194,7 +189,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
   const [currentMonth, setCurrentMonth] = useState(getTodayJST());
   const [selectedDay, setSelectedDay] = useState<Date>(() =>
-    new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }))
+    new Date(new Date().toLocaleString("en-US", { timeZone: account.timezone ?? "Asia/Tokyo" }))
   );
 
   const renderCalendar = () => {
@@ -607,7 +602,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 <div className="flex flex-col gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="flex items-center gap-1"><Calendar size={10} /> {startDateJST.toLocaleDateString('pt-BR')}</span>
-                    <span className="flex items-center gap-1"><Phone size={10} /> {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}</span>
+                    <span className="flex items-center gap-1"><Phone size={10} /> {formatPhone(appt.clientPhone, account.country ?? 'JP') || '(Sem telefone)'}</span>
                   </div>
                   {appt.clientEmail && (
                     <div className="flex items-center gap-1">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Service, AvailabilityConfig, Appointment } from '../types';
 import { mapWorkingHours } from '../utils/availability';
+import { formatPhone, validatePhone } from '../utils/phone';
 import {
   Calendar as CalendarIcon,
   Calendar,
@@ -35,6 +36,10 @@ interface Props {
   busyAppointments: Appointment[]; // NOVA PROP AQUI
   onBook: (data: any) => Promise<boolean>;
   onBack: () => void;
+  country?: string;
+  timezone?: string;
+  currency?: string;
+  phoneCountryCode?: string;
 }
 
 export const PublicBookingPage: React.FC<Props> = ({
@@ -53,7 +58,11 @@ export const PublicBookingPage: React.FC<Props> = ({
   appointments,
   busyAppointments, // RECEBE A NOVA PROP
   onBook,
-  onBack
+  onBack,
+  country = 'JP',
+  timezone = 'Asia/Tokyo',
+  currency = 'JPY',
+  phoneCountryCode = '81'
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
@@ -61,24 +70,8 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
 
-  // Japanese phone format: accepts 09011886491 (11 digits) or 9011886491 (10 digits, no leading zero)
-  const formatJapanesePhone = (raw: string): string => {
-    const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.startsWith('0')) {
-      // Com zero inicial: 090 1188 6491
-      if (digits.length <= 3) return digits;
-      if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-      return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
-    } else {
-      // Sem zero inicial: 90 1188 6491
-      if (digits.length <= 2) return digits;
-      if (digits.length <= 6) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
-      return `${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`;
-    }
-  };
-
   const handlePhoneChange = (value: string) => {
-    setClientData({ ...clientData, phone: formatJapanesePhone(value) });
+    setClientData({ ...clientData, phone: formatPhone(value, country) });
   };
 
   const rawPhoneDigits = (clientData.phone || '').replace(/\D/g, '');
@@ -107,7 +100,7 @@ export const PublicBookingPage: React.FC<Props> = ({
   // ✅ SECURITY [M-8]: Debug logs removed — availability data must not be exposed in production console
 
 
-  const getNowJST = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+  const getNowLocal = () => new Date(new Date().toLocaleString("en-US", { timeZone: timezone }));
   const formatLiteralDate = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -204,7 +197,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   const getSlotsForDate = (date: string) => {
     if (selectedServices.length === 0) return [];
-    const nowJST = getNowJST();
+    const nowJST = getNowLocal();
     const todayStr = formatLiteralDate(nowJST);
     const isToday = date === todayStr;
     const currentMinutes = nowJST.getHours() * 60 + nowJST.getMinutes();
@@ -285,7 +278,7 @@ export const PublicBookingPage: React.FC<Props> = ({
   };
 
   const renderCalendar = () => {
-    const nowJST = getNowJST();
+    const nowJST = getNowLocal();
     const todayStr = formatLiteralDate(nowJST);
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -355,9 +348,13 @@ export const PublicBookingPage: React.FC<Props> = ({
       setIsSubmitting(false);
       return;
     }
-    // Japanese phone: 11 digits (with leading zero) or 10 digits (without leading zero)
-    if (rawPhoneDigits.length < 10 || rawPhoneDigits.length > 11) {
-      setErrorMsg('Telefone inválido. Use o formato 090 1234 5678 (11 dígitos) ou 90 1234 5678 (10 dígitos).');
+    // Validate phone number according to country specific rules
+    if (!validatePhone(rawPhoneDigits, country)) {
+      setErrorMsg(
+        country === 'BR'
+          ? 'Telefone inválido. Use o formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX.'
+          : 'Telefone inválido. Use o formato 090 1234 5678 (11 dígitos) ou 90 1234 5678 (10 dígitos).'
+      );
       setIsSubmitting(false);
       return;
     }
@@ -541,9 +538,8 @@ export const PublicBookingPage: React.FC<Props> = ({
                             </div>
                           </div>
 
-                          {/* Right: Price & Button */}
                           <div className="shrink-0 flex flex-col items-end justify-center border-l border-gray-100 pl-3 ml-1 gap-1.5">
-                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">{new Intl.NumberFormat(country === 'BR' ? 'pt-BR' : 'ja-JP', { style: 'currency', currency: currency }).format(s.price)}</span>}
                             <span 
                               className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg text-white shadow-sm"
                               style={{ backgroundColor: primaryColor }}
@@ -593,7 +589,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                         </div>
                         <div className="flex justify-between items-center border-t border-gray-100/50 pt-4">
                           <div>
-                            {s.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">{new Intl.NumberFormat(country === 'BR' ? 'pt-BR' : 'ja-JP', { style: 'currency', currency: currency }).format(s.price)}</span>}
                           </div>
                           <span 
                             className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
@@ -634,7 +630,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     </div>
                     <div>
                       <p className="font-black text-gray-900 text-xl tracking-tight">{selectedServices.length} {selectedServices.length === 1 ? 'serviço selecionado' : 'serviços selecionados'}</p>
-                      <p className="text-gray-400 text-sm font-medium">Duração: <b>{formatDurationFriendly(totalDuration)}</b> • <b>¥ {totalPrice.toLocaleString()}</b></p>
+                      <p className="text-gray-400 text-sm font-medium">Duração: <b>{formatDurationFriendly(totalDuration)}</b> • <b>{new Intl.NumberFormat(country === 'BR' ? 'pt-BR' : 'ja-JP', { style: 'currency', currency: currency }).format(totalPrice)}</b></p>
                     </div>
                   </div>
                   <button 
@@ -770,7 +766,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                       className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-gray-300 shadow-sm focus-border-dynamic focus:bg-white focus:ring-0 text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}
-                      placeholder="090 0000 0000"
+                      placeholder={country === 'BR' ? '(11) 98765-4321' : '090 0000 0000'}
                     />
                   </div>
                   {/* Digit counter */}
@@ -807,7 +803,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     {totalPrice > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-lg font-black text-gray-900">
-                          {new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(totalPrice)}
+                          {new Intl.NumberFormat(country === 'BR' ? 'pt-BR' : 'ja-JP', { style: 'currency', currency: currency }).format(totalPrice)}
                         </span>
                       </div>
                     )}

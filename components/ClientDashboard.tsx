@@ -117,6 +117,7 @@ export const ClientDashboard: React.FC<Props> = ({
                   onDeleteAppointment={onDeleteAppointment}
                   onBulkDelete={onBulkDelete}
                   publicLink={account.publicLink}
+                  account={account}
                 />
               </div>
 
@@ -139,7 +140,7 @@ export const ClientDashboard: React.FC<Props> = ({
               </div>
 
               <div className={activeTab === 'clients' ? 'block' : 'hidden'}>
-                <ClientsTab />
+                <ClientsTab account={account} />
               </div>
 
               <div className={activeTab === 'history' ? 'block' : 'hidden'}>
