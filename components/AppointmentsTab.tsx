@@ -898,7 +898,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                     <div className="flex flex-col gap-1 px-2 text-xs text-gray-500 font-bold">
                       <div className="flex items-center gap-3">
                         <Phone size={14} />
-                        {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}
+                        {formatPhone(appt.clientPhone, account.country ?? 'JP') || '(Sem telefone)'}
                       </div>
                       {appt.clientEmail && (
                         <div className="flex items-center gap-3">
