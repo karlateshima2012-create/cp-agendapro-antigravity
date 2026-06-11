@@ -17,10 +17,10 @@
 | Fase | Título | Status | Avanço Atual |
 |---|---|---|---|
 | **Fase 1** | Fundação de Dados | ✅ Concluído | Migration executada em produção. API pública retornando `country`, `timezone`, `currency`, e `phone_country_code` perfeitamente. |
-| **Fase 2** | Backend Timezone-Aware | 🔄 Em Execução (Local OK) | Fuso global alterado para UTC; rotas `appointments`, `telegram`, e `admin` ajustadas localmente. Aguardando push/deploy. |
-| **Fase 3** | Frontend Dinâmico | ⏳ Planejado | Sem alterações ainda. |
-| **Fase 4** | Painel Admin Multi-País | ⏳ Planejado | Sem alterações ainda. |
-| **Fase 5** | Testes e Validação Completa | ⏳ Planejado | Checklist e regressão técnica. |
+| **Fase 2** | Backend Timezone-Aware | ✅ Concluído | Fuso global alterado para UTC. Validação de datas, rotas do admin, rotas de agendamento e alertas do Telegram rodando em timezone-aware por conta em produção. |
+| **Fase 3** | Frontend Dinâmico | ✅ Concluído | Mapeamento de fusos, formatador/validador de telefones (com whitelist de DDDs para BR), máscara dinâmica de input de telefone, Intl.NumberFormat para moedas dinâmicas (BRL/JPY) e propagação de props implementados e implantados em produção. |
+| **Fase 4** | Painel Admin Multi-País | ✅ Concluído | Seletor de país e estado na criação/edição de profissionais no AdminDashboard, visualização de flags de país, e filtro rápido de país implementados e implantados em produção. |
+| **Fase 5** | Testes e Validação Completa | 🔄 Em Execução | Verificação de infraestrutura e regressão geral. |
 
 ---
 
