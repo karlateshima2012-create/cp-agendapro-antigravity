@@ -331,7 +331,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
       country: targetCountry,
       timezone,
       currency,
-      phoneCountryCode
+      phone_country_code: phoneCountryCode
     };
     if (manualExpiryDate) { const d = new Date(manualExpiryDate); d.setHours(23,59,59,999); updateData.planExpiresAt = d.toISOString(); }
     const updateSuccess = await onUpdateAdminUser(detailsUser.id, updateData);

@@ -500,7 +500,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                           </>
                         )}
                         <a
-                          href={generateWhatsAppLink(appt, appt.status)}
+                          href={generateWhatsAppLink(appt, appt.status, account)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors"
@@ -650,7 +650,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                     </button>
                   )
                 )}
-                <a href={generateWhatsAppLink(appt, appt.status as any)} target="_blank" rel="noreferrer" className="p-2.5 bg-green-50 text-green-600 border border-green-100 rounded-xl hover:bg-green-100 transition-all" title="WhatsApp"><MessageCircle size={16} /></a>
+                <a href={generateWhatsAppLink(appt, appt.status as any, account)} target="_blank" rel="noreferrer" className="p-2.5 bg-green-50 text-green-600 border border-green-100 rounded-xl hover:bg-green-100 transition-all" title="WhatsApp"><MessageCircle size={16} /></a>
                 <button
                   onClick={() => openConfirm(
                     'Excluir Agendamento',
@@ -938,7 +938,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
                     <div className="w-full">
                       <a
-                        href={generateWhatsAppLink(appt, appt.status as any)}
+                        href={generateWhatsAppLink(appt, appt.status as any, account)}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center justify-center gap-2 text-green-600 bg-green-50 hover:bg-green-100 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all w-full border border-green-100 active:scale-95"
