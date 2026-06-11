@@ -103,5 +103,11 @@ if (preg_match('/^public\/view\/([^\/]+)$/', $path, $matches) && $method === 'PO
     }
 }
 
+if ($path === 'public/log-error' && $method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true) ?? [];
+    Monitor::clientError($data);
+    Response::ok(['success' => true]);
+}
+
 Response::fail('Not Found', 404);
 

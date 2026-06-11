@@ -15,6 +15,36 @@ import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { mapWorkingHours } from './utils/availability';
 import { Lock } from 'lucide-react';
 
+// ✅ MONITORING: Client-side error logger utility to notify via Telegram
+let clientErrorReportCount = 0;
+const MAX_CLIENT_ERRORS_REPORTED = 5;
+
+async function reportErrorToBackend(errorData: {
+  message: string;
+  stack?: string;
+  componentStack?: string;
+  url?: string;
+  userAgent?: string;
+  filename?: string;
+  lineno?: number;
+}) {
+  if (clientErrorReportCount >= MAX_CLIENT_ERRORS_REPORTED) return;
+  clientErrorReportCount++;
+
+  try {
+    const apiBase = import.meta.env.VITE_API_BASE ?? '/api';
+    await fetch(`${apiBase}/public/log-error`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(errorData)
+    });
+  } catch (e) {
+    console.error('Failed to send client error report:', e);
+  }
+}
+
 // ✅ ERROR BOUNDARY para capturar erros fatais
 interface ErrorBoundaryProps { children: React.ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; error: any; }
@@ -32,6 +62,13 @@ class ErrorBoundary extends React.Component<any, any> {
 
   componentDidCatch(error: any, errorInfo: any) {
     console.error("❌ CRASH DETECTADO:", error, errorInfo);
+    reportErrorToBackend({
+      message: error?.toString() || 'React render crash',
+      stack: error?.stack || '',
+      componentStack: errorInfo?.componentStack || '',
+      url: window.location.href,
+      userAgent: navigator.userAgent
+    }).catch(console.error);
   }
 
   render() {
@@ -55,6 +92,34 @@ class ErrorBoundary extends React.Component<any, any> {
 const App: React.FC = () => {
   useEffect(() => {
     log.info('Build Version:', import.meta.env.VITE_APP_VERSION ?? 'dev');
+
+    const handleWindowError = (event: ErrorEvent) => {
+      reportErrorToBackend({
+        message: event.message || 'Window error',
+        filename: event.filename,
+        lineno: event.lineno,
+        stack: event.error?.stack || '',
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      }).catch(console.error);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      reportErrorToBackend({
+        message: event.reason?.message || event.reason?.toString() || 'Unhandled promise rejection',
+        stack: event.reason?.stack || '',
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      }).catch(console.error);
+    };
+
+    window.addEventListener('error', handleWindowError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleWindowError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   // ✅ NOVA VERIFICAÇÃO: Se estiver na rota /reset-password, renderiza componente específico

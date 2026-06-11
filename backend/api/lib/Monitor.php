@@ -70,6 +70,64 @@ class Monitor
         self::sendAlert("🔴 *ALERTA MANUAL*\n\n$message$contextText");
     }
 
+    /**
+     * Send client-side (frontend) javascript/React error alerts to Telegram.
+     */
+    public static function clientError(array $data): void
+    {
+        $message        = $data['message'] ?? 'Unknown client error';
+        $stack          = $data['stack'] ?? '';
+        $componentStack = $data['componentStack'] ?? '';
+        $url            = $data['url'] ?? '';
+        $userAgent      = $data['userAgent'] ?? '';
+        $filename       = $data['filename'] ?? '';
+        $lineno         = $data['lineno'] ?? '';
+
+        $env  = defined('DEBUG_MODE') && DEBUG_MODE ? 'DEV' : 'PRODUÇÃO';
+        $now  = date('d/m/Y H:i:s T');
+        $ip   = $_SERVER['REMOTE_ADDR']  ?? 'unknown';
+
+        $lines = [
+            "📱 *CP Agenda Pro — Erro no Frontend*",
+            "",
+            "🌍 *Ambiente:* $env",
+            "🕐 *Quando:* $now",
+            "🌐 *URL:* `$url`",
+            "📍 *IP:* `$ip`",
+            "💻 *Navegador:* `$userAgent`",
+            "",
+            "❌ *Erro:*",
+            "```",
+            self::truncate($message, 600),
+            "```",
+        ];
+
+        if (!empty($filename)) {
+            $lines[] = "📁 *Arquivo:* `$filename` linha `$lineno`";
+        }
+
+        if (!empty($stack)) {
+            $lines[] = "";
+            $lines[] = "🔍 *JS Stack Trace:*";
+            $lines[] = "```";
+            $lines[] = self::truncate($stack, 1000);
+            $lines[] = "```";
+        }
+
+        if (!empty($componentStack)) {
+            $lines[] = "";
+            $lines[] = "🧩 *React Component Stack:*";
+            $lines[] = "```";
+            $lines[] = self::truncate($componentStack, 1000);
+            $lines[] = "```";
+        }
+
+        $alertText = implode("\n", $lines);
+        $rateKey = md5($message . $filename . $lineno);
+
+        self::sendAlert($alertText, $rateKey);
+    }
+
     // ------------------------------------------------------------------ //
     //  Internal helpers                                                    //
     // ------------------------------------------------------------------ //
