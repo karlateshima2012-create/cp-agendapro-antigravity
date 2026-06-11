@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS `cp_agenda_accounts` (
     `invoices` JSON DEFAULT NULL,
     `onboarding_seen` TINYINT(1) DEFAULT 0,
     `lifetime_appointments` INT DEFAULT 0,
+    `country` VARCHAR(5) NOT NULL DEFAULT 'JP',
+    `timezone` VARCHAR(50) NOT NULL DEFAULT 'Asia/Tokyo',
+    `currency` VARCHAR(3) NOT NULL DEFAULT 'JPY',
+    `phone_country_code` VARCHAR(5) NOT NULL DEFAULT '81',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

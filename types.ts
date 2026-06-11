@@ -111,6 +111,10 @@ export interface User {
   viewMode?: 'card' | 'list';
   coverOpacity?: number;
   pageViews?: number;
+  country?: string;
+  timezone?: string;
+  currency?: string;
+  phone_country_code?: string;
 }
 
 export interface AccountInfo {
@@ -137,4 +141,8 @@ export interface AccountInfo {
   viewMode?: 'card' | 'list';
   coverOpacity?: number;
   pageViews?: number;
+  country?: string;
+  timezone?: string;
+  currency?: string;
+  phone_country_code?: string;
 }

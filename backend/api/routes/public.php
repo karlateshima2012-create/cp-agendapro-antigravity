@@ -8,7 +8,8 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     $profile = Db::fetch('
         SELECT a.id, a.name, a.status, a.plan_type, a.plan_expires_at, a.primary_color, 
                a.secondary_color, a.short_description, a.services_title, a.services_subtitle, 
-               a.cover_image, a.view_mode, a.cover_opacity, a.profile_image, a.lifetime_appointments 
+               a.cover_image, a.view_mode, a.cover_opacity, a.profile_image, a.lifetime_appointments,
+               a.timezone, a.country, a.currency, a.phone_country_code
         FROM cp_agenda_accounts a
         JOIN cp_agenda_users u ON u.account_id = a.id
         WHERE u.id = ?', [$userId]);
@@ -16,6 +17,9 @@ if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 
     if (!$profile) {
         Response::fail('Profile not found', 404);
     }
+
+    // Set the dynamic timezone for any PHP date/time calculations in this request
+    date_default_timezone_set($profile['timezone'] ?? 'Asia/Tokyo');
 
     if ($profile['status'] !== 'active') {
         // ✅ SECURITY [A-6]: Return only status info for non-active accounts

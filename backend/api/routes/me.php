@@ -17,7 +17,8 @@ if ($path === 'me' && $method === 'GET') {
                 primary_color, secondary_color, short_description, services_title,
                 services_subtitle, cover_image, view_mode, cover_opacity, profile_image, contact_phone,
                 telegram_bot_token, telegram_chat_id, onboarding_seen,
-                lifetime_appointments, created_at, invoices, page_views
+                lifetime_appointments, created_at, invoices, page_views,
+                country, timezone, currency, phone_country_code
          FROM cp_agenda_accounts WHERE id = ?',
         [$user['account_id']]
     );
@@ -36,7 +37,7 @@ if ($path === 'me/profile' && $method === 'PATCH') {
     $data = json_decode(file_get_contents('php://input'), true);
     
     // Filter allowed fields
-    $allowed = ['name', 'short_description', 'services_title', 'services_subtitle', 'primary_color', 'secondary_color', 'cover_image', 'view_mode', 'cover_opacity', 'profile_image', 'telegram_bot_token', 'telegram_chat_id'];
+    $allowed = ['name', 'short_description', 'services_title', 'services_subtitle', 'primary_color', 'secondary_color', 'cover_image', 'view_mode', 'cover_opacity', 'profile_image', 'telegram_bot_token', 'telegram_chat_id', 'timezone', 'country', 'currency'];
     $sets = [];
     $params = [];
     foreach ($data as $key => $val) {
