@@ -22,6 +22,10 @@ if ($path === 'admin/profiles' && $method === 'GET') {
             a.last_access_at  AS lastAccessAt,
             a.created_at      AS createdAt,
             a.page_views      AS pageViews,
+            a.country         AS country,
+            a.timezone        AS timezone,
+            a.currency        AS currency,
+            a.phone_country_code AS phoneCountryCode,
 
             (SELECT MAX(start_at)
                FROM cp_agenda_appointments
@@ -89,6 +93,11 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
         'plan_type'         => 'plan_type',
         'plan_expires_at'   => 'plan_expires_at',
         'invoices'          => 'invoices',
+        'country'           => 'country',
+        'timezone'          => 'timezone',
+        'currency'          => 'currency',
+        'phoneCountryCode'  => 'phone_country_code',
+        'phone_country_code'=> 'phone_country_code',
     ];
 
     $sets = [];
@@ -96,12 +105,37 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
     $newEmail = null;
 
     $validPlanTypes = ['trial', '1m', '3m', '6m', '12m'];
+    $validCountries = ['BR', 'JP'];
+    $validCurrencies = ['BRL', 'JPY'];
+    $validPhoneCodes = ['55', '81'];
+    $validTimezones = [
+        'Asia/Tokyo',
+        'America/Sao_Paulo',
+        'America/Manaus',
+        'America/Cuiaba',
+        'America/Campo_Grande',
+        'America/Rio_Branco',
+        'America/Noronha',
+        'America/Araguaina',
+        'America/Fortaleza',
+        'America/Recife',
+        'America/Maceio',
+        'America/Bahia',
+        'America/Belem'
+    ];
 
     foreach ($data as $key => $val) {
         if (isset($fieldMap[$key])) {
             $col = $fieldMap[$key];
             // Skip plan_type if value is empty or not in the allowed ENUM
             if ($col === 'plan_type' && !in_array($val, $validPlanTypes, true)) continue;
+            
+            // Whitelist validation for localization columns
+            if ($col === 'country' && !in_array($val, $validCountries, true)) continue;
+            if ($col === 'currency' && !in_array($val, $validCurrencies, true)) continue;
+            if ($col === 'phone_country_code' && !in_array($val, $validPhoneCodes, true)) continue;
+            if ($col === 'timezone' && !in_array($val, $validTimezones, true)) continue;
+
             // Normalize datetime fields: convert ISO 8601 (JS) to MySQL DATETIME
             if ($col === 'plan_expires_at' && is_string($val) && $val !== '') {
                 $dt = date_create($val);
@@ -186,8 +220,25 @@ if ($path === 'admin/users' && $method === 'POST') {
         };
         $expiresAt = date('Y-m-d H:i:s', strtotime("+$months months"));
         
-        Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at) VALUES (?, ?, ?, ?, ?, ?)', 
-            [$data['companyName'], $data['ownerName'], 'active', $data['contactPhone'] ?? '', $planType, $expiresAt]);
+        $country   = $data['country'] ?? 'JP';
+        $timezone  = $data['timezone'] ?? 'Asia/Tokyo';
+        $currency  = $data['currency'] ?? 'JPY';
+        $phoneCode = $data['phoneCountryCode'] ?? $data['phone_country_code'] ?? '81';
+
+        $validTimezones = [
+            'Asia/Tokyo', 'America/Sao_Paulo', 'America/Manaus', 'America/Cuiaba',
+            'America/Campo_Grande', 'America/Rio_Branco', 'America/Noronha',
+            'America/Araguaina', 'America/Fortaleza', 'America/Recife',
+            'America/Maceio', 'America/Bahia', 'America/Belem'
+        ];
+        
+        if (!in_array($country, ['BR', 'JP'], true)) $country = 'JP';
+        if (!in_array($timezone, $validTimezones, true)) $timezone = 'Asia/Tokyo';
+        if (!in_array($currency, ['BRL', 'JPY'], true)) $currency = 'JPY';
+        if (!in_array($phoneCode, ['55', '81'], true)) $phoneCode = '81';
+
+        Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at, country, timezone, currency, phone_country_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            [$data['companyName'], $data['ownerName'], 'active', $data['contactPhone'] ?? '', $planType, $expiresAt, $country, $timezone, $currency, $phoneCode]);
         $accId = $pdo->lastInsertId();
         
         Db::query('INSERT INTO cp_agenda_users (account_id, email, password_hash, role, name, must_change_password) VALUES (?, ?, ?, ?, ?, ?)', [

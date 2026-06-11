@@ -16,8 +16,8 @@
 
 | Fase | Título | Status | Avanço Atual |
 |---|---|---|---|
-| **Fase 1** | Fundação de Dados | 🔄 Em Execução (Local OK) | Migration criada, `schema.sql`, endpoints `/public` e `/me`, e `types.ts` ajustados localmente. Aguardando deploy e validação da base. |
-| **Fase 2** | Backend Timezone-Aware | ⏳ Planejado | Sem alterações ainda. |
+| **Fase 1** | Fundação de Dados | ✅ Concluído | Migration executada em produção. API pública retornando `country`, `timezone`, `currency`, e `phone_country_code` perfeitamente. |
+| **Fase 2** | Backend Timezone-Aware | 🔄 Em Execução (Local OK) | Fuso global alterado para UTC; rotas `appointments`, `telegram`, e `admin` ajustadas localmente. Aguardando push/deploy. |
 | **Fase 3** | Frontend Dinâmico | ⏳ Planejado | Sem alterações ainda. |
 | **Fase 4** | Painel Admin Multi-País | ⏳ Planejado | Sem alterações ainda. |
 | **Fase 5** | Testes e Validação Completa | ⏳ Planejado | Checklist e regressão técnica. |

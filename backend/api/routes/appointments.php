@@ -41,16 +41,16 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
     try {
         $pdo->beginTransaction();
 
-        // 1. VALIDATION: Check if date is in the past or today (Server time)
-        // User Requirement: "Não permitir agendamento em dias passados / dia atual"
-        // Adjust to Account Timezone (JST) for correct "Today" comparison
-        $accountTz = new DateTimeZone('Asia/Tokyo'); // Assuming JST as per context
-        $nowJst = new DateTime('now', $accountTz);
-        $startJst = new DateTime($startStr, $accountTz); // Input should be ISO8601 or similar
+        // 1. VALIDATION: Check if date is in the past or today in Account Timezone
+        // Adjust to Account Timezone dynamically for correct "Today" comparison
+        $acc = Db::fetch('SELECT timezone FROM cp_agenda_accounts WHERE id = ?', [$accId]);
+        $accountTz = new DateTimeZone($acc['timezone'] ?? 'Asia/Tokyo');
+        $nowLocal = new DateTime('now', $accountTz);
+        $startLocal = new DateTime($startStr, $accountTz); // Input should be ISO8601 or similar
 
         // Compare dates only
-        $todayStr = $nowJst->format('Y-m-d');
-        $dateStr = $startJst->format('Y-m-d');
+        $todayStr = $nowLocal->format('Y-m-d');
+        $dateStr = $startLocal->format('Y-m-d');
 
         if ($dateStr < $todayStr) {
              throw new Exception('Não é possível agendar em datas passadas.');
@@ -58,6 +58,9 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
         if ($dateStr === $todayStr) {
              throw new Exception('Agendamentos devem ser feitos com pelo menos 1 dia de antecedência.');
         }
+
+        // Keep a reference of the start time in timezone for later availability/dayofweek checks
+        $startJst = $startLocal;
 
         // 2. VALIDATION: Check Blocked Dates (Intersection Check)
         // Overlap if: appt_start < block_end AND appt_end > block_start
@@ -143,7 +146,7 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
         
         // TELEGRAM NOTIFICATION (Outside transaction)
         try {
-            $acc = Db::fetch('SELECT telegram_bot_token, telegram_chat_id FROM cp_agenda_accounts WHERE id = ?', [$accId]);
+            $acc = Db::fetch('SELECT telegram_bot_token, telegram_chat_id, timezone FROM cp_agenda_accounts WHERE id = ?', [$accId]);
             // Prefer account-specific bot; fall back to official bot from env var
             $officialToken = get_env_var('TELEGRAM_BOT_TOKEN', '');
             $resolvedToken = !empty($acc['telegram_bot_token']) ? $acc['telegram_bot_token'] : $officialToken;
@@ -154,7 +157,10 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
                 $clientName = $data['clientName'] ?? 'Cliente';
                 $clientPhone = $data['clientPhone'] ?? 'Sem telefone';
                 $serviceName = $data['serviceName'] ?? 'Serviço';
-                $formattedDate = date('d/m/Y H:i', strtotime($newStart));
+                
+                $tzObj = new DateTimeZone($acc['timezone'] ?? 'Asia/Tokyo');
+                $startInTz = new DateTime($newStart, $tzObj);
+                $formattedDate = $startInTz->format('d/m/Y H:i');
     
                 $text = "<b>🔔 Novo Agendamento!</b>\n\n" .
                         "👤 <b>Cliente:</b> {$clientName}\n" .

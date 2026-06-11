@@ -57,4 +57,5 @@ define('API_VERSION', get_config_var('API_VERSION', '1.0.0'));
 define('DEBUG_MODE', filter_var(get_config_var('DEBUG_MODE', 'false'), FILTER_VALIDATE_BOOLEAN));
 
 // Timezone
-date_default_timezone_set('Asia/Tokyo');
+date_default_timezone_set('UTC');
+

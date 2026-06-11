@@ -7,7 +7,7 @@ set -euo pipefail
 VPS_USER="deploy"
 VPS_HOST="76.13.209.192"
 SSH_KEY="$HOME/.ssh/github_deploy_cpagenda"
-SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no"
+SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -t"
 REMOTE_ROOT="/var/www/cpagendapro"
 
 # --- Verificacoes iniciais ---
