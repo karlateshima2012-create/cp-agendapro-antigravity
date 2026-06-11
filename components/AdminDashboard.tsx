@@ -7,6 +7,7 @@ import {
   TrendingUp, BarChart2, DollarSign, Zap, ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { BR_STATE_TIMEZONES, BR_STATES } from '../utils/brazilTimezones';
 
 interface Props {
   users: User[];
@@ -36,13 +37,17 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
   const [activeMainTab, setActiveMainTab] = useState<'clients' | 'billing'>('clients');
 
+  const [countryFilter, setCountryFilter] = useState<'all' | 'JP' | 'BR'>('all');
+
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
     companyName: '',
     ownerName: '',
     contactPhone: '',
-    planType: '6m' as PlanType
+    planType: '6m' as PlanType,
+    country: 'JP' as string,
+    brState: 'SP' as string,
   });
 
   const now = new Date();
@@ -102,9 +107,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   });
 
-  const filteredClients = healthFilter === 'all'
+  const filteredClients = (healthFilter === 'all'
     ? sortedClients
-    : sortedClients.filter(c => getHealth(c) === healthFilter);
+    : sortedClients.filter(c => getHealth(c) === healthFilter)
+  ).filter(c => countryFilter === 'all' || (c.country || 'JP') === countryFilter);
 
   // ── Métricas de topo ───────────────────────────────────────────────────────
   const expire3d     = sortedClients.filter(c => { if (!c.planExpiresAt) return false; const diff = new Date(c.planExpiresAt).getTime() - nowMs; return diff > 0 && diff <= 3 * dayInMs; }).length;
@@ -243,7 +249,17 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const handleOpenDetails = (user: User) => {
     setDetailsUser(user);
     setRenewalPeriod(0);
-    setEditData({ companyName: user.companyName, ownerName: user.ownerName, contactPhone: user.contactPhone, email: user.email, planType: user.planType });
+    const userCountry = user.country || 'JP';
+    const reverseState = Object.keys(BR_STATE_TIMEZONES).find(key => BR_STATE_TIMEZONES[key] === user.timezone) || 'SP';
+    setEditData({
+      companyName: user.companyName,
+      ownerName: user.ownerName,
+      contactPhone: user.contactPhone,
+      email: user.email,
+      planType: user.planType,
+      country: userCountry,
+      brState: reverseState
+    });
     setEditInvoices(user.invoices || []);
     if (user.planExpiresAt) {
       const date = new Date(user.planExpiresAt);
@@ -260,9 +276,28 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     const expiresAt = new Date();
     const months = newUser.planType === '12m' ? 12 : newUser.planType === '6m' ? 6 : newUser.planType === '3m' ? 3 : 1;
     expiresAt.setMonth(expiresAt.getMonth() + months);
-    const userData = { email: (newUser.email || '').trim().toLowerCase(), password: newUser.password.trim(), companyName: newUser.companyName.trim(), ownerName: newUser.ownerName.trim(), contactPhone: newUser.contactPhone.trim(), planType: newUser.planType, planExpiresAt: expiresAt.toISOString() };
+    
+    const timezone = newUser.country === 'BR'
+      ? (BR_STATE_TIMEZONES[newUser.brState] || 'America/Sao_Paulo')
+      : 'Asia/Tokyo';
+    const currency = newUser.country === 'BR' ? 'BRL' : 'JPY';
+    const phoneCountryCode = newUser.country === 'BR' ? '55' : '81';
+
+    const userData = {
+      email: (newUser.email || '').trim().toLowerCase(),
+      password: newUser.password.trim(),
+      companyName: newUser.companyName.trim(),
+      ownerName: newUser.ownerName.trim(),
+      contactPhone: newUser.contactPhone.trim(),
+      planType: newUser.planType,
+      planExpiresAt: expiresAt.toISOString(),
+      country: newUser.country,
+      timezone,
+      currency,
+      phoneCountryCode
+    };
     const success = await onAddUser(userData);
-    if (success) { setShowAddForm(false); setCreatedUser(userData); setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m' }); }
+    if (success) { setShowAddForm(false); setCreatedUser(userData); setNewUser({ email: '', password: '', companyName: '', ownerName: '', contactPhone: '', planType: '6m', country: 'JP', brState: 'SP' }); }
     setIsSubmitting(false);
   };
 
@@ -279,7 +314,25 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const handleSaveModalUpdates = async () => {
     if (!detailsUser) return;
     setIsRenewingInModal(true);
-    const updateData: Partial<User> = { companyName: editData.companyName, ownerName: editData.ownerName, contactPhone: editData.contactPhone, email: editData.email, planType: editData.planType, invoices: editInvoices };
+    const targetCountry = editData.country || 'JP';
+    const timezone = targetCountry === 'BR'
+      ? (BR_STATE_TIMEZONES[editData.brState || 'SP'] || 'America/Sao_Paulo')
+      : 'Asia/Tokyo';
+    const currency = targetCountry === 'BR' ? 'BRL' : 'JPY';
+    const phoneCountryCode = targetCountry === 'BR' ? '55' : '81';
+
+    const updateData: Partial<User> = {
+      companyName: editData.companyName,
+      ownerName: editData.ownerName,
+      contactPhone: editData.contactPhone,
+      email: editData.email,
+      planType: editData.planType,
+      invoices: editInvoices,
+      country: targetCountry,
+      timezone,
+      currency,
+      phoneCountryCode
+    };
     if (manualExpiryDate) { const d = new Date(manualExpiryDate); d.setHours(23,59,59,999); updateData.planExpiresAt = d.toISOString(); }
     const updateSuccess = await onUpdateAdminUser(detailsUser.id, updateData);
     let renewalSuccess = true;
@@ -378,22 +431,43 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
           </button>
         </div>
 
-        {/* ── Tabs de filtro por saúde ── */}
-        <div className="flex gap-2 mb-5 flex-wrap">
-          {([
-            { key: 'all',      label: 'Todas',      active: 'bg-primary text-white',     inactive: 'bg-white text-gray-500 border border-gray-200' },
-            { key: 'critical', label: '🔴 Crítico',  active: 'bg-red-600 text-white',     inactive: 'bg-white text-red-500 border border-red-100' },
-            { key: 'risk',     label: '🟡 Em Risco', active: 'bg-yellow-500 text-white',  inactive: 'bg-white text-yellow-600 border border-yellow-100' },
-            { key: 'healthy',  label: '🟢 Saudável', active: 'bg-green-600 text-white',   inactive: 'bg-white text-green-600 border border-green-100' },
-          ] as { key: HealthFilter; label: string; active: string; inactive: string }[]).map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setHealthFilter(tab.key)}
-              className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${healthFilter === tab.key ? tab.active : tab.inactive}`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* ── Filtro por País e Saúde ── */}
+        <div className="flex flex-col md:flex-row gap-4 mb-5">
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { key: 'all',      label: 'Todas as Saúdes', active: 'bg-primary text-white',     inactive: 'bg-white text-gray-500 border border-gray-200' },
+              { key: 'critical', label: '🔴 Crítico',  active: 'bg-red-600 text-white',     inactive: 'bg-white text-red-500 border border-red-100' },
+              { key: 'risk',     label: '🟡 Em Risco', active: 'bg-yellow-500 text-white',  inactive: 'bg-white text-yellow-600 border border-yellow-100' },
+              { key: 'healthy',  label: '🟢 Saudável', active: 'bg-green-600 text-white',   inactive: 'bg-white text-green-600 border border-green-100' },
+            ] as { key: HealthFilter; label: string; active: string; inactive: string }[]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setHealthFilter(tab.key)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${healthFilter === tab.key ? tab.active : tab.inactive}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 flex-wrap border-l border-gray-200 pl-0 md:pl-4">
+            {([
+              { key: 'all', label: 'Todos os Países' },
+              { key: 'BR',  label: '🇧🇷 Brasil' },
+              { key: 'JP',  label: '🇯🇵 Japão' }
+            ] as { key: 'all' | 'BR' | 'JP'; label: string }[]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setCountryFilter(tab.key)}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
+                  countryFilter === tab.key
+                    ? 'bg-gray-800 text-white border-gray-800'
+                    : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Tabela de clientes ── */}
@@ -420,7 +494,12 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                         <div className="flex items-start gap-3">
                           <span className="text-lg mt-0.5 shrink-0" title={healthLabel[health]}>{healthDot[health]}</span>
                           <div className="flex flex-col min-w-0">
-                            <p className="font-black text-gray-900 uppercase text-sm truncate">{client.companyName}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-black text-gray-900 uppercase text-sm truncate">{client.companyName}</p>
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200">
+                                {client.country === 'BR' ? '🇧🇷 BR' : '🇯🇵 JP'}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <UserIcon size={10} className="text-primary shrink-0" />
                               <p className="text-[10px] text-gray-500 font-bold truncate">{client.ownerName || 'Não informado'}</p>
@@ -737,6 +816,23 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Empresa</label>
                       <input type="text" value={editData.companyName || ''} onChange={e => setEditData({ ...editData, companyName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" />
                     </div>
+                    <div>
+                      <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">País</label>
+                      <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" value={editData.country || 'JP'} onChange={e => setEditData({ ...editData, country: e.target.value })}>
+                        <option value="JP">🇯🇵 Japão</option>
+                        <option value="BR">🇧🇷 Brasil</option>
+                      </select>
+                    </div>
+                    {editData.country === 'BR' && (
+                      <div>
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Estado (Fuso Horário)</label>
+                        <select className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" value={editData.brState || 'SP'} onChange={e => setEditData({ ...editData, brState: e.target.value })}>
+                          {BR_STATES.map(s => (
+                            <option key={s.value} value={s.value}>{s.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Responsável (Info Interna)</label>
                       <input type="text" value={editData.ownerName || ''} onChange={e => setEditData({ ...editData, ownerName: e.target.value })} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:bg-white" placeholder="Nome do gestor" />
@@ -1077,6 +1173,27 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Responsável (Admin)</label>
                   <input required className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all" placeholder="Nome do gestor" value={newUser.ownerName} onChange={e => setNewUser({ ...newUser, ownerName: e.target.value })} />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">País</label>
+                  <select className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all appearance-none" value={newUser.country} onChange={e => setNewUser({ ...newUser, country: e.target.value })}>
+                    <option value="JP">🇯🇵 Japão</option>
+                    <option value="BR">🇧🇷 Brasil</option>
+                  </select>
+                </div>
+                {newUser.country === 'BR' ? (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Estado (Fuso Horário)</label>
+                    <select className="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none font-bold transition-all appearance-none" value={newUser.brState} onChange={e => setNewUser({ ...newUser, brState: e.target.value })}>
+                      {BR_STATES.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="hidden sm:block" />
+                )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
