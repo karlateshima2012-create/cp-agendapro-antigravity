@@ -35,7 +35,7 @@ jobs:
 
     - name: Análise Estática (PHPStan — bloqueia deploy em caso de erro de tipagem)
       working-directory: ./backend
-      run: ./vendor/bin/phpstan analyse --error-format=github
+      run: ./vendor/bin/phpstan analyse --error-format=github --memory-limit=-1
 
     - name: Gerar .env de produção a partir dos GitHub Secrets
       env:
