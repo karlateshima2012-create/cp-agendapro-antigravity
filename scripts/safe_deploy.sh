@@ -7,7 +7,8 @@ set -euo pipefail
 VPS_USER="deploy"
 VPS_HOST="76.13.209.192"
 SSH_KEY="$HOME/.ssh/github_deploy_cpagenda"
-SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -t"
+SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no"
+SSH_TTY_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no -tt"
 REMOTE_ROOT="/var/www/cpagendapro"
 
 # --- Verificacoes iniciais ---
@@ -62,30 +63,18 @@ echo "[4/5] Backend enviado."
 
 # --- Passo 5/5: Finalizar na VPS ---
 echo "[5/5] Executando finalizacao na VPS..."
-ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" << 'ENDSSH'
+ssh $SSH_TTY_OPTS "$VPS_USER@$VPS_HOST" "bash -c '
 set -euo pipefail
-
 cd /var/www/cpagendapro/backend
-
-# Permissoes do .env (deve existir — gerado separadamente ou mantido na VPS)
-if [ -f ".env" ]; then
-    sudo chown deploy:www-data .env
+sudo chown -R deploy:www-data /var/www/cpagendapro/backend
+if [ -f \".env\" ]; then
     chmod 640 .env
 fi
-
-sudo chown -R deploy:www-data /var/www/cpagendapro/backend
-
-# Dependencias PHP
 composer install --no-dev --optimize-autoloader --no-interaction 2>&1 | tail -5
-
-# Migrations
 php /var/www/cpagendapro/backend/migrate.php
-
-# Backup + permissoes + reload PHP-FPM
 /home/deploy/bin/safe-deploy-jp.sh
-
-echo "Finalizacao concluida em $(date '+%Y-%m-%d %H:%M:%S')"
-ENDSSH
+echo \"Finalizacao concluida em \$(date \"+%Y-%m-%d %H:%M:%S\")\"
+'"
 
 echo ""
 echo "[OK] Deploy concluido. Verificando o site..."
