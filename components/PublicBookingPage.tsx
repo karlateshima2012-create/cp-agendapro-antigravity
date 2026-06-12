@@ -762,7 +762,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                       required
                       type="tel"
                       inputMode="numeric"
-                      maxLength={13}
+                      maxLength={country === 'BR' ? 15 : 13}
                       className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-gray-300 shadow-sm focus-border-dynamic focus:bg-white focus:ring-0 text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}

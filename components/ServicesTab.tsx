@@ -15,6 +15,13 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
   // Form state
   const [formState, setFormState] = useState<Partial<Service>>({});
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat(
+      account.country === 'BR' ? 'pt-BR' : 'ja-JP',
+      { style: 'currency', currency: account.currency || 'JPY', minimumFractionDigits: 0 }
+    ).format(price);
+  };
+
   const startEdit = (svc: Service) => {
     setEditingId(svc.id);
     setFormState(svc);
@@ -208,7 +215,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preço (¥) <span className="text-gray-400 font-normal">(Opcional)</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Preço ({account.currency === 'BRL' ? 'R$' : '¥'}) <span className="text-gray-400 font-normal">(Opcional)</span></label>
               <input
                 type="number"
                 placeholder="sem vírgula e sem ponto"
@@ -406,7 +413,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
                       <Trash2 size={12} />
                     </button>
                   </div>
-                  {svc.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">¥ {svc.price.toLocaleString()}</span>}
+                  {svc.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">{formatPrice(svc.price)}</span>}
                 </div>
               </div>
             );
@@ -480,7 +487,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
             </div>
             <div className="relative z-10 flex justify-between items-center border-t border-gray-100/50 pt-4">
               <div>
-                {svc.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">¥ {svc.price.toLocaleString()}</span>}
+                {svc.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">{formatPrice(svc.price)}</span>}
               </div>
             </div>
           </div>

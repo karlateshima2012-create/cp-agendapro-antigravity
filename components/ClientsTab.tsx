@@ -224,7 +224,7 @@ export const ClientsTab: React.FC<Props> = ({ account }) => {
                     required
                     type="tel"
                     inputMode="numeric"
-                    maxLength={14}
+                    maxLength={(account?.country ?? 'JP') === 'BR' ? 15 : 13}
                     value={formData.phone}
                     onChange={e => handlePhoneChange(e.target.value)}
                     placeholder={account.country === 'BR' ? '(11) 98765-4321' : '090 0000 0000'}
