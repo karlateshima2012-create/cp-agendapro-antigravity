@@ -267,7 +267,7 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                       </div>
                    </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-12 md:items-center animate-fade-in">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-12 md:items-center animate-fade-in">
                     <div className="md:col-start-7 md:col-span-3 flex flex-col gap-2">
                       <span className="md:hidden text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Início</span>
                       <input
