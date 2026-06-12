@@ -267,8 +267,8 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                       </div>
                    </div>
                 ) : (
-                  <div className="flex flex-col sm:flex-row gap-4 md:grid md:grid-cols-12 md:items-center animate-fade-in">
-                    <div className="md:col-start-7 md:col-span-3 flex flex-col gap-2 w-full sm:flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row gap-4 md:justify-end animate-fade-in">
+                    <div className="flex flex-col gap-2 w-full sm:flex-1 md:w-40 md:flex-none min-w-0">
                       <span className="md:hidden text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Início</span>
                       <input
                         type="time"
@@ -278,7 +278,7 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
                         className="w-full max-w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-primary focus:bg-white outline-none disabled:opacity-50 transition-all"
                       />
                     </div>
-                    <div className="md:col-span-3 flex flex-col gap-2 w-full sm:flex-1 min-w-0">
+                    <div className="flex flex-col gap-2 w-full sm:flex-1 md:w-40 md:flex-none min-w-0">
                       <span className="md:hidden text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fim</span>
                       <input
                         type="time"
