@@ -14,27 +14,52 @@ $chatId = $message['chat']['id'] ?? null;
 $text = $message['text'] ?? '';
 
 if ($chatId && (strpos($text, '/start') === 0)) {
-    $token = get_env_var('TELEGRAM_BOT_TOKEN', '');
-    if (empty($token)) { header('HTTP/1.1 200 OK'); echo json_encode(['status' => 'ok']); exit; }
+    $botToken = get_env_var('TELEGRAM_BOT_TOKEN', '');
+    if (empty($botToken)) { header('HTTP/1.1 200 OK'); echo json_encode(['status' => 'ok']); exit; }
     
-    // Prepare the message in the format requested by the user
-    $msg = "Olá! Bem-vindo ao assistente do <b>CP Agenda Pro</b> 🚀\n\n"
-         . "🆔 Seu Chat ID: <code>{$chatId}</code> (Toque no número para copiar)\n\n"
-         . "📍 <b>O que fazer agora?</b>\n"
-         . "1️⃣ Copie o número acima.\n"
-         . "2️⃣ Vá até o seu painel em <b>Minha Conta</b>.\n"
-         . "3️⃣ No campo <b>Seu Chat ID</b>, cole esse número.\n"
-         . "4️⃣ Clique em <b>Salvar Alterações</b>.\n\n"
-         . "Pronto! Agora você receberá as notificações de agendamentos aqui. ⚡";
+    // Parse parameter: /start TOKEN
+    $parts = explode(' ', $text);
+    $startParam = isset($parts[1]) ? trim($parts[1]) : '';
 
-    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    if (!empty($startParam)) {
+        // Look up the account by valid token
+        $account = Db::fetch(
+            'SELECT id FROM cp_agenda_accounts 
+             WHERE telegram_link_token = ? AND telegram_link_expires_at > NOW()',
+            [$startParam]
+        );
+
+        if ($account) {
+            // Associated successfully! Save the chat_id, clear the token columns.
+            Db::query(
+                'UPDATE cp_agenda_accounts 
+                 SET telegram_chat_id = ?, 
+                     telegram_link_token = NULL, 
+                     telegram_link_expires_at = NULL 
+                 WHERE id = ?',
+                [$chatId, $account['id']]
+            );
+
+            $msg = "<b>✅ CP Agenda Pro — Telegram conectado com sucesso!</b>\n\n"
+                 . "A partir de agora você receberá uma mensagem aqui toda vez que um novo agendamento for realizado ou alterado. 🚀";
+        } else {
+            // Token expired or invalid
+            $msg = "❌ <b>Link de conexão inválido ou expirado!</b>\n\n"
+                 . "Por favor, volte ao seu painel em <i>Minha Conta</i> e gere um novo link de conexão clicando em <b>Conectar Telegram</b>. O link expira em 10 minutos.";
+        }
+    } else {
+        // Fallback for simple /start (without token parameter)
+        $msg = "Olá! Bem-vindo ao assistente do <b>CP Agenda Pro</b> 🚀\n\n"
+             . "Para ativar as notificações automáticas de seus agendamentos, por favor clique no botão <b>Conectar Telegram</b> diretamente no painel administrativo do seu sistema. ⚡";
+    }
+
+    $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
     $params = [
         'chat_id' => $chatId,
         'text' => $msg,
         'parse_mode' => 'HTML'
     ];
 
-    // Use curl or file_get_contents for simple post
     $options = [
         'http' => [
             'method'  => 'POST',

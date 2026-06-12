@@ -168,6 +168,18 @@ export const api = {
 
     async testTelegramNotification(chatId: string): Promise<ApiResponse> {
         return apiClient.post('/me/test-telegram', { chat_id: chatId });
+    },
+
+    async getTelegramLink(): Promise<ApiResponse<{ link: string }>> {
+        return apiClient.get('/me/telegram/link');
+    },
+
+    async getTelegramStatus(): Promise<ApiResponse<{ connected: boolean; chat_id: string }>> {
+        return apiClient.get('/me/telegram/status');
+    },
+
+    async disconnectTelegram(): Promise<ApiResponse> {
+        return apiClient.post('/me/telegram/disconnect');
     }
 };
 

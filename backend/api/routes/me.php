@@ -130,4 +130,48 @@ if ($path === 'me/onboarding' && $method === 'POST') {
     Response::ok(['msg' => 'Onboarding updated']);
 }
 
+if ($path === 'me/telegram/link' && $method === 'GET') {
+    $user = Auth::requireAuth();
+    $token = bin2hex(random_bytes(16));
+    
+    Db::query(
+        'UPDATE cp_agenda_accounts 
+         SET telegram_link_token = ?, 
+             telegram_link_expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE) 
+         WHERE id = ?',
+        [$token, $user['account_id']]
+    );
+    
+    Response::ok([
+        'link' => "https://t.me/Cpagendaprobot?start={$token}"
+    ]);
+}
+
+if ($path === 'me/telegram/status' && $method === 'GET') {
+    $user = Auth::requireAuth();
+    $account = Db::fetch(
+        'SELECT telegram_chat_id FROM cp_agenda_accounts WHERE id = ?',
+        [$user['account_id']]
+    );
+    
+    $chatId = $account['telegram_chat_id'] ?? '';
+    Response::ok([
+        'connected' => !empty($chatId),
+        'chat_id' => $chatId
+    ]);
+}
+
+if ($path === 'me/telegram/disconnect' && $method === 'POST') {
+    $user = Auth::requireAuth();
+    Db::query(
+        'UPDATE cp_agenda_accounts 
+         SET telegram_chat_id = NULL, 
+             telegram_link_token = NULL, 
+             telegram_link_expires_at = NULL 
+         WHERE id = ?',
+        [$user['account_id']]
+    );
+    Response::ok(['msg' => 'Telegram desconectado com sucesso']);
+}
+
 Response::fail('Not Found', 404);

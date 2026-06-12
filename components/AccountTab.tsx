@@ -6,6 +6,7 @@ import {
   Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X, ChevronDown
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
+import { ConfirmModal } from './ConfirmModal';
 import { api } from '../src/api';
 
 interface Props {
@@ -34,10 +35,55 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   const [viewMode, setViewMode] = useState<'card'|'list'>(account.viewMode || 'card');
   const [coverOpacity, setCoverOpacity] = useState<number>(account.coverOpacity ?? 100);
 
+  const [telegramState, setTelegramState] = useState<'disconnected' | 'awaiting' | 'connected'>(
+    account.telegramChatId ? 'connected' : 'disconnected'
+  );
+  const [linkedChatId, setLinkedChatId] = useState(account.telegramChatId || '');
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const pollingRef = useRef<any>(null);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDanger?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+  });
+
+  const openConfirm = (title: string, message: string, onConfirm: () => void, isDanger = true) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      isDanger
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
   // Sincronizar estado local quando os props mudarem (ex: após salvar ou carregar)
   useEffect(() => {
     setTelegramToken(account.telegramBotToken || '');
     setTelegramChatId(account.telegramChatId || '');
+    setLinkedChatId(account.telegramChatId || '');
+    if (telegramState !== 'awaiting') {
+      setTelegramState(account.telegramChatId ? 'connected' : 'disconnected');
+    }
     setCoverImage(account.coverImage || '');
     setProfileImage(account.profileImage || '');
     setShortDescription(account.shortDescription || '');
@@ -181,6 +227,72 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
     } catch (e) {
       alert('Erro de conexão.');
     }
+  };
+
+  const handleConnectTelegram = async () => {
+    setIsLoadingLink(true);
+    try {
+      const res = await api.getTelegramLink();
+      if (res.ok && res.data?.link) {
+        window.open(res.data.link, '_blank');
+        setTelegramState('awaiting');
+        
+        // Start polling for connection confirmation
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+        
+        pollingRef.current = setInterval(async () => {
+          try {
+            const statusRes = await api.getTelegramStatus();
+            if (statusRes.ok && statusRes.data?.connected) {
+              if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+                pollingRef.current = null;
+              }
+              setTelegramState('connected');
+              setLinkedChatId(statusRes.data.chat_id);
+              setTelegramChatId(statusRes.data.chat_id);
+              onUpdateSettings?.({ telegramChatId: statusRes.data.chat_id });
+            }
+          } catch (err) {
+            console.error('Erro de polling do Telegram:', err);
+          }
+        }, 3000);
+      } else {
+        alert('Erro ao gerar link de conexão do Telegram.');
+      }
+    } catch (e) {
+      alert('Erro de conexão com o servidor.');
+    } finally {
+      setIsLoadingLink(false);
+    }
+  };
+
+  const handleDisconnectTelegram = () => {
+    openConfirm(
+      'Desconectar Telegram',
+      'Tem certeza de que deseja desconectar o Telegram? Você deixará de receber as notificações automáticas de agendamentos.',
+      async () => {
+        try {
+          const res = await api.disconnectTelegram();
+          if (res.ok) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            setTelegramState('disconnected');
+            setTelegramChatId('');
+            setLinkedChatId('');
+            onUpdateSettings?.({ telegramChatId: '' });
+          } else {
+            alert('Erro ao desconectar o Telegram.');
+          }
+        } catch (e) {
+          alert('Erro de conexão com o servidor.');
+        }
+      }
+    );
   };
 
   return (
@@ -424,34 +536,89 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
           <h3 className="font-bold text-gray-900 flex items-center gap-3">
             <Bell size={20} className="text-yellow-500" /> Notificações via Telegram
           </h3>
-          <p className="text-sm text-gray-500 mt-2 mb-6">Ative Lembretes automáticos com aviso sonoro via Telegram</p>
+          <p className="text-sm text-gray-500 mt-2 mb-6">Ative lembretes automáticos com aviso sonoro via Telegram</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a
-              href="https://t.me/Cpagendaprobot?start=setup"
-              target="_blank"
-              rel="noreferrer"
-              className="bg-primary w-full text-white text-center rounded-2xl font-black text-[10px] uppercase tracking-[0.1em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 h-14"
-            >
-              <Bell size={18} /> CLIQUE E COPIE O CHAT ID
-            </a>
-            
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-2">
-              <input
-                type="text"
-                value={telegramChatId}
-                onChange={e => setTelegramChatId(e.target.value)}
-                placeholder="COLE O CHAT ID AQUI"
-                className="block appearance-none m-0 w-full sm:flex-1 px-4 border border-gray-200 rounded-2xl bg-white focus:bg-white outline-none text-xs font-black ring-2 ring-transparent focus:ring-primary/20 transition-all text-center placeholder:text-gray-400 placeholder:font-black shadow-sm h-14 uppercase tracking-widest"
-              />
+          {telegramState === 'disconnected' && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gray-50 p-6 rounded-[2rem] border border-gray-100 animate-fade-in">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status: Não Conectado</span>
+                </div>
+                <p className="text-sm text-gray-600 font-medium">
+                  Ative o envio de notificações instantâneas no seu celular clicando no botão abaixo para vincular.
+                </p>
+              </div>
               <button
-                onClick={testNotification}
-                className="w-full sm:w-auto bg-gray-900 text-white px-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-black/10 h-14 shrink-0"
+                disabled={isLoadingLink}
+                onClick={handleConnectTelegram}
+                className="w-full md:w-auto bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 h-14 shrink-0 cursor-pointer"
               >
-                <Bell size={16} /> Testar
+                📲 Conectar Telegram
               </button>
             </div>
-          </div>
+          )}
+
+          {telegramState === 'awaiting' && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-yellow-50/50 p-6 rounded-[2rem] border border-yellow-100 animate-fade-in">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-yellow-700 uppercase tracking-widest flex items-center gap-1">
+                    Status: Aguardando Conexão
+                    <span className="flex gap-0.5 ml-1">
+                      <span className="w-1 h-1 rounded-full bg-yellow-600 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1 h-1 rounded-full bg-yellow-600 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1 h-1 rounded-full bg-yellow-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  </span>
+                </div>
+                <p className="text-sm text-yellow-800 font-medium">
+                  Clique abaixo para abrir o bot do Telegram e pressione <b>Iniciar/Começar</b>. Estamos aguardando a confirmação.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  api.getTelegramLink().then(res => {
+                    if (res.ok && res.data?.link) {
+                      window.open(res.data.link, '_blank');
+                    }
+                  });
+                }}
+                className="w-full md:w-auto bg-yellow-500 hover:bg-yellow-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-yellow-500/20 flex items-center justify-center gap-2 active:scale-95 transition-all h-14 shrink-0 cursor-pointer"
+              >
+                ↗ Abrir Telegram novamente
+              </button>
+            </div>
+          )}
+
+          {telegramState === 'connected' && (
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-green-50/50 p-6 rounded-[2rem] border border-green-100 animate-fade-in">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Status: Conectado</span>
+                </div>
+                <p className="text-sm text-green-800 font-medium">
+                  Seu celular está associado e pronto! Notificações automáticas ativas no Chat ID <code>{linkedChatId}</code>.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 w-full md:w-auto">
+                <button
+                  onClick={testNotification}
+                  className="flex-1 md:flex-none bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-black/10 h-14 shrink-0 cursor-pointer"
+                >
+                  ⚡ Testar
+                </button>
+                <button
+                  onClick={handleDisconnectTelegram}
+                  className="flex-1 md:flex-none bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all h-14 shrink-0 cursor-pointer"
+                >
+                  🔕 Desconectar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* QR CODE CARD */}
@@ -688,6 +855,15 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        isDanger={confirmModal.isDanger}
+      />
     </div>
   );
 };
