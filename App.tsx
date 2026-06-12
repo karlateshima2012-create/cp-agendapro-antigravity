@@ -10,7 +10,6 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { BlockedScreen } from './components/BlockedScreen';
 import { Toast, ToastType } from './components/Toast';
 import { ForcePasswordChange } from './components/ForcePasswordChange';
-import { OnboardingModal } from './components/OnboardingModal';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { mapWorkingHours } from './utils/availability';
 import { Lock } from 'lucide-react';
@@ -748,26 +747,6 @@ const App: React.FC = () => {
             onUpdateAccount={handleUpdateAccount}
             onUpdateAppointments={setAppointments}
           />
-          {/* 🔥 ONBOARDING MODAL moved here to be inside the fragment */}
-          {(!mustChangePassword && currentAccountStatus === 'active') && (
-            <OnboardingModal
-              seen={!!profile.onboardingSeen}
-              onMarkSeen={async () => {
-                console.log('🎯 Onboarding seen');
-                setProfile(prev => prev ? { ...prev, onboardingSeen: true } : null);
-                try {
-                  const resp: any = await api.updateOnboarding(true);
-                  if (!resp.ok) {
-                    setProfile(prev => prev ? { ...prev, onboardingSeen: false } : null);
-                    showToast("Erro ao salvar configuração.", "error");
-                  }
-                } catch (e) {
-                  console.error('❌ Erro onboarding:', e);
-                  showToast("Erro ao salvar configuração.", "error");
-                }
-              }}
-            />
-          )}
         </>
       ) : (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">

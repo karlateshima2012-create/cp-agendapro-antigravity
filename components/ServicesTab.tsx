@@ -174,6 +174,7 @@ export const ServicesTab: React.FC<Props> = ({ account, onUpdateAccount, service
           </div>
           <button
             onClick={startNew}
+            data-tour="services-new-btn"
             className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 flex-shrink-0"
           >
             <Plus size={20} /> Novo

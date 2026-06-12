@@ -17,6 +17,7 @@ import { AvailabilityTab } from './AvailabilityTab';
 import { ServicesTab } from './ServicesTab';
 import { AccountTab } from './AccountTab';
 import { OnboardingModal } from './OnboardingModal';
+import { InteractiveTour } from './InteractiveTour';
 import { Logo } from './Logo';
 import { ClientsTab } from './ClientsTab';
 import { HistoryTab } from './HistoryTab';
@@ -60,6 +61,7 @@ export const ClientDashboard: React.FC<Props> = ({
   const NavItem = ({ id, label, icon: Icon }: { id: typeof activeTab; label: string; icon: any }) => (
     <button
       onClick={() => setActiveTab(id)}
+      data-tour={`nav-${id}`}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeTab === id
         ? 'bg-primary text-white shadow-lg shadow-primary/30'
         : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
@@ -72,9 +74,13 @@ export const ClientDashboard: React.FC<Props> = ({
 
   return (
     <>
-      <OnboardingModal
+      <InteractiveTour
         seen={!!account.onboardingSeen}
         onMarkSeen={async () => onUpdateAccount({ onboardingSeen: true })}
+        setActiveTab={setActiveTab}
+        activeTab={activeTab}
+        setShowMobileMenu={setShowMobileMenu}
+        showMobileMenu={showMobileMenu}
       />
 
       <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
@@ -165,6 +171,7 @@ export const ClientDashboard: React.FC<Props> = ({
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-2 flex items-center justify-around z-[60] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] pb-safe-offset-3">
               <button
                 onClick={() => { setActiveTab('appointments'); setShowMobileMenu(false); }}
+                data-tour="mobile-nav-appointments"
                 className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'appointments' ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
                 <div className={`p-2.5 rounded-full transition-all ${activeTab === 'appointments' ? 'bg-[#25aae1]/10' : ''}`}>
@@ -175,6 +182,7 @@ export const ClientDashboard: React.FC<Props> = ({
 
               <button
                 onClick={() => { setActiveTab('availability'); setShowMobileMenu(false); }}
+                data-tour="mobile-nav-availability"
                 className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'availability' ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
                 <div className={`p-2.5 rounded-full transition-all ${activeTab === 'availability' ? 'bg-[#25aae1]/10' : ''}`}>
@@ -185,6 +193,7 @@ export const ClientDashboard: React.FC<Props> = ({
 
               <button
                 onClick={() => { setActiveTab('services'); setShowMobileMenu(false); }}
+                data-tour="mobile-nav-services"
                 className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'services' ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
                 <div className={`p-2.5 rounded-full transition-all ${activeTab === 'services' ? 'bg-[#25aae1]/10' : ''}`}>
@@ -195,6 +204,7 @@ export const ClientDashboard: React.FC<Props> = ({
 
               <button
                 onClick={() => { setActiveTab('account'); setShowMobileMenu(false); }}
+                data-tour="mobile-nav-account"
                 className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${activeTab === 'account' ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
                 <div className={`p-2.5 rounded-full transition-all ${activeTab === 'account' ? 'bg-[#25aae1]/10' : ''}`}>
@@ -205,6 +215,7 @@ export const ClientDashboard: React.FC<Props> = ({
 
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
+                data-tour="mobile-nav-more"
                 className={`flex flex-col items-center gap-1 min-w-[60px] transition-all ${showMobileMenu ? 'text-[#25aae1]' : 'text-gray-400'}`}
               >
                 <div className={`p-2.5 rounded-full transition-all ${showMobileMenu ? 'bg-[#25aae1]/10' : ''}`}>
@@ -225,6 +236,7 @@ export const ClientDashboard: React.FC<Props> = ({
                   <div className="grid grid-cols-1 gap-4">
                     <button
                       onClick={() => { setActiveTab('history'); setShowMobileMenu(false); }}
+                      data-tour="mobile-overflow-history"
                       className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'history' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
                     >
                       <History size={22} />
@@ -233,6 +245,7 @@ export const ClientDashboard: React.FC<Props> = ({
                     
                     <button
                       onClick={() => { setActiveTab('clients'); setShowMobileMenu(false); }}
+                      data-tour="mobile-overflow-clients"
                       className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'clients' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
                     >
                       <Contact2 size={22} />
@@ -241,6 +254,7 @@ export const ClientDashboard: React.FC<Props> = ({
 
                     <button
                       onClick={() => { setActiveTab('gestao'); setShowMobileMenu(false); }}
+                      data-tour="mobile-overflow-gestao"
                       className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${activeTab === 'gestao' ? 'bg-[#25aae1] text-white shadow-lg' : 'bg-[#f8fafc] text-gray-700 border border-gray-100'}`}
                     >
                       <BarChart2 size={22} />

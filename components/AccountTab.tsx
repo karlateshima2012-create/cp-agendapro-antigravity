@@ -264,7 +264,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
           </div>
 
         {/* LINK PÚBLICO */}
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
+        <div data-tour="public-link-section" className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
           <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
             <ExternalLink size={20} style={{ color: primaryColor }} /> Link Público
           </h3>
@@ -420,7 +420,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
 
 
         {/* TELEGRAM */}
-        <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
+        <div data-tour="telegram-config" className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
           <h3 className="font-bold text-gray-900 flex items-center gap-3">
             <Bell size={20} className="text-yellow-500" /> Notificações via Telegram
           </h3>

@@ -686,7 +686,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
             </div>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full md:w-auto">
+          <div data-tour="appointments-toggle" className="flex items-center justify-between md:justify-end bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-full md:w-auto">
             <button
               onClick={() => setView('grid')}
               className={`flex-1 md:flex-none flex items-center justify-center gap-2 p-2.5 rounded-xl transition-all ${view === 'grid' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
@@ -846,17 +846,17 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
         </div>
       </div>
 
-      <div className="mt-8">
+      <div data-tour="appointments-view" className="mt-8">
         {view === 'calendar' ? renderCalendar() : view === 'list' ? renderListView() : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredAppointments.map(appt => {
+            {filteredAppointments.map((appt, idx) => {
               const startDateJST = getJSTDate(appt.startAt);
               const isPending = appt.status === 'pending';
               const isActive = appt.status !== 'canceled' && appt.status !== 'rejected';
               const status = getStatusConfig(appt.status);
 
               return (
-                <div key={appt.id} className="group bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full animate-fade-in relative overflow-hidden">
+                <div key={appt.id} data-tour={idx === 0 ? "first-appointment" : undefined} className="group bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full animate-fade-in relative overflow-hidden">
 
                   <div className="flex justify-between items-start mb-6">
                     <div className="max-w-[60%]">
