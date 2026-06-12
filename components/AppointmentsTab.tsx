@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Appointment, AppointmentStatus, AvailabilityConfig, AccountInfo } from '../types';
 import {
   Calendar,
@@ -79,11 +79,44 @@ function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'reje
 
 export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, onUpdateStatus, onDeleteAppointment, onBulkDelete, publicLink, account }) => {
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const filterScrollRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'grid' | 'list' | 'calendar'>('grid');
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'tomorrow' | 'past' | 'manual'>('all');
   const [manualDate, setManualDate] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+
+  const checkScroll = () => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    const canScrollLeft = el.scrollLeft > 5;
+    const canScrollRight = el.scrollWidth - el.clientWidth - el.scrollLeft > 5;
+    setShowLeftArrow(canScrollLeft);
+    setShowRightArrow(canScrollRight);
+  };
+
+  useEffect(() => {
+    checkScroll();
+
+    const observer = new ResizeObserver(() => {
+      checkScroll();
+    });
+
+    const el = filterScrollRef.current;
+    if (el) {
+      observer.observe(el);
+    }
+
+    const handleResize = () => checkScroll();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [appointments, dateFilter, selectedIds]);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -677,6 +710,22 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes bounce-x {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(4px); }
+        }
+        .animate-bounce-x {
+          animation: bounce-x 1s infinite;
+        }
+        @keyframes bounce-x-left {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(-4px); }
+        }
+        .animate-bounce-x-left {
+          animation: bounce-x-left 1s infinite;
+        }
+      `}} />
       <div className="flex flex-col gap-6 px-2">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -715,115 +764,134 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex overflow-x-auto no-scrollbar items-center gap-2 pb-2 md:pb-0 -mx-2 px-2">
-            <button
-              onClick={() => setDateFilter('all')}
-              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'all'
-                ? 'bg-gray-900 text-white'
-                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-                }`}
+          <div className="relative flex-1 min-w-0">
+            <div
+              ref={filterScrollRef}
+              onScroll={checkScroll}
+              className="flex overflow-x-auto no-scrollbar items-center gap-2 pb-2 md:pb-0 -mx-2 px-2"
             >
-              Todos
-            </button>
+              <button
+                onClick={() => setDateFilter('all')}
+                className={`whitespace-nowrap px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'all'
+                  ? 'border border-transparent bg-gray-900 text-white'
+                  : 'border border-gray-100 bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+              >
+                Todos
+              </button>
 
-            <div 
-              onClick={() => {
-                if (dateInputRef.current) {
-                  try {
-                    dateInputRef.current.showPicker();
-                  } catch (err) {
-                    dateInputRef.current.click();
+              <div 
+                onClick={() => {
+                  if (dateInputRef.current) {
+                    try {
+                      dateInputRef.current.showPicker();
+                    } catch (err) {
+                      dateInputRef.current.click();
+                    }
                   }
-                }
-              }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all cursor-pointer hover:bg-gray-50 ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}
-            >
-              <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={manualDate}
-                onChange={(e) => {
-                  setManualDate(e.target.value);
-                  setDateFilter(e.target.value ? 'manual' : 'all');
                 }}
-                className="bg-transparent text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none cursor-pointer"
-              />
-              {dateFilter === 'manual' && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setManualDate('');
-                    setDateFilter('all');
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all cursor-pointer hover:bg-gray-50 whitespace-nowrap ${dateFilter === 'manual' ? 'bg-primary/5 border-primary/30' : 'bg-white border-gray-100'}`}
+              >
+                <Calendar size={14} className={dateFilter === 'manual' ? 'text-primary' : 'text-gray-400'} />
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={manualDate}
+                  onChange={(e) => {
+                    setManualDate(e.target.value);
+                    setDateFilter(e.target.value ? 'manual' : 'all');
                   }}
-                  className="clear-date-btn p-1 hover:bg-gray-200 rounded-md text-gray-400"
+                  className="p-0 m-0 border-none bg-transparent text-[10px] font-black uppercase tracking-widest text-gray-600 outline-none cursor-pointer"
+                />
+                {dateFilter === 'manual' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setManualDate('');
+                      setDateFilter('all');
+                    }}
+                    className="clear-date-btn p-1 hover:bg-gray-200 rounded-md text-gray-400"
+                  >
+                    <XCircle size={14} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setDateFilter('today')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${dateFilter === 'today'
+                  ? 'border border-transparent bg-primary text-white shadow-lg shadow-primary/20'
+                  : 'border border-gray-100 bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+              >
+                <Sun size={14} />
+                Hoje <span className="opacity-50 text-[9px]">{todayCount}</span>
+              </button>
+              <button
+                onClick={() => setDateFilter('tomorrow')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${dateFilter === 'tomorrow'
+                  ? 'border border-transparent bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'border border-gray-100 bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+              >
+                <ArrowRightCircle size={14} />
+                Amanhã <span className="opacity-50 text-[9px]">{tomorrowCount}</span>
+              </button>
+              <button
+                onClick={() => { setDateFilter('past'); setSelectedIds([]); }}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${dateFilter === 'past'
+                  ? 'border border-transparent bg-rose-600 text-white shadow-lg shadow-rose-600/20'
+                  : 'border border-gray-100 bg-white text-gray-500 hover:bg-gray-50'
+                  }`}
+              >
+                <Trash2 size={14} />
+                Dias Passados
+              </button>
+
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={() => openConfirm(
+                    'Apagar Selecionados',
+                    `Deseja apagar ${selectedIds.length} agendamentos selecionados? Esta ação não pode ser desfeita.`,
+                    () => {
+                      onBulkDelete?.(selectedIds);
+                      setSelectedIds([]);
+                    }
+                  )}
+                  className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all flex items-center gap-2 whitespace-nowrap"
                 >
-                  <XCircle size={14} />
+                  <Trash2 size={14} />
+                  Apagar Selecionados ({selectedIds.length})
+                </button>
+              )}
+
+              {dateFilter === 'past' && filteredAppointments.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (selectedIds.length === filteredAppointments.length) {
+                      setSelectedIds([]);
+                    } else {
+                      setSelectedIds(filteredAppointments.map(a => a.id));
+                    }
+                  }}
+                  className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline whitespace-nowrap"
+                >
+                  {selectedIds.length === filteredAppointments.length ? 'Limpar Seleção' : 'Selecionar Todos'}
                 </button>
               )}
             </div>
 
-            <button
-              onClick={() => setDateFilter('today')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'today'
-                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-                }`}
-            >
-              <Sun size={14} />
-              Hoje <span className="opacity-50 text-[9px]">{todayCount}</span>
-            </button>
-            <button
-              onClick={() => setDateFilter('tomorrow')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'tomorrow'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-                }`}
-            >
-              <ArrowRightCircle size={14} />
-              Amanhã <span className="opacity-50 text-[9px]">{tomorrowCount}</span>
-            </button>
-            <button
-              onClick={() => { setDateFilter('past'); setSelectedIds([]); }}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${dateFilter === 'past'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20'
-                : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
-                }`}
-            >
-              <Trash2 size={14} />
-              Dias Passados
-            </button>
-
-            {selectedIds.length > 0 && (
-              <button
-                onClick={() => openConfirm(
-                  'Apagar Selecionados',
-                  `Deseja apagar ${selectedIds.length} agendamentos selecionados? Esta ação não pode ser desfeita.`,
-                  () => {
-                    onBulkDelete?.(selectedIds);
-                    setSelectedIds([]);
-                  }
-                )}
-                className="bg-red-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all flex items-center gap-2"
-              >
-                <Trash2 size={14} />
-                Apagar Selecionados ({selectedIds.length})
-              </button>
+            {/* Scroll Indicator Arrow & Fade on the Right */}
+            {showRightArrow && (
+              <div className="absolute right-0 top-0 bottom-2 md:hidden flex items-center justify-end w-10 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none pr-1">
+                <ChevronRight className="w-5 h-5 text-gray-500 animate-bounce-x" />
+              </div>
             )}
-
-            {dateFilter === 'past' && filteredAppointments.length > 0 && (
-              <button
-                onClick={() => {
-                  if (selectedIds.length === filteredAppointments.length) {
-                    setSelectedIds([]);
-                  } else {
-                    setSelectedIds(filteredAppointments.map(a => a.id));
-                  }
-                }}
-                className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
-              >
-                {selectedIds.length === filteredAppointments.length ? 'Limpar Seleção' : 'Selecionar Todos'}
-              </button>
+            {/* Scroll Indicator Arrow & Fade on the Left */}
+            {showLeftArrow && (
+              <div className="absolute left-0 top-0 bottom-2 md:hidden flex items-center justify-start w-10 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none pl-1">
+                <ChevronLeft className="w-5 h-5 text-gray-500 animate-bounce-x-left" />
+              </div>
             )}
           </div>
 
