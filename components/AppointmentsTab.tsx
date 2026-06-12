@@ -97,6 +97,18 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     setShowRightArrow(canScrollRight);
   };
 
+  const scrollLeft = () => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: -150, behavior: 'smooth' });
+  };
+
+  const scrollRight = () => {
+    const el = filterScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: 150, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     checkScroll();
 
@@ -883,14 +895,24 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
             {/* Scroll Indicator Arrow & Fade on the Right */}
             {showRightArrow && (
-              <div className="absolute right-0 top-0 bottom-2 md:hidden flex items-center justify-end w-10 bg-gradient-to-l from-gray-50 to-transparent pointer-events-none pr-1">
-                <ChevronRight className="w-5 h-5 text-gray-500 animate-bounce-x" />
+              <div className="absolute right-0 top-0 bottom-2 md:hidden flex items-center justify-end w-12 bg-gradient-to-l from-gray-50 via-gray-50/90 to-transparent pointer-events-none pr-1">
+                <button
+                  onClick={scrollRight}
+                  className="pointer-events-auto p-1 bg-white hover:bg-gray-100 border border-gray-200 rounded-full shadow-md text-gray-500 animate-bounce-x flex items-center justify-center w-8 h-8 active:scale-95 transition-transform"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
             {/* Scroll Indicator Arrow & Fade on the Left */}
             {showLeftArrow && (
-              <div className="absolute left-0 top-0 bottom-2 md:hidden flex items-center justify-start w-10 bg-gradient-to-r from-gray-50 to-transparent pointer-events-none pl-1">
-                <ChevronLeft className="w-5 h-5 text-gray-500 animate-bounce-x-left" />
+              <div className="absolute left-0 top-0 bottom-2 md:hidden flex items-center justify-start w-12 bg-gradient-to-r from-gray-50 via-gray-50/90 to-transparent pointer-events-none pl-1">
+                <button
+                  onClick={scrollLeft}
+                  className="pointer-events-auto p-1 bg-white hover:bg-gray-100 border border-gray-200 rounded-full shadow-md text-gray-500 animate-bounce-x-left flex items-center justify-center w-8 h-8 active:scale-95 transition-transform"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
