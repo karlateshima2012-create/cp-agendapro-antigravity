@@ -434,10 +434,10 @@ export const AvailabilityTab: React.FC<Props> = ({ config, onSave }) => {
         </div>
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="pt-4">
         <button
           onClick={() => onSave(localConfig)}
-          className="bg-primary hover:bg-primary-hover text-white px-10 py-5 rounded-3xl font-black shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 uppercase tracking-[0.2em] text-[10px]"
+          className="w-full bg-primary hover:bg-primary-hover text-white px-10 py-5 rounded-3xl font-black shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 uppercase tracking-[0.2em] text-[10px]"
         >
           <Save size={20} /> Salvar Alterações
         </button>
