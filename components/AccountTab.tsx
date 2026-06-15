@@ -600,7 +600,7 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
                   <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Status: Conectado</span>
                 </div>
                 <p className="text-sm text-green-800 font-medium">
-                  Seu celular está associado e pronto! Notificações automáticas ativas no Chat ID <code>{linkedChatId}</code>.
+                  Notificações via Telegram ativas no Chat ID: <code>{linkedChatId}</code>.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 w-full md:w-auto">
