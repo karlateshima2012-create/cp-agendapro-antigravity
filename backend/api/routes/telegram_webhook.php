@@ -29,7 +29,9 @@ if ($chatId && (strpos($text, '/start') === 0)) {
             [$startParam]
         );
 
+
         if ($account) {
+
             // Associated successfully! Save the chat_id, clear the token columns.
             Db::query(
                 'UPDATE cp_agenda_accounts 
@@ -41,7 +43,8 @@ if ($chatId && (strpos($text, '/start') === 0)) {
             );
 
             $msg = "<b>✅ CP Agenda Pro — Telegram conectado com sucesso!</b>\n\n"
-                 . "A partir de agora você receberá uma mensagem aqui toda vez que um novo agendamento for realizado ou alterado. 🚀";
+                 . "A partir de agora você receberá uma mensagem aqui toda vez que um novo agendamento for realizado ou alterado. 🚀\n\n"
+                 . "<b>Você já pode voltar para o sistema!</b>";
         } else {
             // Token expired or invalid
             $msg = "❌ <b>Link de conexão inválido ou expirado!</b>\n\n"
