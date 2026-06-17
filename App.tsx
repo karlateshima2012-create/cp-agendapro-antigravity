@@ -423,7 +423,7 @@ const App: React.FC = () => {
             setAppointments(mappedAppts);
           }
         }
-      });
+      }).catch(() => { /* transient network error during polling — silently ignored */ });
     }, 15000);
 
     return () => clearInterval(interval);
