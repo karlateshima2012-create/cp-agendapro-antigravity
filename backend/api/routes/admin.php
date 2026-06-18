@@ -259,7 +259,7 @@ if ($path === 'admin/users' && $method === 'POST') {
         Db::query('INSERT INTO cp_agenda_users (account_id, email, password_hash, role, name, must_change_password, reset_token, reset_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
             $accId,
             $data['email'],
-            password_hash($data['password'], PASSWORD_DEFAULT),
+            password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT), // ✅ SECURITY: Ignore frontend password, generate a secure random one
             'client',
             $data['ownerName'],
             1,
@@ -320,7 +320,8 @@ if ($path === 'admin/users' && $method === 'POST') {
 
         Mail::send($userEmail, $subject, $body);
 
-        Response::ok(['id' => $pdo->lastInsertId()]);
+        // ✅ BUGFIX: Return the correct new user ID captured before commit (lastInsertId returns 0 post-commit)
+        Response::ok(['id' => $newUserId]);
     } catch (Exception $e) {
         $pdo->rollBack();
         Monitor::critical('Falha ao criar usuário admin', ['error' => $e->getMessage()]);
