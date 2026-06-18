@@ -55,6 +55,7 @@ define('DB_CHARSET', get_config_var('DB_CHARSET', 'utf8mb4'));
 define('API_VERSION', get_config_var('API_VERSION', '1.0.0'));
 // ✅ SECURITY FIX: DEBUG_MODE defaults to FALSE. Enable only via .env (DEBUG_MODE=true).
 define('DEBUG_MODE', filter_var(get_config_var('DEBUG_MODE', 'false'), FILTER_VALIDATE_BOOLEAN));
+define('APP_DOMAIN', get_config_var('APP_DOMAIN', 'cpagendapro.creativeprintjp.com'));
 
 // Timezone
 date_default_timezone_set('UTC');

@@ -116,14 +116,29 @@ switch ($module) {
         require_once __DIR__ . '/routes/clients.php';
         break;
     case 'telegram-register':
+        // ✅ SECURITY [1.1]: Authenticate and restrict to super_admin
+        $user = Auth::requireAuth();
+        if ($user['role'] !== 'super_admin') {
+            Response::fail('Forbidden', 403);
+        }
+
         // ✅ SECURITY FIX: Token loaded from environment variable — never hardcoded
         $token = get_env_var('TELEGRAM_BOT_TOKEN', '');
         if (empty($token)) {
             Response::fail('TELEGRAM_BOT_TOKEN not configured in environment', 500);
         }
-        $domain = $_SERVER['HTTP_HOST'];
+        
+        // ✅ SECURITY [1.1]: Use APP_DOMAIN from config instead of untrusted Host Header
+        $domain = APP_DOMAIN;
         $webhookUrl = "https://{$domain}/api/telegram-webhook";
+        
+        // ✅ SECURITY [1.2]: Register secret token to authenticate Telegram webhook payloads
+        $webhookSecret = get_env_var('WEBHOOK_SECRET', '');
         $url = "https://api.telegram.org/bot{$token}/setWebhook?url=" . urlencode($webhookUrl);
+        if (!empty($webhookSecret)) {
+            $url .= "&secret_token=" . urlencode($webhookSecret);
+        }
+        
         $res = @file_get_contents($url);
         Response::ok(['status' => 'webhook_registered', 'response' => json_decode($res, true), 'url' => $webhookUrl]);
         break;
