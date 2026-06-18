@@ -100,7 +100,7 @@ export const AdminDashboard: React.FC<Props> = ({ currentUser, onUpdateCurrentUs
         setPwError(resp.error || 'Erro ao alterar a senha. Verifique a senha atual.');
       }
     } catch (err: any) {
-      setPwError('Erro de conexão com o servidor.');
+      setPwError(err.message || 'Erro de conexão com o servidor.');
     } finally {
       setPwLoading(false);
     }
@@ -118,8 +118,8 @@ export const AdminDashboard: React.FC<Props> = ({ currentUser, onUpdateCurrentUs
       } else {
         setMfaError(resp.error || 'Erro ao iniciar o setup do MFA.');
       }
-    } catch (err) {
-      setMfaError('Erro de conexão com o servidor.');
+    } catch (err: any) {
+      setMfaError(err.message || 'Erro de conexão com o servidor.');
     } finally {
       setMfaLoading(false);
     }
@@ -145,8 +145,8 @@ export const AdminDashboard: React.FC<Props> = ({ currentUser, onUpdateCurrentUs
       } else {
         setMfaError(resp.error || 'Código incorreto ou expirado.');
       }
-    } catch (err) {
-      setMfaError('Erro de conexão com o servidor.');
+    } catch (err: any) {
+      setMfaError(err.message || 'Erro de conexão com o servidor.');
     } finally {
       setMfaLoading(false);
     }
@@ -170,8 +170,8 @@ export const AdminDashboard: React.FC<Props> = ({ currentUser, onUpdateCurrentUs
       } else {
         setMfaError(resp.error || 'Senha incorreta.');
       }
-    } catch (err) {
-      setMfaError('Erro de conexão com o servidor.');
+    } catch (err: any) {
+      setMfaError(err.message || 'Erro de conexão com o servidor.');
     } finally {
       setMfaLoading(false);
     }
