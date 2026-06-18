@@ -1,13 +1,14 @@
 <?php
 // backend/api/routes/telegram_webhook.php
 
-// ✅ SECURITY [1.2]: Validate webhook secret token to authenticate Telegram payload origin
-$incomingSecret = $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '';
+// ✅ SECURITY [1.2]: Validate webhook secret token when WEBHOOK_SECRET is configured
 $expectedSecret = get_env_var('WEBHOOK_SECRET', '');
-
-if (empty($expectedSecret) || !hash_equals($expectedSecret, $incomingSecret)) {
-    http_response_code(403);
-    exit;
+if (!empty($expectedSecret)) {
+    $incomingSecret = $_SERVER['HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN'] ?? '';
+    if (!hash_equals($expectedSecret, $incomingSecret)) {
+        http_response_code(403);
+        exit;
+    }
 }
 
 // Telegram sends POST requests with JSON body

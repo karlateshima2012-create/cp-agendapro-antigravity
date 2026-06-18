@@ -52,6 +52,7 @@ jobs:
         SECRET_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         SECRET_SMTP_FROM: ${{ secrets.SMTP_FROM }}
         SECRET_SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+        SECRET_WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
       run: |
         echo "DB_HOST=${SECRET_DB_HOST}" > backend/.env
         echo "DB_PORT=${SECRET_DB_PORT}" >> backend/.env
@@ -71,6 +72,7 @@ jobs:
         echo "SMTP_PASSWORD=${SECRET_SMTP_PASSWORD}" >> backend/.env
         echo "SMTP_FROM=${SECRET_SMTP_FROM}" >> backend/.env
         echo "SMTP_FROM_NAME=${SECRET_SMTP_FROM_NAME}" >> backend/.env
+        echo "WEBHOOK_SECRET=${SECRET_WEBHOOK_SECRET}" >> backend/.env
         echo ".env gerado com $(wc -l < backend/.env) linhas"
 
     - name: Configurar chave SSH
