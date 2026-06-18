@@ -31,7 +31,7 @@ class Audit {
             // Decouple audit logging failures from core application flows to prevent lockouts
             // but report the issue to internal monitoring.
             if (class_exists('Monitor')) {
-                Monitor::error('Audit log failed', [
+                Monitor::critical('Audit log failed', [
                     'error' => $e->getMessage(),
                     'event' => $event,
                     'description' => $description
