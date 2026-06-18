@@ -103,7 +103,7 @@ jobs:
         rsync -az \
           -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.SSH_PORT }}" \
           --exclude='vendor/' \
-          backend/api/ backend/database/ backend/migrate.php backend/.env backend/composer.json backend/composer.lock \
+          backend/api backend/database backend/migrate.php backend/.env backend/composer.json backend/composer.lock \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/cpagendapro/backend/
 
     - name: Finalizar deploy via SSH
