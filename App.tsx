@@ -620,9 +620,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = async (email: string, pass: string): Promise<void> => {
+  const handleLogin = async (email: string, pass: string): Promise<{ mfa_required?: boolean } | void> => {
     const resp: any = await api.login({ email, password: pass });
     if (resp.ok) {
+      // ✅ SECURITY [5.9]: Handle MFA prompt redirection if required on login response
+      if (resp.data.mfa_required) {
+        return { mfa_required: true };
+      }
       setSession({ user: resp.data.user });
       setUserRole(resp.data.user.role);
       if (resp.data.user.account_status !== 'active') {
@@ -636,6 +640,25 @@ const App: React.FC = () => {
       showToast(`Bem-vindo, ${resp.data.user.name}!`);
     } else {
       throw new Error(resp.error || 'E-mail ou senha incorretos.');
+    }
+  };
+
+  const handleMfaVerify = async (code: string): Promise<void> => {
+    const resp: any = await api.mfaVerify(code);
+    if (resp.ok && resp.data && resp.data.user) {
+      setSession({ user: resp.data.user });
+      setUserRole(resp.data.user.role);
+      if (resp.data.user.account_status !== 'active') {
+        setCurrentAccountStatus('blocked');
+        setBlockedReason(resp.data.user.account_status === 'blocked' ? 'Conta bloqueada' : 'Plano vencido');
+      }
+      if (resp.data.user.must_change_password) {
+        setMustChangePassword(true);
+      }
+      await fetchAllData(resp.data.user.id, resp.data.user.role);
+      showToast(`Bem-vindo, ${resp.data.user.name}!`);
+    } else {
+      throw new Error(resp.error || 'Código incorreto ou expirado.');
     }
   };
 
@@ -699,7 +722,7 @@ const App: React.FC = () => {
           </div>
         )
       ) : !session ? (
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen onLogin={handleLogin} onMfaVerify={handleMfaVerify} />
       ) : (userRole === 'client' && currentAccountStatus !== 'active') ? (
         <BlockedScreen
           reason={blockedReason || "Sua assinatura expirou ou seu acesso foi suspenso."}
@@ -721,6 +744,19 @@ const App: React.FC = () => {
         />
       ) : (userRole === 'admin' || userRole === 'super_admin') ? (
         <AdminDashboard
+          currentUser={session?.user}
+          onUpdateCurrentUserMfaStatus={(enabled) => {
+            setSession((prev: any) => {
+              if (!prev || !prev.user) return prev;
+              return {
+                ...prev,
+                user: {
+                  ...prev.user,
+                  mfa_enabled: enabled
+                }
+              };
+            });
+          }}
           users={allUsers}
           onAddUser={handleAddUser}
           onUpdateUserStatus={handleUpdateUserStatus}

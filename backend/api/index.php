@@ -7,6 +7,8 @@ require_once __DIR__ . '/lib/Auth.php';
 require_once __DIR__ . '/lib/Response.php';
 require_once __DIR__ . '/lib/Mail.php';
 require_once __DIR__ . '/lib/Monitor.php';
+require_once __DIR__ . '/lib/Audit.php';
+require_once __DIR__ . '/lib/Totp.php';
 
 // ✅ SECURITY FIX: CORS Allowlist — only accept requests from known, trusted origins
 $allowedOrigins = [
@@ -25,7 +27,7 @@ if (in_array($origin, $allowedOrigins, true)) {
 
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-CSRF-Token, X-Xsrf-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -57,6 +59,9 @@ if (DEBUG_MODE) {
 
 // Initialize Auth
 Auth::init();
+
+// ✅ SECURITY [5.10]: Validate CSRF tokens for state-changing requests
+Auth::validateCsrf();
 
 // ✅ MONITORING: Register global error/exception handlers → alerts via Telegram
 Monitor::register();

@@ -154,9 +154,10 @@ if (preg_match('/^appointments\/create$/', $path) && $method === 'POST') {
                 $token = $resolvedToken;
                 $chatId = $acc['telegram_chat_id'];
                 
-                $clientName = $data['clientName'] ?? 'Cliente';
-                $clientPhone = $data['clientPhone'] ?? 'Sem telefone';
-                $serviceName = $data['serviceName'] ?? 'Serviço';
+                // ✅ SECURITY [2.4]: Sanitize variable content to prevent HTML parsing errors on Telegram API
+                $clientName = htmlspecialchars($data['clientName'] ?? 'Cliente', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $clientPhone = htmlspecialchars($data['clientPhone'] ?? 'Sem telefone', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $serviceName = htmlspecialchars($data['serviceName'] ?? 'Serviço', ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 
                 $tzObj = new DateTimeZone($acc['timezone'] ?? 'Asia/Tokyo');
                 $startInTz = new DateTime($newStart, $tzObj);

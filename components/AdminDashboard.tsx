@@ -4,13 +4,16 @@ import {
   Users, Lock, Unlock, Trash2, LogOut, CheckCircle,
   X, RefreshCw, Clock, AlertTriangle, Activity, Briefcase, Save, Edit2, User as UserIcon, Calendar, Copy, ExternalLink, Upload,
   AlertCircle, TrendingDown, Shield, MessageSquare, ChevronDown,
-  TrendingUp, BarChart2, DollarSign, Zap, ArrowUpRight, ArrowDownRight, Minus
+  TrendingUp, BarChart2, DollarSign, Zap, ArrowUpRight, ArrowDownRight, Minus, QrCode, Check
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { BR_STATE_TIMEZONES, BR_STATES } from '../utils/brazilTimezones';
 import { normalizeE164 } from '../utils/phone';
+import { api } from '../src/api';
 
 interface Props {
+  currentUser: { id: string; email: string; name: string; role: string; mfa_enabled?: boolean } | null;
+  onUpdateCurrentUserMfaStatus: (enabled: boolean) => void;
   users: User[];
   onAddUser: (user: any) => Promise<boolean>;
   onUpdateAdminUser: (userId: string, data: Partial<User>) => Promise<boolean>;
@@ -24,7 +27,7 @@ interface Props {
 type HealthStatus = 'critical' | 'risk' | 'healthy';
 type HealthFilter = 'all' | 'critical' | 'risk' | 'healthy';
 
-export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdminUser, onUpdateUserStatus, onRenewPlan, onDeleteUser, onLogout, showToast }) => {
+export const AdminDashboard: React.FC<Props> = ({ currentUser, onUpdateCurrentUserMfaStatus, users, onAddUser, onUpdateAdminUser, onUpdateUserStatus, onRenewPlan, onDeleteUser, onLogout, showToast }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdUser, setCreatedUser] = useState<any | null>(null);
@@ -36,7 +39,143 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   const [manualExpiryDate, setManualExpiryDate] = useState<string>('');
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
-  const [activeMainTab, setActiveMainTab] = useState<'clients' | 'billing'>('clients');
+  const [activeMainTab, setActiveMainTab] = useState<'clients' | 'billing' | 'security'>('clients');
+
+  // ✅ SECURITY [5.9]: Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+
+  // ✅ SECURITY [5.9]: MFA setup states
+  const [isSettingUpMfa, setIsSettingUpMfa] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState('');
+  const [mfaQrUrl, setMfaQrUrl] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
+
+  // ✅ SECURITY [5.9]: MFA disable states
+  const [isDisablingMfa, setIsDisablingMfa] = useState(false);
+  const [disablePassword, setDisablePassword] = useState('');
+
+  const validateNewPassword = (pwd: string) => {
+    const requirements = {
+      length: pwd.length >= 8,
+      uppercase: /[A-Z]/.test(pwd),
+      lowercase: /[a-z]/.test(pwd),
+      number: /\d/.test(pwd),
+    };
+    return {
+      ...requirements,
+      allValid: Object.values(requirements).every(v => v === true)
+    };
+  };
+  const pwReqs = validateNewPassword(newPassword);
+
+  const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess(false);
+    if (!pwReqs.allValid) {
+      setPwError('A nova senha não atende aos requisitos de segurança.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError('As senhas não coincidem.');
+      return;
+    }
+    setPwLoading(true);
+    try {
+      const resp = await api.changePassword(newPassword, currentPassword);
+      if (resp.ok) {
+        setPwSuccess(true);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        if (showToast) showToast('Senha alterada com sucesso!');
+      } else {
+        setPwError(resp.error || 'Erro ao alterar a senha. Verifique a senha atual.');
+      }
+    } catch (err: any) {
+      setPwError('Erro de conexão com o servidor.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  const handleStartMfaSetup = async () => {
+    setMfaError('');
+    setMfaLoading(true);
+    try {
+      const resp = await api.mfaSetup();
+      if (resp.ok && resp.data) {
+        setMfaSecret(resp.data.secret);
+        setMfaQrUrl(resp.data.otpauth_url);
+        setIsSettingUpMfa(true);
+      } else {
+        setMfaError(resp.error || 'Erro ao iniciar o setup do MFA.');
+      }
+    } catch (err) {
+      setMfaError('Erro de conexão com o servidor.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleConfirmMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError('');
+    if (mfaCode.length < 6) {
+      setMfaError('O código deve ter 6 dígitos.');
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const resp = await api.mfaConfirm(mfaCode);
+      if (resp.ok) {
+        onUpdateCurrentUserMfaStatus(true);
+        setIsSettingUpMfa(false);
+        setMfaCode('');
+        setMfaSecret('');
+        setMfaQrUrl('');
+        if (showToast) showToast('Autenticação em duas etapas (MFA) ativada com sucesso!');
+      } else {
+        setMfaError(resp.error || 'Código incorreto ou expirado.');
+      }
+    } catch (err) {
+      setMfaError('Erro de conexão com o servidor.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleDisableMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMfaError('');
+    if (!disablePassword) {
+      setMfaError('A senha é obrigatória para desativar o MFA.');
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const resp = await api.mfaDisable(disablePassword);
+      if (resp.ok) {
+        onUpdateCurrentUserMfaStatus(false);
+        setIsDisablingMfa(false);
+        setDisablePassword('');
+        if (showToast) showToast('Autenticação em duas etapas (MFA) desativada com sucesso.');
+      } else {
+        setMfaError(resp.error || 'Senha incorreta.');
+      }
+    } catch (err) {
+      setMfaError('Erro de conexão com o servidor.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
 
   const [countryFilter, setCountryFilter] = useState<'all' | 'JP' | 'BR'>('all');
 
@@ -361,7 +500,8 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
           {([
             { id: 'clients', label: 'Clientes',    Icon: Users },
             { id: 'billing', label: 'Faturamento', Icon: TrendingUp },
-          ] as { id: 'clients' | 'billing'; label: string; Icon: any }[]).map(({ id, label, Icon }) => (
+            { id: 'security', label: 'Segurança',  Icon: Lock },
+          ] as { id: 'clients' | 'billing' | 'security'; label: string; Icon: any }[]).map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setActiveMainTab(id)}
@@ -736,6 +876,259 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
 
       </main>
       )} {/* fim aba Faturamento */}
+
+      {activeMainTab === 'security' && (
+        <main className="max-w-7xl mx-auto p-6 space-y-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="text-primary" size={24} />
+            <h2 className="text-2xl font-black text-gray-900 uppercase">Segurança e Autenticação</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* CARD 1: ALTERAÇÃO DE SENHA */}
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
+              <h3 className="font-bold text-gray-900 flex items-center gap-3">
+                <Lock size={20} className="text-red-500" /> Alterar Senha
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 mb-6">Altere sua senha de acesso administrativo</p>
+              
+              <form onSubmit={handlePasswordChangeSubmit} className="space-y-4">
+                {pwError && (
+                  <div className="p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3 animate-fade-in">
+                    <AlertCircle size={18} className="flex-shrink-0" />
+                    {pwError}
+                  </div>
+                )}
+                {pwSuccess && (
+                  <div className="p-4 bg-green-50 text-green-700 text-xs font-bold rounded-2xl border border-green-100 flex items-center gap-3 animate-fade-in">
+                    <CheckCircle size={18} className="flex-shrink-0" />
+                    Senha alterada com sucesso!
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Senha Atual</label>
+                  <input
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium text-sm"
+                    placeholder="Digite sua senha atual"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nova Senha</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium text-sm"
+                    placeholder="Mínimo 8 caracteres"
+                  />
+                  <div className="mt-2 space-y-1.5 pl-1">
+                    <div className="flex items-center gap-2">
+                      {pwReqs.length ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                      <span className={`text-[11px] ${pwReqs.length ? 'text-green-600 font-medium' : 'text-gray-400'}`}>Mínimo 8 caracteres</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pwReqs.uppercase ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                      <span className={`text-[11px] ${pwReqs.uppercase ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 letra maiúscula (A-Z)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pwReqs.lowercase ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                      <span className={`text-[11px] ${pwReqs.lowercase ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 letra minúscula (a-z)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pwReqs.number ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                      <span className={`text-[11px] ${pwReqs.number ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 número (0-9)</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirmar Nova Senha</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium text-sm"
+                    placeholder="Digite novamente a nova senha"
+                  />
+                  {newPassword && confirmPassword && (
+                    <div className="flex items-center gap-2 mt-2 ml-1">
+                      {newPassword === confirmPassword ? (
+                        <>
+                          <Check size={12} className="text-green-500" />
+                          <span className="text-xs text-green-600 font-medium">As senhas coincidem</span>
+                        </>
+                      ) : (
+                        <>
+                          <X size={12} className="text-red-500" />
+                          <span className="text-xs text-red-600 font-medium">As senhas não coincidem</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={pwLoading || !pwReqs.allValid || newPassword !== confirmPassword || !currentPassword}
+                  className="mt-4 w-full bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 h-14 cursor-pointer"
+                >
+                  {pwLoading ? 'Atualizando...' : 'Atualizar Senha'}
+                </button>
+              </form>
+            </div>
+
+            {/* CARD 2: AUTENTICAÇÃO EM DUAS ETAPAS (MFA) */}
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8 flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 flex items-center gap-3">
+                  <Shield size={20} className="text-primary" /> Autenticação em Duas Etapas (MFA)
+                </h3>
+                <p className="text-sm text-gray-500 mt-2 mb-6">Proteja seu acesso administrativo com Google Authenticator</p>
+
+                {mfaError && (
+                  <div className="p-4 mb-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3 animate-fade-in">
+                    <AlertCircle size={18} className="flex-shrink-0" />
+                    {mfaError}
+                  </div>
+                )}
+
+                {/* MFA ESTÁ ATIVADO */}
+                {currentUser?.mfa_enabled && !isDisablingMfa && (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-green-50 text-green-800 text-xs font-bold rounded-2xl border border-green-100 flex items-center gap-3">
+                      <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
+                      <span>Seu MFA está <b>ATIVO e PROTEGIDO</b>. O login agora exige um código de verificação temporário.</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                      Caso necessite desativar ou re-configurar seu MFA em outro dispositivo móvel, clique no botão abaixo.
+                    </p>
+                    <button
+                      onClick={() => { setIsDisablingMfa(true); setDisablePassword(''); setMfaError(''); }}
+                      className="mt-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all h-14 w-full cursor-pointer"
+                    >
+                      Desativar MFA
+                    </button>
+                  </div>
+                )}
+
+                {/* MFA ATIVADO - CONFIRMAÇÃO DE DESATIVAÇÃO */}
+                {currentUser?.mfa_enabled && isDisablingMfa && (
+                  <form onSubmit={handleDisableMfa} className="space-y-4">
+                    <p className="text-xs font-bold text-red-600 mb-2">Para desativar o MFA, confirme sua senha administrativa:</p>
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sua Senha Atual</label>
+                      <input
+                        type="password"
+                        required
+                        value={disablePassword}
+                        onChange={e => setDisablePassword(e.target.value)}
+                        className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium text-sm"
+                        placeholder="Digite sua senha administrativa"
+                      />
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        type="submit"
+                        disabled={mfaLoading || !disablePassword}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 h-12 cursor-pointer transition-all disabled:opacity-50"
+                      >
+                        {mfaLoading ? 'Processando...' : 'Confirmar Desativação'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setIsDisablingMfa(false); setDisablePassword(''); setMfaError(''); }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center h-12 cursor-pointer transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* MFA NÃO ESTÁ CONFIGURADO E NÃO ESTÁ EM SETUP */}
+                {!currentUser?.mfa_enabled && !isSettingUpMfa && (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-amber-50 text-amber-800 text-xs font-bold rounded-2xl border border-amber-100 flex items-center gap-3">
+                      <AlertCircle size={20} className="text-amber-600 flex-shrink-0" />
+                      <span>Recomendado: Ative a autenticação em duas etapas para evitar acessos indesejados.</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                      O MFA adiciona uma camada extra de proteção. Além do e-mail e senha normais, você precisará informar um código temporário gerado pelo celular ao entrar.
+                    </p>
+                    <button
+                      onClick={handleStartMfaSetup}
+                      disabled={mfaLoading}
+                      className="mt-2 w-full bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-primary/25 h-14 cursor-pointer disabled:opacity-50"
+                    >
+                      {mfaLoading ? 'Carregando setup...' : 'Configurar MFA'}
+                    </button>
+                  </div>
+                )}
+
+                {/* MFA SETUP EM EXECUÇÃO */}
+                {!currentUser?.mfa_enabled && isSettingUpMfa && (
+                  <form onSubmit={handleConfirmMfa} className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col items-center gap-4 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaQrUrl)}`}
+                        alt="QR Code MFA"
+                        className="w-44 h-44 border-2 border-white shadow-md rounded-2xl bg-white"
+                      />
+                      <div className="text-center bg-white border border-gray-200 px-4 py-2 rounded-xl mt-1 w-full max-w-[280px]">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Chave Manual</span>
+                        <p className="text-xs font-mono font-bold text-gray-900 select-all truncate mt-0.5" title={mfaSecret}>{mfaSecret}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                        1. Escaneie o QR Code acima com o app <b>Google Authenticator</b>.<br />
+                        2. Digite o código de 6 dígitos gerado pelo app abaixo para confirmar:
+                      </p>
+                      <input
+                        type="text"
+                        required
+                        value={mfaCode}
+                        onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                        className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-mono font-bold text-2xl text-center outline-none transition-all placeholder:font-sans placeholder:text-sm"
+                        placeholder="000 000"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        disabled={mfaLoading || mfaCode.length < 6}
+                        className="flex-1 bg-primary hover:bg-primary-hover text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 h-12 cursor-pointer transition-all disabled:opacity-50"
+                      >
+                        {mfaLoading ? 'Confirmando...' : 'Ativar e Salvar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setIsSettingUpMfa(false); setMfaCode(''); setMfaSecret(''); setMfaQrUrl(''); setMfaError(''); }}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center h-12 cursor-pointer transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+              </div>
+            </div>
+
+          </div>
+        </main>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════
           MODAL: FICHA E EDIÇÃO

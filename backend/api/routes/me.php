@@ -29,6 +29,9 @@ if ($path === 'me' && $method === 'GET') {
         $account['invoices'] = [];
     }
 
+    $dbUser = Db::fetch('SELECT totp_secret FROM cp_agenda_users WHERE id = ?', [$user['id']]);
+    $user['mfa_enabled'] = ($dbUser && !empty($dbUser['totp_secret']));
+
     Response::ok(['user' => $user, 'account' => $account]);
 }
 
@@ -73,6 +76,20 @@ if ($path === 'me/change-password' && $method === 'POST') {
     $newPass = $data['password'] ?? '';
     if (strlen($newPass) < 8) Response::fail('A senha deve ter no mínimo 8 caracteres', 400);
     
+    // ✅ SECURITY [2.3]: Fetch current user record to verify current_password
+    $dbUser = Db::fetch('SELECT password_hash, must_change_password FROM cp_agenda_users WHERE id = ?', [$user['id']]);
+    if (!$dbUser) {
+        Response::fail('Usuário não encontrado', 404);
+    }
+    
+    // Require current password verification only if the password change is not forced (must_change_password is 0)
+    if (empty($dbUser['must_change_password'])) {
+        $currentPass = $data['current_password'] ?? '';
+        if (empty($currentPass) || !password_verify($currentPass, $dbUser['password_hash'])) {
+            Response::fail('A senha atual está incorreta', 400);
+        }
+    }
+    
     $hash = password_hash($newPass, PASSWORD_DEFAULT);
     Db::query('UPDATE cp_agenda_users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [$hash, $user['id']]);
     
@@ -80,6 +97,9 @@ if ($path === 'me/change-password' && $method === 'POST') {
     if (isset($_SESSION['user'])) {
         $_SESSION['user']['must_change_password'] = false;
     }
+    
+    // ✅ SECURITY [4.7]: Audit Log voluntary password change
+    Audit::log('password_changed', "Profissional alterou sua senha de acesso voluntariamente", (int)$user['account_id'], (int)$user['id']);
     
     Response::ok(['msg' => 'Password updated']);
 }
@@ -172,6 +192,65 @@ if ($path === 'me/telegram/disconnect' && $method === 'POST') {
         [$user['account_id']]
     );
     Response::ok(['msg' => 'Telegram desconectado com sucesso']);
+}
+
+// ✅ SECURITY [5.9]: Generate secret and OTPAuth URL for Google Authenticator pareament
+if ($path === 'me/mfa/setup' && $method === 'GET') {
+    $user = Auth::requireAuth();
+    $secret = Totp::generateSecret();
+    $_SESSION['mfa_setup_secret'] = $secret;
+    
+    $email = rawurlencode($user['email']);
+    $otpauthUrl = "otpauth://totp/CP%20Agenda%20Pro:{$email}?secret={$secret}&issuer=CP%20Agenda%20Pro";
+    
+    Response::ok([
+        'secret' => $secret,
+        'otpauth_url' => $otpauthUrl
+    ]);
+}
+
+// ✅ SECURITY [5.9]: Verify code and save secret in user profile database
+if ($path === 'me/mfa/confirm' && $method === 'POST') {
+    $user = Auth::requireAuth();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $code = trim($data['code'] ?? '');
+    
+    if (!isset($_SESSION['mfa_setup_secret'])) {
+        Response::fail('Sessão de setup expirada', 400);
+    }
+    
+    $secret = $_SESSION['mfa_setup_secret'];
+    if (Totp::verifyCode($secret, $code)) {
+        unset($_SESSION['mfa_setup_secret']);
+        Db::query('UPDATE cp_agenda_users SET totp_secret = ? WHERE id = ?', [$secret, $user['id']]);
+        
+        // Audit log
+        Audit::log('mfa_enabled', "Autenticação em duas etapas (MFA) ativada com sucesso", (int)$user['account_id'], (int)$user['id']);
+        
+        Response::ok(['msg' => 'MFA ativado com sucesso!']);
+    } else {
+        Response::fail('Código de verificação inválido', 400);
+    }
+}
+
+// ✅ SECURITY [5.9]: Disable MFA requiring password re-verification
+if ($path === 'me/mfa/disable' && $method === 'POST') {
+    $user = Auth::requireAuth();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $password = $data['password'] ?? '';
+    
+    // Verify password
+    $dbUser = Db::fetch('SELECT password_hash FROM cp_agenda_users WHERE id = ?', [$user['id']]);
+    if (!$dbUser || !password_verify($password, $dbUser['password_hash'])) {
+        Response::fail('Senha incorreta', 400);
+    }
+    
+    Db::query('UPDATE cp_agenda_users SET totp_secret = NULL WHERE id = ?', [$user['id']]);
+    
+    // Audit log
+    Audit::log('mfa_disabled', "Autenticação em duas etapas (MFA) desativada", (int)$user['account_id'], (int)$user['id']);
+    
+    Response::ok(['msg' => 'MFA desativado com sucesso!']);
 }
 
 Response::fail('Not Found', 404);

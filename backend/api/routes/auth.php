@@ -55,8 +55,21 @@ if ($path === 'auth/login' && $method === 'POST') {
     $user = Db::fetch('SELECT * FROM cp_agenda_users WHERE email = ?', [$email]);
 
     if ($user && password_verify($password, $user['password_hash'])) {
+        // ✅ SECURITY [5.9]: Google Authenticator (TOTP) MFA Check for admins
+        $isAdmin = in_array($user['role'], ['admin', 'super_admin'], true);
+        if ($isAdmin && !empty($user['totp_secret'])) {
+            $_SESSION['mfa_pending_user_id'] = (int)$user['id'];
+            Response::ok([
+                'mfa_required' => true,
+                'email' => $user['email']
+            ]);
+        }
+
         Auth::login($user);
         
+        // ✅ SECURITY [4.7]: Audit Log successful login
+        Audit::log('login_success', "Login efetuado com sucesso para o usuário: {$email}", (int)$user['account_id'], (int)$user['id']);
+
         // Fetch account status
         $acc = Db::fetch('SELECT status FROM cp_agenda_accounts WHERE id = ?', [$user['account_id']]);
         $status = $acc ? $acc['status'] : 'active';
@@ -71,13 +84,71 @@ if ($path === 'auth/login' && $method === 'POST') {
             'must_change_password' => (bool)$user['must_change_password']
         ]]);
     } else {
+        // ✅ SECURITY [4.7]: Audit Log failed login attempt
+        $failUserId = $user ? (int)$user['id'] : null;
+        $failAccId = $user ? (int)$user['account_id'] : null;
+        Audit::log('login_failed', "Tentativa de login malsucedida para o e-mail: {$email}", $failAccId, $failUserId);
+
         Response::fail('E-mail ou senha incorretos', 401);
     }
 }
 
 if ($path === 'auth/logout' && $method === 'POST') {
+    // ✅ SECURITY [4.7]: Audit Log logout before session is cleared
+    Audit::log('logout', "Usuário efetuou logout");
     Auth::logout();
     Response::ok(['msg' => 'Logged out']);
+}
+
+if ($path === 'auth/mfa-verify' && $method === 'POST') {
+    // ✅ SECURITY [3.6]: Rate limit MFA verification attempts by IP
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (!checkRateLimit('mfa_ip_' . $ip, 5, 300)) {
+        Response::fail('Muitas tentativas de MFA. Aguarde 5 minutos.', 429);
+    }
+
+    if (!isset($_SESSION['mfa_pending_user_id'])) {
+        Response::fail('Nenhuma sessão de login pendente', 400);
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $code = trim($data['code'] ?? '');
+
+    if (empty($code)) {
+        Response::fail('Código de verificação é obrigatório', 400);
+    }
+
+    $userId = $_SESSION['mfa_pending_user_id'];
+    $user = Db::fetch('SELECT * FROM cp_agenda_users WHERE id = ?', [$userId]);
+
+    if (!$user || empty($user['totp_secret'])) {
+        Response::fail('Erro de autenticação', 400);
+    }
+
+    if (Totp::verifyCode($user['totp_secret'], $code)) {
+        unset($_SESSION['mfa_pending_user_id']);
+        Auth::login($user);
+
+        // ✅ SECURITY [4.7]: Audit Log successful MFA login
+        Audit::log('login_success_mfa', "Login com MFA concluído com sucesso para: {$user['email']}", (int)$user['account_id'], (int)$user['id']);
+
+        $acc = Db::fetch('SELECT status FROM cp_agenda_accounts WHERE id = ?', [$user['account_id']]);
+        $status = $acc ? $acc['status'] : 'active';
+
+        Response::ok(['user' => [
+            'id' => $user['id'],
+            'email' => $user['email'],
+            'name' => $user['name'],
+            'role' => $user['role'],
+            'account_id' => $user['account_id'],
+            'account_status' => $status,
+            'must_change_password' => (bool)$user['must_change_password']
+        ]]);
+    } else {
+        // ✅ SECURITY [4.7]: Audit Log failed MFA verification
+        Audit::log('mfa_failed', "Falha de validação do código MFA para: {$user['email']}", (int)$user['account_id'], (int)$user['id']);
+        Response::fail('Código de verificação incorreto ou expirado', 400);
+    }
 }
 
 if ($path === 'auth/forgot-password' && $method === 'POST') {
@@ -151,6 +222,12 @@ if ($path === 'auth/forgot-password' && $method === 'POST') {
 }
 
 if ($path === 'auth/reset-password' && $method === 'POST') {
+    // ✅ SECURITY [3.6]: Rate limit reset password confirmations by IP (10 attempts per 15 mins)
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (!checkRateLimit('reset_confirm_ip_' . $ip, 10, 900)) {
+        Response::fail('Muitas tentativas. Aguarde 15 minutos.', 429);
+    }
+
     $data = json_decode(file_get_contents('php://input'), true);
     $code = $data['code'] ?? '';
     $newPass = $data['password'] ?? '';
@@ -164,8 +241,13 @@ if ($path === 'auth/reset-password' && $method === 'POST') {
     }
     
     $hash = password_hash($newPass, PASSWORD_DEFAULT);
-    Db::query('UPDATE cp_agenda_users SET password_hash = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?', [$hash, $user['id']]);
+    Db::query('UPDATE cp_agenda_users SET password_hash = ?, reset_token = NULL, reset_expires = NULL, must_change_password = 0 WHERE id = ?', [$hash, $user['id']]);
     
+    // ✅ SECURITY [4.7]: Audit Log successful password reset
+    $dbUsr = Db::fetch('SELECT account_id FROM cp_agenda_users WHERE id = ?', [$user['id']]);
+    $accId = $dbUsr ? (int)$dbUsr['account_id'] : null;
+    Audit::log('password_reset', "Senha redefinida com sucesso via token de recuperação", $accId, (int)$user['id']);
+
     Response::ok(['msg' => 'Password reset successful']);
 }
 

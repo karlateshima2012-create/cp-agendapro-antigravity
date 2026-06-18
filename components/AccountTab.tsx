@@ -3,7 +3,8 @@ import { AccountInfo } from '../types';
 import {
   Shield, User, Bell, Save,
   Image as ImageIcon, Layout, Upload,
-  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X, ChevronDown
+  Info, Lock, HelpCircle, Copy, ExternalLink, Check, QrCode, X, ChevronDown,
+  AlertCircle, CheckCircle
 } from 'lucide-react';
 import { TermsAndPoliciesModal } from './TermsAndPoliciesModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -41,6 +42,58 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
   const [linkedChatId, setLinkedChatId] = useState(account.telegramChatId || '');
   const [isLoadingLink, setIsLoadingLink] = useState(false);
   const pollingRef = useRef<any>(null);
+
+  // ✅ SECURITY [2.3]: State variables for voluntary password changes
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+
+  const validateNewPassword = (pwd: string) => {
+    const requirements = {
+      length: pwd.length >= 8,
+      uppercase: /[A-Z]/.test(pwd),
+      lowercase: /[a-z]/.test(pwd),
+      number: /\d/.test(pwd),
+    };
+    return {
+      ...requirements,
+      allValid: Object.values(requirements).every(v => v === true)
+    };
+  };
+  const pwReqs = validateNewPassword(newPassword);
+
+  const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess(false);
+    if (!pwReqs.allValid) {
+      setPwError('A nova senha não atende aos requisitos de segurança.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError('As senhas não coincidem.');
+      return;
+    }
+    setPwLoading(true);
+    try {
+      const resp = await api.changePassword(newPassword, currentPassword);
+      if (resp.ok) {
+        setPwSuccess(true);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPwError(resp.error || 'Erro ao alterar a senha. Verifique a senha atual.');
+      }
+    } catch (err: any) {
+      setPwError('Erro de conexão com o servidor.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -619,6 +672,106 @@ export const AccountTab: React.FC<Props> = ({ account, onUpdateSettings, onOpenP
               </div>
             </div>
           )}
+        </div>
+
+        {/* ✅ SECURITY [2.3]: Card para alteração voluntária de senha */}
+        <div className="md:col-span-2 bg-white rounded-3xl border border-gray-200 shadow-sm p-8">
+          <h3 className="font-bold text-gray-900 flex items-center gap-3">
+            <Lock size={20} className="text-red-500" /> Segurança e Senha
+          </h3>
+          <p className="text-sm text-gray-500 mt-2 mb-6">Altere sua senha de acesso ao painel de controle</p>
+          
+          <form onSubmit={handlePasswordChangeSubmit} className="space-y-4 max-w-md">
+            {pwError && (
+              <div className="p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3 animate-fade-in">
+                <AlertCircle size={18} className="flex-shrink-0" />
+                {pwError}
+              </div>
+            )}
+            {pwSuccess && (
+              <div className="p-4 bg-green-50 text-green-700 text-xs font-bold rounded-2xl border border-green-100 flex items-center gap-3 animate-fade-in">
+                <CheckCircle size={18} className="flex-shrink-0" />
+                Senha alterada com sucesso!
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Senha Atual</label>
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium"
+                placeholder="Digite sua senha atual"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nova Senha</label>
+              <input
+                type="password"
+                required
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium"
+                placeholder="Mínimo 8 caracteres"
+              />
+              <div className="mt-2 space-y-1.5 pl-1">
+                <div className="flex items-center gap-2">
+                  {pwReqs.length ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                  <span className={`text-[11px] ${pwReqs.length ? 'text-green-600 font-medium' : 'text-gray-400'}`}>Mínimo 8 caracteres</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pwReqs.uppercase ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                  <span className={`text-[11px] ${pwReqs.uppercase ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 letra maiúscula (A-Z)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pwReqs.lowercase ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                  <span className={`text-[11px] ${pwReqs.lowercase ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 letra minúscula (a-z)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {pwReqs.number ? <Check size={12} className="text-green-500" /> : <X size={12} className="text-gray-300" />}
+                  <span className={`text-[11px] ${pwReqs.number ? 'text-green-600 font-medium' : 'text-gray-400'}`}>1 número (0-9)</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirmar Nova Senha</label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-bold outline-none transition-all placeholder:font-medium"
+                placeholder="Digite novamente a nova senha"
+              />
+              {newPassword && confirmPassword && (
+                <div className="flex items-center gap-2 mt-2 ml-1">
+                  {newPassword === confirmPassword ? (
+                    <>
+                      <Check size={12} className="text-green-500" />
+                      <span className="text-xs text-green-600 font-medium">As senhas coincidem</span>
+                    </>
+                  ) : (
+                    <>
+                      <X size={12} className="text-red-500" />
+                      <span className="text-xs text-red-600 font-medium">As senhas não coincidem</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <button
+              type="submit"
+              disabled={pwLoading || !pwReqs.allValid || newPassword !== confirmPassword || !currentPassword}
+              className="mt-2 w-full bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 h-14 cursor-pointer"
+            >
+              {pwLoading ? 'Atualizando...' : 'Atualizar Senha'}
+            </button>
+          </form>
         </div>
 
         {/* QR CODE CARD */}

@@ -150,8 +150,8 @@ export const api = {
         return apiClient.delete(`/admin/users/${id}`);
     },
 
-    async changePassword(password: string): Promise<ApiResponse> {
-        return apiClient.post('/me/change-password', { password });
+    async changePassword(password: string, currentPassword?: string): Promise<ApiResponse> {
+        return apiClient.post('/me/change-password', { password, current_password: currentPassword });
     },
 
     async updateOnboarding(seen: boolean): Promise<ApiResponse> {
@@ -164,6 +164,23 @@ export const api = {
 
     async confirmPasswordReset(code: string, password: string): Promise<ApiResponse> {
         return apiClient.post('/auth/reset-password', { code, password });
+    },
+
+    // ✅ SECURITY [5.9]: Google Authenticator (TOTP) MFA Methods
+    async mfaVerify(code: string): Promise<ApiResponse<{ user: any }>> {
+        return apiClient.post('/auth/mfa-verify', { code });
+    },
+
+    async mfaSetup(): Promise<ApiResponse<{ secret: string; otpauth_url: string }>> {
+        return apiClient.get('/me/mfa/setup');
+    },
+
+    async mfaConfirm(code: string): Promise<ApiResponse> {
+        return apiClient.post('/me/mfa/confirm', { code });
+    },
+
+    async mfaDisable(password: string): Promise<ApiResponse> {
+        return apiClient.post('/me/mfa/disable', { password });
     },
 
     async testTelegramNotification(chatId: string): Promise<ApiResponse> {

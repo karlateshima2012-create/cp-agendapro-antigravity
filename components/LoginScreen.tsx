@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Mail, RefreshCw, CheckCircle, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { api } from '../src/api';
 import { Logo } from './Logo';
 
 interface Props {
-  onLogin: (email: string, pass: string) => Promise<void>;
+  onLogin: (email: string, pass: string) => Promise<{ mfa_required?: boolean } | void>;
+  onMfaVerify: (code: string) => Promise<void>;
 }
 
-
-
-export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
-  const [view, setView] = useState<'login' | 'forgot'>('login');
+export const LoginScreen: React.FC<Props> = ({ onLogin, onMfaVerify }) => {
+  const [view, setView] = useState<'login' | 'forgot' | 'mfa'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +27,29 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
     }
     setLoading(true);
     try {
-      await onLogin(email, password);
+      const resp = await onLogin(email, password);
+      if (resp && resp.mfa_required) {
+        setView('mfa');
+      }
     } catch (err: any) {
       setError(err.message || 'E-mail ou senha incorretos. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (mfaCode.length < 6) {
+      setError('O código deve ter 6 dígitos.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await onMfaVerify(mfaCode);
+    } catch (err: any) {
+      setError(err.message || 'Código de verificação incorreto ou expirado.');
     } finally {
       setLoading(false);
     }
@@ -141,6 +161,63 @@ export const LoginScreen: React.FC<Props> = ({ onLogin }) => {
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'mfa') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border-t-4 border-primary">
+            <button
+              onClick={() => { setView('login'); setError(''); setMfaCode(''); }}
+              className="flex items-center gap-2 text-gray-400 hover:text-primary transition-colors text-xs font-black uppercase tracking-widest mb-6"
+            >
+              <ArrowLeft size={16} /> Voltar ao Login
+            </button>
+
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                <Shield size={32} />
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight text-center">Verificação de Segurança</h2>
+            <p className="text-gray-500 text-sm mb-8 font-medium text-center">
+              Abra seu aplicativo <b>Google Authenticator</b> e digite o código de 6 dígitos para continuar.
+            </p>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100 flex items-center gap-3">
+                <AlertCircle size={16} className="flex-shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleMfaSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Código de Verificação (MFA)</label>
+                <input
+                  type="text"
+                  required
+                  value={mfaCode}
+                  onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                  className="w-full px-5 py-4 rounded-2xl border-2 border-transparent bg-gray-50 focus:border-primary focus:bg-white text-gray-900 font-mono font-bold text-3xl text-center outline-none transition-all placeholder:font-sans placeholder:text-lg"
+                  placeholder="000 000"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || mfaCode.length < 6}
+                className="w-full bg-primary hover:bg-primary-hover text-white font-black py-5 rounded-2xl shadow-xl shadow-primary/30 transition-all transform active:scale-95 text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {loading ? <><RefreshCw className="animate-spin" size={18} /> Verificando...</> : 'Verificar e Acessar'}
+              </button>
+            </form>
           </div>
         </div>
       </div>

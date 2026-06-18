@@ -6,7 +6,10 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
-    }
+    },
+    // ✅ SECURITY [5.10]: Enable automatic Double-Submit CSRF cookie forwarding
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-CSRF-Token'
 });
 
 // Response interceptor to handle session expiration

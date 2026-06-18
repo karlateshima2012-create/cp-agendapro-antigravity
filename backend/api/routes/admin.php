@@ -166,6 +166,10 @@ if (preg_match('/^admin\/profiles\/(\d+)$/', $path, $matches) && $method === 'PA
         Db::query('UPDATE cp_agenda_users SET email = ? WHERE id = ?', [$newEmail, $userId]);
     }
 
+    // ✅ SECURITY [4.7]: Audit Log admin profile update
+    $updatedFields = implode(', ', array_keys($data));
+    Audit::log('profile_updated', "Admin atualizou os campos ({$updatedFields}) do usuário ID {$userId}", $accId, (int)$userId);
+
     Response::ok(['msg' => 'Profile updated']);
 }
 
@@ -182,6 +186,10 @@ if (preg_match('/^admin\/profiles\/(\d+)\/renew$/', $path, $matches) && $method 
     $newExpiry = date('Y-m-d H:i:s', strtotime("+$months months", $date));
     
     Db::query('UPDATE cp_agenda_accounts SET plan_expires_at = ?, status = "active" WHERE id = ?', [$newExpiry, $usr['account_id']]);
+    
+    // ✅ SECURITY [4.7]: Audit Log plan renewal
+    Audit::log('plan_renewed', "Plano do usuário ID {$userId} renovado por {$months} meses (Novo vencimento: {$newExpiry})", (int)$usr['account_id'], (int)$userId);
+
     Response::ok(['newExpiryDate' => $newExpiry]);
 }
 
@@ -244,23 +252,33 @@ if ($path === 'admin/users' && $method === 'POST') {
         Db::query('INSERT INTO cp_agenda_accounts (name, owner_name, status, contact_phone, plan_type, plan_expires_at, country, timezone, currency, phone_country_code, hotmart_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
             [$data['companyName'], $data['ownerName'], 'active', $data['contactPhone'] ?? '', $planType, $expiresAt, $country, $timezone, $currency, $phoneCode, $hotmartUrl]);
         $accId = $pdo->lastInsertId();
-        
-        Db::query('INSERT INTO cp_agenda_users (account_id, email, password_hash, role, name, must_change_password) VALUES (?, ?, ?, ?, ?, ?)', [
+        // ✅ SECURITY [3.5]: Generate a secure reset token for first access password activation
+        $resetToken = bin2hex(random_bytes(32));
+        $resetExpires = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+        Db::query('INSERT INTO cp_agenda_users (account_id, email, password_hash, role, name, must_change_password, reset_token, reset_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
             $accId,
             $data['email'],
             password_hash($data['password'], PASSWORD_DEFAULT),
             'client',
             $data['ownerName'],
-            1
+            1,
+            $resetToken,
+            $resetExpires
         ]);
         
+        $newUserId = $pdo->lastInsertId();
         $pdo->commit();
+        
+        // ✅ SECURITY [4.7]: Audit Log new user creation
+        Audit::log('user_created', "Profissional cadastrado no sistema (Empresa: {$data['companyName']}, Email: {$data['email']})", (int)$accId, (int)$newUserId);
 
         // ✅ AUTOMATION: Send Welcome Email
         $userName = $data['ownerName'];
         $userEmail = $data['email'];
-        $password = $data['password'];
-        $loginUrl = "https://" . $_SERVER['HTTP_HOST'];
+        
+        $domain = defined('APP_DOMAIN') ? APP_DOMAIN : ($_SERVER['HTTP_HOST'] ?? 'cpagendapro.creativeprintjp.com');
+        $resetUrl = "https://{$domain}/reset-password?code={$resetToken}";
         $landingPage = "https://saibamaiscpagendapro.creativeprintjp.com/";
 
         $subject = "Sua Agenda Profissional está pronta! - CP Agenda Pro";
@@ -274,16 +292,17 @@ if ($path === 'admin/users' && $method === 'POST') {
                 <p>Sua plataforma de agendamentos foi configurada com sucesso. Agora você já pode organizar seus horários e serviços de forma profissional.</p>
                 
                 <div style='background: #f8fafc; padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #e2e8f0;'>
-                    <p style='margin: 0 0 15px 0; font-weight: bold; color: #1e293b;'>Suas Credenciais de Acesso:</p>
-                    <p style='margin: 8px 0; font-size: 14px;'><strong>E-mail:</strong> <span style='color: #25aae1;'>{$userEmail}</span></p>
-                    <p style='margin: 8px 0; font-size: 14px;'><strong>Senha Temporária:</strong> <span style='color: #25aae1;'>{$password}</span></p>
+                    <p style='margin: 0 0 15px 0; font-weight: bold; color: #1e293b;'>Sua Conta de Acesso:</p>
+                    <p style='margin: 8px 0; font-size: 14px;'><strong>E-mail cadastrado:</strong> <span style='color: #25aae1;'>{$userEmail}</span></p>
+                    <p style='margin: 8px 0; font-size: 14px;'>Para definir sua senha de acesso e ativar sua conta, clique no link abaixo (válido por 48 horas):</p>
                 </div>
 
                 <div style='text-align: center; margin: 30px 0;'>
-                    <a href='{$loginUrl}' style='background: #25aae1; color: white; padding: 15px 35px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;'>ACESSAR MEU PAINEL</a>
+                    <a href='{$resetUrl}' style='background: #25aae1; color: white; padding: 15px 35px; border-radius: 10px; text-decoration: none; font-weight: bold; display: inline-block;'>DEFINIR MINHA SENHA</a>
                 </div>
 
-                <p style='font-size: 13px; color: #64748b;'><strong>Importante:</strong> Por segurança, o sistema solicitará a alteração desta senha no seu primeiro acesso.</p>
+                <p style='font-size: 13px; color: #64748b;'><strong>Importante:</strong> Se o botão acima não funcionar, copie e cole o link a seguir no seu navegador:<br>
+                <span style='color: #25aae1; word-break: break-all;'>{$resetUrl}</span></p>
                 
                 <hr style='border: 0; border-top: 1px solid #eee; margin: 30px 0;'>
                 
@@ -323,9 +342,14 @@ if (preg_match('/^admin\/users\/(\d+)$/', $path, $matches) && $method === 'DELET
 
         // The schema uses ON DELETE CASCADE, but for extra safety (in case of manual changes or variations)
         // we delete the account which triggers the cascade to users, services, appointments, etc.
-        Db::query('DELETE FROM cp_agenda_accounts WHERE id = ?', [$usr['account_id']]);
+        $delAccId = (int)$usr['account_id'];
+        Db::query('DELETE FROM cp_agenda_accounts WHERE id = ?', [$delAccId]);
         
         $pdo->commit();
+        
+        // ✅ SECURITY [4.7]: Audit Log user deletion
+        Audit::log('user_deleted', "Profissional ID {$userId} excluído permanentemente (e todos os dados associados)", $delAccId, (int)$userId);
+
         Response::ok(['msg' => 'Profissional excluído com sucesso.']);
     } catch (Exception $e) {
         if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
