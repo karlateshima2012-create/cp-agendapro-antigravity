@@ -93,6 +93,9 @@ const App: React.FC = () => {
     log.info('Build Version:', import.meta.env.VITE_APP_VERSION ?? 'dev');
 
     const handleWindowError = (event: ErrorEvent) => {
+      // "Script error." has no details — it's a cross-origin script (e.g. social
+      // media WebView injections) that the browser intentionally sanitizes. Skip it.
+      if (!event.message || event.message === 'Script error.') return;
       reportErrorToBackend({
         message: event.message || 'Window error',
         filename: event.filename,
