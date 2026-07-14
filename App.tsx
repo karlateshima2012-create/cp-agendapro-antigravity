@@ -93,9 +93,17 @@ const App: React.FC = () => {
     log.info('Build Version:', import.meta.env.VITE_APP_VERSION ?? 'dev');
 
     const handleWindowError = (event: ErrorEvent) => {
-      // "Script error." has no details — it's a cross-origin script (e.g. social
-      // media WebView injections) that the browser intentionally sanitizes. Skip it.
-      if (!event.message || event.message === 'Script error.') return;
+      // Filter known false positives from social media WebView injected scripts.
+      // These are errors in Instagram/Facebook's own bridge code, not the application.
+      const msg = event.message || '';
+      const stack = (event.error?.stack || '') + (event.filename || '');
+      const isWebViewNoise =
+        !msg ||
+        msg === 'Script error.' ||
+        msg.includes('webkit.messageHandlers') ||
+        stack.includes('sendDataToNative') ||
+        stack.includes('sendPageHideMessage');
+      if (isWebViewNoise) return;
       reportErrorToBackend({
         message: event.message || 'Window error',
         filename: event.filename,
